@@ -11,6 +11,7 @@
   margin: 0 auto;
   overflow-wrap: break-word; /* Text will wrap in textarea */
   resize: none; /* Optional: Prevents resizing the textarea */
+margin: 5;
 
 }
 
@@ -24,13 +25,12 @@
 
 p {
   font-size: 18px;
-  margin: 0 auto;
+  margin: 10px;
   padding: 12px;
-  border: 1px solid #ccc;
+  border: 1px solid #7a7a7a;
   box-sizing: border-box;
   width: 90%;
   min-height: 150px;
-  margin: 0 auto;
   overflow-wrap: break-word; 
   resize: none;
 }

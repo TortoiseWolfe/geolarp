@@ -26,13 +26,16 @@ const ChatBot_UI: React.FC = () => {
 
   return (
     <div className="chatbot-ui">
-<h3>GeoLARP</h3>
 <p>
-  an immersive geo-located live action role-playing game.<br />
-  Explore, interact, and embark on adventures in a world<br />
-   where your physical location shapes your gaming experience.<br />
-  Get ready to step into a realm where fantasy and reality merge! <br />
-  Edit <code>src/App.tsx</code> and save to reload.
+
+<code>geo-located live action role-playing game</code>
+ <br />
+ <br />
+  Explore, interact, and embark on adventures<br />
+   in a world where your physical location<br />
+    shapes your gaming experience.<br />
+  Get ready to step into a realm<br />
+   where fantasy and reality merge!  
   </p>
 
       <div className="messages">
