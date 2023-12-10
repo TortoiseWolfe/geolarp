@@ -1,0 +1,18 @@
+.textInput {
+    background-color: #f3e13f;
+    width: 90%; /* Set the width to half of the parent container */
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    display: block; /* Ensure it's a block element to accept width and margin */
+    margin: 0 auto; /* Center the input */
+  }
+  
+  
+
+  .chatbot-ui {
+    width: 90%; /* Adjust this to your preferred width */
+    margin: 0 auto; /* This will center the container */
+    /* Add any additional styling for the container */
+  }

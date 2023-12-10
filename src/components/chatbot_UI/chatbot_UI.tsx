@@ -1,5 +1,5 @@
 import React, { useState, KeyboardEvent } from 'react';
-
+import styles from './ChatBot_UI.module.css';
 interface Message {
   id: number;
   text: string;
@@ -32,7 +32,7 @@ const ChatBot_UI: React.FC = () => {
           </div>
         ))}
       </div>
-      <input type="text" onKeyPress={handleKeyPress} placeholder="Type a message..." />
+      <input type="text" onKeyPress={handleKeyPress} placeholder="Type a message..."  className={styles.textInput} /> 
     </div>
   );
 };
