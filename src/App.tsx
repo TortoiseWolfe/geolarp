@@ -9,8 +9,6 @@ function App() {
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-        </p>
         <a
           className="App-link"
           href="https://reactjs.org"
@@ -19,12 +17,7 @@ function App() {
         >
           Learn React
         </a>
-  <p>
-  Welcome to GeoLARP, an immersive geo-located live action role-playing game.<br />
-  Explore, interact, and embark on adventures in a world where your physical location shapes your gaming experience.<br />
-  Get ready to step into a realm where fantasy and reality merge! <br />
-  Edit <code>src/App.tsx</code> and save to reload.
-  </p>
+
 <ChatBot_UI />  
 
       </header>

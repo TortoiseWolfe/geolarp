@@ -16,15 +16,25 @@ const ChatBot_UI: React.FC = () => {
     setMessages(prevMessages => [...prevMessages, messageObj]);
   };
 
-  const handleKeyPress = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && event.currentTarget.value.trim()) {
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) { // Prevents Enter from creating a new line
+      event.preventDefault(); // Stops the default behavior of Enter key in a textarea
       sendMessage(event.currentTarget.value);
-      event.currentTarget.value = ''; // clear the input after sending
+      event.currentTarget.value = ''; // Clear the textarea after sending
     }
   };
 
   return (
     <div className="chatbot-ui">
+<h3>GeoLARP</h3>
+<p>
+  an immersive geo-located live action role-playing game.<br />
+  Explore, interact, and embark on adventures in a world<br />
+   where your physical location shapes your gaming experience.<br />
+  Get ready to step into a realm where fantasy and reality merge! <br />
+  Edit <code>src/App.tsx</code> and save to reload.
+  </p>
+
       <div className="messages">
         {messages.map((message) => (
           <div key={message.id} className="message">
@@ -32,7 +42,11 @@ const ChatBot_UI: React.FC = () => {
           </div>
         ))}
       </div>
-      <input type="text" onKeyPress={handleKeyPress} placeholder="Type a message..."  className={styles.textInput} /> 
+      <textarea
+  className={styles.textInput}
+  placeholder="Type a message..."
+  onKeyPress={handleKeyPress}
+/>
     </div>
   );
 };
