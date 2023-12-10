@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/geolarp/static/css/main.f855e6bc.css",
-    "main.js": "/geolarp/static/js/main.c86fb017.js",
+    "main.js": "/geolarp/static/js/main.c6a17199.js",
     "static/js/787.387303be.chunk.js": "/geolarp/static/js/787.387303be.chunk.js",
     "static/media/logo.svg": "/geolarp/static/media/logo.91115edcf021852851579e531413cbef.svg",
     "index.html": "/geolarp/index.html",
     "main.f855e6bc.css.map": "/geolarp/static/css/main.f855e6bc.css.map",
-    "main.c86fb017.js.map": "/geolarp/static/js/main.c86fb017.js.map",
+    "main.c6a17199.js.map": "/geolarp/static/js/main.c6a17199.js.map",
     "787.387303be.chunk.js.map": "/geolarp/static/js/787.387303be.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.f855e6bc.css",
-    "static/js/main.c86fb017.js"
+    "static/js/main.c6a17199.js"
   ]
 }
