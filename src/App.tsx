@@ -12,7 +12,7 @@ function App() {
             <Helmet>
         <title>geoLARP</title>
         <meta property='og:title' content='geoLARP' />
-<meta property='og:image' content='https://geolarp.com/images/geoLARP_logo.png' />
+<meta property='og:image' content='https://github.com/TortoiseWolfe/geolarp/blob/main/src/images/global_Map.png?raw=true' />
 <meta property='og:description' content='Immerse yourself in a geo-located live action role-playing game where your physical location shapes the adventure. Explore and interact in a realm where fantasy and reality merge.' />
 <meta property='og:url' content='https://geolarp.com' />
 <meta property='og:type' content='website' />
@@ -20,7 +20,7 @@ function App() {
 <meta name="twitter:site" content="@geoLARP" />
 <meta name="twitter:title" content="geoLARP" />
 <meta name="twitter:description" content="Immerse yourself in a geo-located live action role-playing game where your physical location shapes the adventure. Explore and interact in a realm where fantasy and reality merge." />
-<meta name="twitter:image" content="https://geolarp.com/images/geoLARP_logo.png" />
+<meta name="twitter:image" content="https://github.com/TortoiseWolfe/geolarp/blob/main/src/images/global_Map.png?raw=true" />
 <meta name="viewport" content="initial-scale=1.0, width=device-width" />
 <meta name="description" content="Immerse yourself in a geo-located live action role-playing game where your physical location shapes the adventure. Explore and interact in a realm where fantasy and reality merge." />
 
