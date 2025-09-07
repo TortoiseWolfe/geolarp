@@ -1,46 +1,104 @@
-# Getting Started with Create React App
+# GeoLARP
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A location-based Live Action Role Playing game built with Next.js using PRP-driven development.
 
-## Available Scripts
+## Development Philosophy: PRP-Driven
 
-In the project directory, you can run:
+This project uses **Punk Rock Prompts (PRPs)** - temporary specifications that guide implementation then rotate into code, tests, and archives. 
 
-### `npm start`
+### Why PRPs?
+- **No documentation drift** - Code is the source of truth
+- **Clear lifecycle** - Specs → Code → Tests → Archive
+- **Fast iteration** - No duplicate documentation
+- **Quality gates** - Tests validate requirements
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### PRP Workflow
+```
+1. Create PRP in /docs/prp/queue/
+2. Activate (move to /docs/prp/active/)
+3. Implement in code
+4. Validate with tests
+5. Archive and extract decisions
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Project Structure
 
-### `npm test`
+```
+geolarp/
+├── docs/
+│   ├── prp/              # Punk Rock Prompts
+│   │   ├── active/       # Currently implementing
+│   │   └── queue/        # Backlog
+│   ├── archive/          # Completed PRPs
+│   └── decisions/        # Architecture Decision Records
+├── src/                  # Source code (when created)
+├── tests/                # Test specifications (when created)
+└── README.md            # You are here
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Getting Started
 
-### `npm run build`
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- Git
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Installation
+```bash
+# Clone the repository
+git clone https://github.com/TortoiseWolfe/geolarp.git
+cd geolarp
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+# Install Next.js (when ready)
+npx create-next-app@latest . --typescript --tailwind --app
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Development Process
 
-### `npm run eject`
+1. **Check active PRPs**: `ls docs/prp/active/`
+2. **Pick a PRP**: Move from queue to active
+3. **Implement**: Build the feature
+4. **Test**: Validate PRP requirements
+5. **Archive**: Complete the cycle
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Resources
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Saved Components
+Located in backup:
+- `SpinningDice/` - Animated dice component
+- `images/` - Global map and assets
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Documentation
+- [PRP Lifecycle Guide](docs/PRP_LIFECYCLE.md)
+- [PRP Directory](docs/prp/)
+- [Architecture Decisions](docs/decisions/)
+- [Archive](docs/archive/)
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Tech Stack (Planned)
 
-## Learn More
+- **Framework**: Next.js 14+ (App Router)
+- **Styling**: Tailwind CSS + DaisyUI
+- **Testing**: Vitest + Testing Library
+- **Maps**: Mapbox/Leaflet
+- **Database**: TBD via PRP
+- **Auth**: TBD via PRP
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Contributing
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+1. Create a PRP for your feature
+2. Get PRP approved
+3. Move to active and implement
+4. Ensure tests validate PRP
+5. Archive on completion
+
+## License
+
+MIT - See [LICENSE](LICENSE)
+
+## Status
+
+🚧 **Project Restructuring** - Setting up PRP-driven development workflow
+
+---
+
+*Built with Punk Rock Prompts - where specifications become code, not documentation.*
