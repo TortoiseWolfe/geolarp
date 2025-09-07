@@ -1,0 +1,40 @@
+{
+  "name": "geolarp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@3d-dice/dice-box": "^1.1.4",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@emailjs/browser": "^4.4.1",
+    "@types/qrcode": "^1.5.5",
+    "dexie": "^4.2.0",
+    "localforage": "^1.10.0",
+    "next": "15.5.2",
+    "qrcode": "^1.5.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@serwist/next": "^9.2.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "daisyui": "^5.1.7",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.2",
+    "serwist": "^9.2.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
