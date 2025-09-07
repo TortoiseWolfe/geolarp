@@ -2,6 +2,13 @@
 
 A location-based Live Action Role Playing game built with Next.js using PRP-driven development.
 
+## 🔗 Demo Pages
+
+- [Database Demo](http://localhost:3000/database-demo) - IndexedDB integration demo
+- [Dice Demo](http://localhost:3000/dice-demo) - D7 Dice System (Boggle-style dice roller)
+- [Geolocation Demo](http://localhost:3000/geolocation-demo) - Privacy-first geolocation system
+- [Offline Page](http://localhost:3000/offline) - Offline functionality demo
+
 ## Development Philosophy: PRP-Driven
 
 This project uses **Punk Rock Prompts (PRPs)** - temporary specifications that guide implementation then rotate into code, tests, and archives. 
