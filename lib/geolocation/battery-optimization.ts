@@ -5,13 +5,18 @@ interface BatteryStatus {
   charging: boolean;
 }
 
+interface BatteryManager extends EventTarget {
+  level: number;
+  charging: boolean;
+}
+
 /**
  * Get current battery status
  */
 export async function getBatteryStatus(): Promise<BatteryStatus | null> {
   if ('getBattery' in navigator) {
     try {
-      const battery = await (navigator as any).getBattery();
+      const battery = await (navigator as unknown as { getBattery: () => Promise<{ level: number; charging: boolean }> }).getBattery();
       return {
         level: battery.level,
         charging: battery.charging
@@ -107,7 +112,7 @@ export function monitorBattery(
   if ('getBattery' in navigator) {
     let cleanup: (() => void) | null = null;
     
-    (navigator as any).getBattery().then((battery: any) => {
+    (navigator as unknown as { getBattery: () => Promise<BatteryManager> }).getBattery().then((battery: BatteryManager) => {
       const handleChange = () => {
         onBatteryChange({
           level: battery.level,

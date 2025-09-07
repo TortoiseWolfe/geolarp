@@ -76,7 +76,7 @@ export class LocationService {
       }
 
       // Fallback: try to get position to trigger permission prompt
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         navigator.geolocation.getCurrentPosition(
           () => {
             this.permissionState = {
@@ -409,7 +409,7 @@ export class LocationService {
   }
 
   private checkGeofences(position: PrivacyCoordinates): void {
-    this.geofences.forEach((area, id) => {
+    this.geofences.forEach((area) => {
       const inside = isWithinGeofence(position, area.center, area.radius);
       
       if (inside && !area.active) {
