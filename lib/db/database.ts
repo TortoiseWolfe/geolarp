@@ -6,6 +6,14 @@ import {
   Encounter,
   ExportBundle 
 } from './types';
+import { 
+  validateCharacter, 
+  validateGameState, 
+  validateEncounter, 
+  validateMapTile,
+  validateExportBundle,
+  sanitizeString 
+} from './validators';
 
 export class GeoLARPDatabase extends Dexie {
   mapTiles!: Table<MapTile, string>;
@@ -25,6 +33,15 @@ export class GeoLARPDatabase extends Dexie {
   }
 
   async saveCharacter(character: Character): Promise<void> {
+    // Validate character data
+    const validation = validateCharacter(character);
+    if (!validation.valid) {
+      throw new Error(`Invalid character data: ${validation.errors.join(', ')}`);
+    }
+    
+    // Sanitize string fields
+    character.name = sanitizeString(character.name, 50);
+    
     character.updatedAt = Date.now();
     character.version = (character.version || 0) + 1;
     await this.characters.put(character);
@@ -39,6 +56,12 @@ export class GeoLARPDatabase extends Dexie {
   }
 
   async cacheTile(tile: MapTile): Promise<void> {
+    // Validate tile data
+    const validation = validateMapTile(tile);
+    if (!validation.valid) {
+      throw new Error(`Invalid map tile: ${validation.errors.join(', ')}`);
+    }
+    
     tile.timestamp = Date.now();
     await this.mapTiles.put(tile);
   }
@@ -50,6 +73,12 @@ export class GeoLARPDatabase extends Dexie {
   }
 
   async saveGameState(state: GameState): Promise<void> {
+    // Validate game state
+    const validation = validateGameState(state);
+    if (!validation.valid) {
+      throw new Error(`Invalid game state: ${validation.errors.join(', ')}`);
+    }
+    
     state.lastPlayed = Date.now();
     state.statistics.lastUpdated = Date.now();
     await this.gameState.put(state);
@@ -61,6 +90,16 @@ export class GeoLARPDatabase extends Dexie {
   }
 
   async saveEncounter(encounter: Encounter): Promise<void> {
+    // Validate encounter data
+    const validation = validateEncounter(encounter);
+    if (!validation.valid) {
+      throw new Error(`Invalid encounter: ${validation.errors.join(', ')}`);
+    }
+    
+    // Sanitize string fields
+    encounter.name = sanitizeString(encounter.name, 50);
+    encounter.description = sanitizeString(encounter.description, 500);
+    
     await this.encounters.put(encounter);
   }
 
@@ -106,17 +145,40 @@ export class GeoLARPDatabase extends Dexie {
   }
 
   async importData(bundle: ExportBundle): Promise<void> {
+    // Validate entire bundle structure
+    const validation = validateExportBundle(bundle);
+    if (!validation.valid) {
+      throw new Error(`Invalid import data: ${validation.errors.slice(0, 5).join(', ')}`);
+    }
+    
     await this.transaction('rw', this.characters, this.gameState, this.encounters, async () => {
+      // Import characters with validation
       for (const character of bundle.characters) {
-        await this.characters.put(character);
+        const charValidation = validateCharacter(character);
+        if (charValidation.valid) {
+          // Sanitize before storing
+          character.name = sanitizeString(character.name, 50);
+          await this.characters.put(character);
+        }
       }
       
+      // Import game state with validation
       if (bundle.gameState) {
-        await this.gameState.put(bundle.gameState);
+        const stateValidation = validateGameState(bundle.gameState);
+        if (stateValidation.valid) {
+          await this.gameState.put(bundle.gameState);
+        }
       }
       
+      // Import encounters with validation
       for (const encounter of bundle.encounters) {
-        await this.encounters.put(encounter);
+        const encValidation = validateEncounter(encounter);
+        if (encValidation.valid) {
+          // Sanitize before storing
+          encounter.name = sanitizeString(encounter.name, 50);
+          encounter.description = sanitizeString(encounter.description, 500);
+          await this.encounters.put(encounter);
+        }
       }
     });
   }

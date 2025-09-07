@@ -10,6 +10,7 @@ import {
 import { db } from '@/lib/db/database';
 import { storageManager } from '@/lib/db/storage-manager';
 import { Character, GameState } from '@/lib/db/types';
+import { sanitizeDisplayName, validateCharacter } from '@/lib/db/validators';
 
 export default function DatabaseDemo() {
   const { characters, loading: charsLoading, refetch: refetchCharacters } = useCharacters();
@@ -32,9 +33,12 @@ export default function DatabaseDemo() {
     setError('');
     
     try {
+      // Sanitize input before creating character
+      const sanitizedName = sanitizeDisplayName(newCharName);
+      
       const character: Character = {
         id: `char-${Date.now()}`,
-        name: newCharName,
+        name: sanitizedName,
         level: 1,
         experience: 0,
         attributes: {
@@ -51,6 +55,12 @@ export default function DatabaseDemo() {
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
+      
+      // Validate before saving
+      const validation = validateCharacter(character);
+      if (!validation.valid) {
+        throw new Error(validation.errors[0]);
+      }
 
       await db.saveCharacter(character);
       setNewCharName('');
@@ -273,7 +283,7 @@ export default function DatabaseDemo() {
           <div className="space-y-2">
             {characters.map((char) => (
               <div key={char.id} className="bg-gray-700 p-3 rounded">
-                <p className="font-semibold">{char.name}</p>
+                <p className="font-semibold">{sanitizeDisplayName(char.name)}</p>
                 <p className="text-sm text-gray-300">
                   Level {char.level} | Created: {new Date(char.createdAt).toLocaleDateString()}
                 </p>

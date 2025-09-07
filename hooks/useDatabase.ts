@@ -215,12 +215,30 @@ export function useDataExport() {
   const importData = useCallback(async (file: File) => {
     try {
       setLoading(true);
+      
+      // Validate file before processing
+      const { validateFileImport } = await import('@/lib/db/validators');
+      const fileValidation = validateFileImport(file);
+      if (!fileValidation.valid) {
+        throw new Error(fileValidation.error || 'Invalid file');
+      }
+      
       const text = await file.text();
-      const bundle: ExportBundle = JSON.parse(text);
+      
+      // Parse JSON with error handling
+      let bundle: ExportBundle;
+      try {
+        bundle = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Invalid JSON format');
+      }
+      
+      // Import with validation (database will validate internally)
       await db.importData(bundle);
     } catch (err) {
-      setError(err as Error);
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : 'Import failed';
+      setError(new Error(errorMessage));
+      throw new Error(errorMessage); // Throw sanitized error
     } finally {
       setLoading(false);
     }
