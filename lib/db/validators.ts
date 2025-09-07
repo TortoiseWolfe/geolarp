@@ -1,12 +1,6 @@
 import { 
-  Character, 
-  GameState, 
-  Encounter, 
-  MapTile,
-  ExportBundle,
   Attributes,
   Item,
-  Quest,
   Coordinates
 } from './types';
 
@@ -38,23 +32,26 @@ export function sanitizeDisplayName(name: string): string {
 }
 
 // Validation functions
-export function isValidCoordinates(coords: any): coords is Coordinates {
-  return coords &&
-    typeof coords.lat === 'number' &&
-    typeof coords.lng === 'number' &&
-    coords.lat >= -90 && coords.lat <= 90 &&
-    coords.lng >= -180 && coords.lng <= 180;
+export function isValidCoordinates(coords: unknown): coords is Coordinates {
+  const c = coords as Record<string, unknown>;
+  return c &&
+    typeof c.lat === 'number' &&
+    typeof c.lng === 'number' &&
+    c.lat >= -90 && c.lat <= 90 &&
+    c.lng >= -180 && c.lng <= 180;
 }
 
-export function isValidAttributes(attrs: any): attrs is Attributes {
+export function isValidAttributes(attrs: unknown): attrs is Attributes {
   if (!attrs || typeof attrs !== 'object') return false;
   
+  const a = attrs as Record<string, unknown>;
   const requiredAttrs = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
   
   for (const attr of requiredAttrs) {
-    if (typeof attrs[attr] !== 'number' || 
-        attrs[attr] < MIN_ATTRIBUTE || 
-        attrs[attr] > MAX_ATTRIBUTE) {
+    const value = a[attr];
+    if (typeof value !== 'number' || 
+        value < MIN_ATTRIBUTE || 
+        value > MAX_ATTRIBUTE) {
       return false;
     }
   }
@@ -62,17 +59,18 @@ export function isValidAttributes(attrs: any): attrs is Attributes {
   return true;
 }
 
-export function isValidItem(item: any): item is Item {
-  return item &&
-    typeof item.id === 'string' &&
-    typeof item.name === 'string' &&
-    item.name.length <= MAX_NAME_LENGTH &&
-    VALID_ITEM_TYPES.includes(item.type) &&
-    typeof item.quantity === 'number' &&
-    item.quantity >= 0;
+export function isValidItem(item: unknown): item is Item {
+  if (!item || typeof item !== 'object') return false;
+  const i = item as Record<string, unknown>;
+  return typeof i.id === 'string' &&
+    typeof i.name === 'string' &&
+    (i.name as string).length <= MAX_NAME_LENGTH &&
+    VALID_ITEM_TYPES.includes(i.type as typeof VALID_ITEM_TYPES[number]) &&
+    typeof i.quantity === 'number' &&
+    i.quantity >= 0;
 }
 
-export function validateCharacter(character: any): { valid: boolean; errors: string[] } {
+export function validateCharacter(character: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   if (!character || typeof character !== 'object') {
@@ -80,64 +78,67 @@ export function validateCharacter(character: any): { valid: boolean; errors: str
     return { valid: false, errors };
   }
   
+  const char = character as Record<string, unknown>;
+  
   // Validate ID
-  if (!character.id || typeof character.id !== 'string') {
+  if (!char.id || typeof char.id !== 'string') {
     errors.push('Character must have a valid ID');
   }
   
   // Validate name
-  if (!character.name || typeof character.name !== 'string') {
+  if (!char.name || typeof char.name !== 'string') {
     errors.push('Character must have a name');
-  } else if (character.name.length > MAX_NAME_LENGTH) {
+  } else if ((char.name as string).length > MAX_NAME_LENGTH) {
     errors.push(`Character name must be ${MAX_NAME_LENGTH} characters or less`);
   }
   
   // Validate level
-  if (typeof character.level !== 'number' || 
-      character.level < MIN_LEVEL || 
-      character.level > MAX_LEVEL) {
+  if (typeof char.level !== 'number' || 
+      char.level < MIN_LEVEL || 
+      char.level > MAX_LEVEL) {
     errors.push(`Character level must be between ${MIN_LEVEL} and ${MAX_LEVEL}`);
   }
   
   // Validate experience
-  if (typeof character.experience !== 'number' || character.experience < 0) {
+  if (typeof char.experience !== 'number' || char.experience < 0) {
     errors.push('Character experience must be a positive number');
   }
   
   // Validate attributes
-  if (!isValidAttributes(character.attributes)) {
+  if (!isValidAttributes(char.attributes)) {
     errors.push('Character must have valid attributes');
   }
   
   // Validate inventory
-  if (!Array.isArray(character.inventory)) {
+  if (!Array.isArray(char.inventory)) {
     errors.push('Character inventory must be an array');
   } else {
-    for (let i = 0; i < character.inventory.length; i++) {
-      if (!isValidItem(character.inventory[i])) {
+    const inventory = char.inventory as unknown[];
+    for (let i = 0; i < inventory.length; i++) {
+      if (!isValidItem(inventory[i])) {
         errors.push(`Invalid item at inventory position ${i}`);
       }
     }
   }
   
   // Validate position
-  if (!isValidCoordinates(character.position)) {
+  if (!isValidCoordinates(char.position)) {
     errors.push('Character must have a valid position');
   }
   
   // Validate timestamps
-  if (typeof character.createdAt !== 'number' || character.createdAt < 0) {
+  if (typeof char.createdAt !== 'number' || char.createdAt < 0) {
     errors.push('Character must have a valid creation timestamp');
   }
   
-  if (typeof character.updatedAt !== 'number' || character.updatedAt < 0) {
+  if (typeof char.updatedAt !== 'number' || char.updatedAt < 0) {
     errors.push('Character must have a valid update timestamp');
   }
   
   return { valid: errors.length === 0, errors };
 }
 
-export function validateGameState(gameState: any): { valid: boolean; errors: string[] } {
+export function validateGameState(gameState: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   if (!gameState || typeof gameState !== 'object') {
@@ -145,29 +146,31 @@ export function validateGameState(gameState: any): { valid: boolean; errors: str
     return { valid: false, errors };
   }
   
+  const gs = gameState as Record<string, unknown>;
+  
   // Validate ID
-  if (!gameState.id || typeof gameState.id !== 'string') {
+  if (!gs.id || typeof gs.id !== 'string') {
     errors.push('Game state must have a valid ID');
   }
   
   // Validate arrays
-  if (!Array.isArray(gameState.activeQuests)) {
+  if (!Array.isArray(gs.activeQuests)) {
     errors.push('Active quests must be an array');
   }
   
-  if (!Array.isArray(gameState.completedQuests)) {
+  if (!Array.isArray(gs.completedQuests)) {
     errors.push('Completed quests must be an array');
   }
   
-  if (!Array.isArray(gameState.achievements)) {
+  if (!Array.isArray(gs.achievements)) {
     errors.push('Achievements must be an array');
   }
   
   // Validate statistics
-  if (!gameState.statistics || typeof gameState.statistics !== 'object') {
+  if (!gs.statistics || typeof gs.statistics !== 'object') {
     errors.push('Game state must have statistics');
   } else {
-    const stats = gameState.statistics;
+    const stats = gs.statistics as Record<string, unknown>;
     if (typeof stats.totalPlayTime !== 'number' || stats.totalPlayTime < 0) {
       errors.push('Total play time must be a positive number');
     }
@@ -177,17 +180,17 @@ export function validateGameState(gameState: any): { valid: boolean; errors: str
   }
   
   // Validate settings
-  if (!gameState.settings || typeof gameState.settings !== 'object') {
+  if (!gs.settings || typeof gs.settings !== 'object') {
     errors.push('Game state must have settings');
   } else {
-    const settings = gameState.settings;
+    const settings = gs.settings as Record<string, unknown>;
     if (typeof settings.soundEnabled !== 'boolean') {
       errors.push('Sound enabled must be a boolean');
     }
-    if (!VALID_DIFFICULTIES.includes(settings.difficulty)) {
+    if (!VALID_DIFFICULTIES.includes(settings.difficulty as typeof VALID_DIFFICULTIES[number])) {
       errors.push('Invalid difficulty setting');
     }
-    if (!VALID_MAP_STYLES.includes(settings.mapStyle)) {
+    if (!VALID_MAP_STYLES.includes(settings.mapStyle as typeof VALID_MAP_STYLES[number])) {
       errors.push('Invalid map style');
     }
   }
@@ -195,7 +198,7 @@ export function validateGameState(gameState: any): { valid: boolean; errors: str
   return { valid: errors.length === 0, errors };
 }
 
-export function validateEncounter(encounter: any): { valid: boolean; errors: string[] } {
+export function validateEncounter(encounter: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   if (!encounter || typeof encounter !== 'object') {
@@ -203,42 +206,44 @@ export function validateEncounter(encounter: any): { valid: boolean; errors: str
     return { valid: false, errors };
   }
   
+  const enc = encounter as Record<string, unknown>;
+  
   // Validate ID
-  if (!encounter.id || typeof encounter.id !== 'string') {
+  if (!enc.id || typeof enc.id !== 'string') {
     errors.push('Encounter must have a valid ID');
   }
   
   // Validate coordinates
-  if (!isValidCoordinates(encounter.coordinates)) {
+  if (!isValidCoordinates(enc.coordinates)) {
     errors.push('Encounter must have valid coordinates');
   }
   
   // Validate type
   const validTypes = ['battle', 'treasure', 'npc', 'landmark', 'puzzle'];
-  if (!validTypes.includes(encounter.type)) {
+  if (!validTypes.includes(enc.type as string)) {
     errors.push('Invalid encounter type');
   }
   
   // Validate name and description
-  if (!encounter.name || typeof encounter.name !== 'string' || 
-      encounter.name.length > MAX_NAME_LENGTH) {
+  if (!enc.name || typeof enc.name !== 'string' || 
+      enc.name.length > MAX_NAME_LENGTH) {
     errors.push('Encounter must have a valid name');
   }
   
-  if (!encounter.description || typeof encounter.description !== 'string' || 
-      encounter.description.length > MAX_STRING_LENGTH) {
+  if (!enc.description || typeof enc.description !== 'string' || 
+      enc.description.length > MAX_STRING_LENGTH) {
     errors.push('Encounter must have a valid description');
   }
   
   // Validate discovered flag
-  if (typeof encounter.discovered !== 'boolean') {
+  if (typeof enc.discovered !== 'boolean') {
     errors.push('Discovered must be a boolean');
   }
   
   return { valid: errors.length === 0, errors };
 }
 
-export function validateMapTile(tile: any): { valid: boolean; errors: string[] } {
+export function validateMapTile(tile: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   if (!tile || typeof tile !== 'object') {
@@ -246,31 +251,33 @@ export function validateMapTile(tile: any): { valid: boolean; errors: string[] }
     return { valid: false, errors };
   }
   
+  const t = tile as Record<string, unknown>;
+  
   // Validate coordinates
-  if (typeof tile.x !== 'number' || typeof tile.y !== 'number' || 
-      typeof tile.zoom !== 'number') {
+  if (typeof t.x !== 'number' || typeof t.y !== 'number' || 
+      typeof t.zoom !== 'number') {
     errors.push('Map tile must have valid x, y, and zoom values');
   }
   
   // Validate zoom level
-  if (tile.zoom < 0 || tile.zoom > 22) {
+  if (typeof t.zoom === 'number' && (t.zoom < 0 || t.zoom > 22)) {
     errors.push('Zoom level must be between 0 and 22');
   }
   
   // Validate blob
-  if (!(tile.blob instanceof Blob)) {
+  if (!(t.blob instanceof Blob)) {
     errors.push('Map tile must have a valid blob');
   }
   
   // Validate timestamp
-  if (typeof tile.timestamp !== 'number' || tile.timestamp < 0) {
+  if (typeof t.timestamp !== 'number' || t.timestamp < 0) {
     errors.push('Map tile must have a valid timestamp');
   }
   
   return { valid: errors.length === 0, errors };
 }
 
-export function validateExportBundle(bundle: any): { valid: boolean; errors: string[] } {
+export function validateExportBundle(bundle: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   if (!bundle || typeof bundle !== 'object') {
@@ -278,22 +285,24 @@ export function validateExportBundle(bundle: any): { valid: boolean; errors: str
     return { valid: false, errors };
   }
   
+  const b = bundle as Record<string, unknown>;
+  
   // Validate version
-  if (!bundle.version || typeof bundle.version !== 'string') {
+  if (!b.version || typeof b.version !== 'string') {
     errors.push('Export bundle must have a version');
   }
   
   // Validate export date
-  if (typeof bundle.exportDate !== 'number' || bundle.exportDate < 0) {
+  if (typeof b.exportDate !== 'number' || b.exportDate < 0) {
     errors.push('Export bundle must have a valid export date');
   }
   
   // Validate characters array
-  if (!Array.isArray(bundle.characters)) {
+  if (!Array.isArray(b.characters)) {
     errors.push('Export bundle must have a characters array');
   } else {
-    for (let i = 0; i < bundle.characters.length; i++) {
-      const charValidation = validateCharacter(bundle.characters[i]);
+    for (let i = 0; i < b.characters.length; i++) {
+      const charValidation = validateCharacter(b.characters[i]);
       if (!charValidation.valid) {
         errors.push(`Character ${i}: ${charValidation.errors.join(', ')}`);
       }
@@ -301,19 +310,19 @@ export function validateExportBundle(bundle: any): { valid: boolean; errors: str
   }
   
   // Validate game state
-  if (bundle.gameState) {
-    const stateValidation = validateGameState(bundle.gameState);
+  if (b.gameState) {
+    const stateValidation = validateGameState(b.gameState);
     if (!stateValidation.valid) {
       errors.push(`Game state: ${stateValidation.errors.join(', ')}`);
     }
   }
   
   // Validate encounters array
-  if (!Array.isArray(bundle.encounters)) {
+  if (!Array.isArray(b.encounters)) {
     errors.push('Export bundle must have an encounters array');
   } else {
-    for (let i = 0; i < bundle.encounters.length; i++) {
-      const encValidation = validateEncounter(bundle.encounters[i]);
+    for (let i = 0; i < b.encounters.length; i++) {
+      const encValidation = validateEncounter(b.encounters[i]);
       if (!encValidation.valid) {
         errors.push(`Encounter ${i}: ${encValidation.errors.join(', ')}`);
       }

@@ -8,13 +8,10 @@ import {
   shouldQueueRequest 
 } from "@/lib/sw/background-sync";
 import {
-  broadcastMessage,
   handleSkipWaiting,
   handleClaimClients,
-  notifyUpdate,
   notifyActivation,
   setupConnectivityListeners,
-  createOfflineResponse,
   logLifecycleEvent,
   isNavigationRequest,
   MessageType,
@@ -118,34 +115,18 @@ self.addEventListener("fetch", (event) => {
   }
   
   // Let Serwist handle with our runtime caching strategies
-  event.respondWith(
-    serwist.handleFetch(event).then((response) => {
-      // If we got a response, return it
-      if (response) return response;
-      
-      // If offline and no cached response, return offline fallback
-      if (!navigator.onLine) {
-        return createOfflineResponse(request);
-      }
-      
-      // Otherwise, try to fetch
-      return fetch(request);
-    }).catch(() => {
-      // Network error - return offline response
-      return createOfflineResponse(request);
-    })
-  );
+  serwist.handleFetch(event);
 });
 
 // Background sync event
-self.addEventListener("sync", (event: any) => {
+self.addEventListener("sync", (event: ExtendableEvent & { tag: string }) => {
   logLifecycleEvent("Sync", { tag: event.tag });
   event.waitUntil(handleSync(event));
 });
 
 // Message event - handle messages from clients
 self.addEventListener("message", (event) => {
-  const { type, ...data } = event.data;
+  const { type } = event.data;
   
   switch (type) {
     case MessageType.SKIP_WAITING:

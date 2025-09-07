@@ -187,7 +187,7 @@ export default function DatabaseDemo() {
         {storageInfo && storageInfo.isPersistent && (
           <div className="bg-green-900/50 border border-green-700 p-4 rounded mb-4">
             <p className="font-semibold">✅ Persistent Storage Active!</p>
-            <p className="text-sm mt-1">Your data is protected and won't be automatically cleared.</p>
+            <p className="text-sm mt-1">Your data is protected and won&apos;t be automatically cleared.</p>
           </div>
         )}
         {storageInfo && (

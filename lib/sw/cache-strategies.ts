@@ -146,7 +146,7 @@ export async function cleanupCaches(): Promise<void> {
   
   await Promise.all(
     cacheNames.map(async (cacheName) => {
-      if (!cacheWhitelist.includes(cacheName)) {
+      if (!cacheWhitelist.includes(cacheName as typeof CACHE_NAMES[keyof typeof CACHE_NAMES])) {
         console.log(`[SW] Deleting old cache: ${cacheName}`);
         await caches.delete(cacheName);
       }

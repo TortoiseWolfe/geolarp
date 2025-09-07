@@ -83,11 +83,13 @@ export class StorageManager {
   async getStorageStats(): Promise<{
     mapTilesCount: number;
     charactersCount: number;
+    gameStatesCount: number;
     encountersCount: number;
     estimatedSize: number;
   }> {
     const mapTilesCount = await db.mapTiles.count();
     const charactersCount = await db.characters.count();
+    const gameStatesCount = await db.gameState.count();
     const encountersCount = await db.encounters.count();
     
     const { usage } = await this.checkStorageQuota();
@@ -95,6 +97,7 @@ export class StorageManager {
     return {
       mapTilesCount,
       charactersCount,
+      gameStatesCount,
       encountersCount,
       estimatedSize: usage
     };
@@ -110,7 +113,16 @@ export class StorageManager {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
-  async monitorStorage(callback: (stats: any) => void, intervalMs: number = 60000): () => void {
+  async monitorStorage(callback: (stats: {
+    usage: number;
+    quota: number;
+    percentUsed: number;
+    isPersistent: boolean;
+    mapTilesCount: number;
+    charactersCount: number;
+    gameStatesCount: number;
+    encountersCount: number;
+  }) => void, intervalMs: number = 60000): Promise<() => void> {
     const checkStorage = async () => {
       try {
         const quota = await this.checkStorageQuota();
@@ -120,9 +132,7 @@ export class StorageManager {
         callback({
           ...quota,
           ...stats,
-          isPersistent,
-          formattedUsage: this.formatBytes(quota.usage),
-          formattedQuota: this.formatBytes(quota.quota)
+          isPersistent
         });
         
         // Perform cleanup if needed

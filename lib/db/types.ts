@@ -27,7 +27,7 @@ export interface Item {
   type: 'weapon' | 'armor' | 'consumable' | 'quest' | 'misc';
   quantity: number;
   equipped?: boolean;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
 }
 
 export interface Character {

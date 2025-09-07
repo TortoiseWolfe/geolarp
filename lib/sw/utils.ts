@@ -1,5 +1,7 @@
 /// <reference lib="webworker" />
 
+declare const self: ServiceWorkerGlobalScope;
+
 // Message types for SW communication
 export enum MessageType {
   SKIP_WAITING = 'SKIP_WAITING',
@@ -13,7 +15,7 @@ export enum MessageType {
 }
 
 // Send message to all clients
-export async function broadcastMessage(message: any): Promise<void> {
+export async function broadcastMessage(message: Record<string, unknown>): Promise<void> {
   const clients = await self.clients.matchAll({ type: 'window' });
   clients.forEach(client => client.postMessage(message));
 }
@@ -167,7 +169,7 @@ export function createOfflineResponse(request: Request): Response {
 }
 
 // Log SW lifecycle events
-export function logLifecycleEvent(event: string, details?: any): void {
+export function logLifecycleEvent(event: string, details?: Record<string, unknown>): void {
   const timestamp = new Date().toISOString();
   console.log(`[SW][${timestamp}] ${event}`, details || '');
 }

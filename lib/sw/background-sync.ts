@@ -1,5 +1,7 @@
 /// <reference lib="webworker" />
 
+declare const self: ServiceWorkerGlobalScope;
+
 interface SyncRequest {
   id: string;
   url: string;
@@ -14,7 +16,7 @@ interface SyncRequest {
 class BackgroundSyncQueue {
   private readonly queueName = 'geolarp-sync-queue';
   private readonly maxRetries = 3;
-  private readonly db: IDBDatabase | null = null;
+  private db: IDBDatabase | null = null;
 
   async init(): Promise<void> {
     if ('indexedDB' in self) {
@@ -30,7 +32,7 @@ class BackgroundSyncQueue {
 
       return new Promise((resolve, reject) => {
         request.onsuccess = () => {
-          (this as any).db = request.result;
+          this.db = request.result;
           resolve();
         };
         request.onerror = () => reject(request.error);
@@ -166,7 +168,7 @@ class BackgroundSyncQueue {
 export const syncQueue = new BackgroundSyncQueue();
 
 // Handle sync event
-export async function handleSync(event: any): Promise<void> {
+export async function handleSync(event: ExtendableEvent & { tag: string }): Promise<void> {
   if (event.tag === 'sync-game-data') {
     await syncQueue.processQueue();
   }
