@@ -1,24 +1,30 @@
 # PRP-005: Dice System
 
 ## Status
-Queue
+Active
 
 ## Priority
 High
 
 ## Overview
-Create a D7 dice rolling system React component with 3D physics animation, fallbacks for low-end devices, and full touch/mouse support.
+Create a D7 dice rolling system React component with animated visual feedback, optimized for mobile gameplay. Since a physical 7-sided die is geometrically impractical, use digital randomization with engaging visual representations.
+
+## D7 System Mathematics
+- **Range**: 1-7 (each result has 14.29% probability)
+- **Average Roll**: 4.0 (compared to D6's 3.5)
+- **Critical Success**: Natural 7 (14.29% chance) - triggers special effects
+- **Critical Failure**: Natural 1 (14.29% chance) - causes complications
 
 ## Success Criteria
-- [ ] D7 (7-sided) dice variant implemented
-- [ ] 3D physics animation working
-- [ ] 2D fallback for low-end devices
+- [ ] D7 digital randomizer implemented with cryptographically secure RNG
+- [ ] Visual roll animation (spinner wheel, card flip, or rune stones)
 - [ ] Multiple dice pools supported (1d7, 2d7, 3d7+modifier)
-- [ ] Roll history displayed
+- [ ] Roll history displayed with statistics tracking
 - [ ] Drag-to-roll gesture working
-- [ ] Haptic feedback on mobile
-- [ ] Sound effects toggleable
-- [ ] Roll results exportable
+- [ ] Haptic feedback on mobile for criticals
+- [ ] Sound effects toggleable (special sounds for 7s and 1s)
+- [ ] Roll results exportable with probability analysis
+- [ ] Lucky 7 and Unlucky 1 special visual/audio effects
 
 ## Technical Requirements
 
@@ -27,8 +33,11 @@ Create a D7 dice rolling system React component with 3D physics animation, fallb
 interface DiceRoller {
   roll(formula: string): Promise<RollResult>;
   rollPool(count: number, modifier?: number): Promise<RollResult>;
+  rollAdvantage(modifier?: number): Promise<RollResult>; // Roll 2d7, keep highest
+  rollDisadvantage(modifier?: number): Promise<RollResult>; // Roll 2d7, keep lowest
   animateRoll(result: RollResult): Promise<void>;
   getHistory(): RollResult[];
+  getStatistics(): DiceStatistics;
   clearHistory(): void;
 }
 
@@ -38,44 +47,99 @@ interface RollResult {
   modifier: number;
   total: number;
   timestamp: number;
-  critical?: boolean;
+  critical?: 'success' | 'failure' | null;
+  keptDice?: number[]; // For advantage/disadvantage
+  droppedDice?: number[]; // For advantage/disadvantage
+}
+
+interface DiceStatistics {
+  totalRolls: number;
+  averageRoll: number;
+  criticalSuccesses: number;
+  criticalFailures: number;
+  distribution: Record<number, number>; // Face value -> count
 }
 ```
 
-### Animation System
-- Use @3d-dice/dice-box for 3D
-- Canvas fallback for 2D
-- 60fps target framerate
-- Physics simulation
-- Customizable dice colors
+### Visual Representation Options
+- **Spinner Wheel**: 7 segments with smooth rotation animation
+- **Rune Stones**: 7 mystical symbols that glow when selected
+- **Card Draw**: 7 cards that flip to reveal the result
+- **Energy Orb**: Pulsing orb that reveals number with particle effects
+- 60fps target framerate for all animations
+- Customizable themes (mystical, sci-fi, fantasy, minimal)
 
 ### Interaction Methods
 - Click/tap to roll
-- Drag and release
-- Shake gesture (mobile)
-- Keyboard shortcuts
-- Voice commands (future)
+- Drag and release for velocity-based rolls
+- Shake gesture (mobile with accelerometer)
+- Swipe patterns for different roll types
+- Keyboard shortcuts (Space for roll, Shift+Space for advantage)
+
+### Difficulty Class (DC) System
+```typescript
+interface DifficultyClass {
+  trivial: 2;     // 85.7% success
+  easy: 3;        // 71.4% success
+  moderate: 4;    // 57.1% success
+  hard: 5;        // 42.9% success
+  veryHard: 6;    // 28.6% success
+  extreme: 7;     // 14.3% success
+}
+
+interface PoolDifficulty {
+  '2d7': { easy: 6, moderate: 8, hard: 10, extreme: 12 };
+  '3d7': { easy: 10, moderate: 12, hard: 15, extreme: 18 };
+}
+```
+
+### Lucky 7 / Unlucky 1 Effects
+```typescript
+interface CriticalEffects {
+  lucky7: {
+    visual: 'golden_burst' | 'rainbow_trail' | 'star_explosion';
+    haptic: 'success_pattern'; // double buzz
+    audio: 'chime_ascending';
+    gameEffect: 'double_damage' | 'perfect_success' | 'bonus_action';
+  };
+  unlucky1: {
+    visual: 'shatter_effect' | 'dark_pulse' | 'crack_animation';
+    haptic: 'failure_pattern'; // long buzz
+    audio: 'discord_descending';
+    gameEffect: 'fumble' | 'complication' | 'lost_action';
+  };
+}
+```
 
 ## Testing Requirements
-- Animation performance tests
-- Touch interaction tests
-- Dice probability validation
-- Accessibility tests
-- Cross-device tests
+- RNG distribution validation (Chi-square test for uniformity)
+- Animation performance tests (maintain 60fps)
+- Touch interaction responsiveness (<100ms)
+- Probability validation over 10,000+ rolls
+- Accessibility tests (screen reader, color blind modes)
+- Battery usage optimization tests
+
+## Implementation Phases
+1. **Phase 1**: Core RNG and basic visual (1 day)
+2. **Phase 2**: Animations and effects (1 day)
+3. **Phase 3**: Statistics and history tracking (0.5 day)
+4. **Phase 4**: Testing and optimization (0.5 day)
 
 ## Acceptance Criteria
-1. D7 dice working correctly
-2. Animations smooth (60fps)
-3. All input methods functional
-4. History tracked properly
-5. Fallbacks working
+1. D7 randomization statistically validated
+2. Animations smooth (60fps) on target devices
+3. All interaction methods responsive
+4. Critical effects trigger correctly
+5. Statistics accurately tracked
+6. Accessible to screen readers
 
 ## Rotation Plan
-- Extract D7 system rules to docs
-- Animation approach to ADR
+- Extract D7 probability tables to game docs
+- Visual design decisions to ADR
 - Archive after implementation
-- Tests validate probability
+- Export statistics for balance tuning
 
 ---
 *Created: 2024-12-07*
+*Updated: 2025-01-08*
 *Estimated effort: 3 days*
