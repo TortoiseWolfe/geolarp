@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useDice } from '@/hooks/useDice';
 import { DiceRoller } from '@/components/dice/DiceRoller';
 import { RollHistory } from '@/components/dice/RollHistory';
+import { DiceStatisticsDisplay } from '@/components/dice/DiceStatistics';
 
 export default function DiceDemo() {
   const [theme, setTheme] = useState<'classic' | 'fantasy' | 'neon'>('classic');
+  const [showStatistics, setShowStatistics] = useState(false);
   
   const {
     currentRoll,
@@ -16,6 +18,9 @@ export default function DiceDemo() {
     config,
     statistics,
     roll,
+    rollAdvantage,
+    rollDisadvantage,
+    rollCheck,
     quickRoll,
     clearHistory,
     updateConfig
@@ -61,8 +66,12 @@ export default function DiceDemo() {
               isRolling={isRolling}
               onRoll={roll}
               onQuickRoll={quickRoll}
+              onRollAdvantage={rollAdvantage}
+              onRollDisadvantage={rollDisadvantage}
+              onRollCheck={rollCheck}
               theme={theme}
               enableSound={config.enableSound}
+              enableHaptics={config.enableHaptics}
               onSoundToggle={handleSoundToggle}
             />
 
@@ -105,13 +114,57 @@ export default function DiceDemo() {
             </div>
           </div>
 
-          {/* Right Column - History */}
-          <div>
-            <RollHistory
-              history={history}
-              statistics={statistics}
-              onClearHistory={clearHistory}
-            />
+          {/* Right Column - History & Statistics */}
+          <div className="space-y-6">
+            {/* Toggle Statistics/History */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowStatistics(false)}
+                className={`flex-1 py-2 px-4 rounded transition-colors ${
+                  !showStatistics
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Roll History
+              </button>
+              <button
+                onClick={() => setShowStatistics(true)}
+                className={`flex-1 py-2 px-4 rounded transition-colors ${
+                  showStatistics
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Statistics
+              </button>
+            </div>
+            
+            {/* Display History or Statistics */}
+            {showStatistics ? (
+              <DiceStatisticsDisplay
+                statistics={statistics}
+                onExport={() => {
+                  const data = JSON.stringify(statistics, null, 2);
+                  const blob = new Blob([data], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `dice-statistics-${Date.now()}.json`;
+                  a.click();
+                }}
+                onReset={() => {
+                  clearHistory();
+                  window.location.reload();
+                }}
+              />
+            ) : (
+              <RollHistory
+                history={history}
+                statistics={statistics}
+                onClearHistory={clearHistory}
+              />
+            )}
           </div>
         </div>
 
@@ -122,19 +175,23 @@ export default function DiceDemo() {
             <div>
               <h4 className="font-semibold text-blue-400 mb-2">D7 Dice System</h4>
               <ul className="space-y-1 text-gray-300">
-                <li>• Each die shows 1-7</li>
-                <li>• Rolling a 7 (★) is a critical success</li>
-                <li>• All 1s is a fumble (critical failure)</li>
-                <li>• Support for modifiers: 2d7+3, 3d7-1, etc.</li>
+                <li>• Each die: 1-7 (14.29% per face)</li>
+                <li>• Average roll: 4.0 (vs D6&apos;s 3.5)</li>
+                <li>• Lucky 7: Critical success (★)</li>
+                <li>• Unlucky 1: Critical failure</li>
+                <li>• Advantage: Roll 2d7, keep highest</li>
+                <li>• Disadvantage: Roll 2d7, keep lowest</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-blue-400 mb-2">Controls</h4>
+              <h4 className="font-semibold text-blue-400 mb-2">Controls & Shortcuts</h4>
               <ul className="space-y-1 text-gray-300">
-                <li>• Click &quot;Shake Box&quot; to roll 3d7</li>
-                <li>• Use quick buttons for 1d7, 2d7, 3d7</li>
-                <li>• Enter custom formulas like &quot;4d7+2&quot;</li>
-                <li>• View history and statistics on the right</li>
+                <li>• Space: Quick roll 1d7</li>
+                <li>• Shift+Space: Roll with advantage</li>
+                <li>• Ctrl+Space: Roll with disadvantage</li>
+                <li>• DC Checks: Test against difficulty</li>
+                <li>• Statistics: Track probability distribution</li>
+                <li>• Haptic feedback on mobile devices</li>
               </ul>
             </div>
           </div>

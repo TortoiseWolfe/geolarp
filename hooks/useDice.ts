@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { D7Roller } from '@/lib/dice/d7-roller';
-import { RollResult, DiceConfig, DEFAULT_CONFIG } from '@/lib/dice/types';
+import { RollResult, DiceConfig, DEFAULT_CONFIG, DiceStatistics, CheckResult } from '@/lib/dice/types';
 
 interface UseDiceOptions extends Partial<DiceConfig> {
   onRoll?: (result: RollResult) => void;
@@ -16,17 +16,14 @@ interface UseDiceReturn {
   isRolling: boolean;
   error: Error | null;
   config: DiceConfig;
-  statistics: {
-    average: number;
-    highest: number;
-    lowest: number;
-    criticals: number;
-    fumbles: number;
-  };
+  statistics: DiceStatistics;
   
   // Actions
   roll: (formula: string) => Promise<void>;
   rollPool: (count: number, modifier?: number) => Promise<void>;
+  rollAdvantage: (modifier?: number) => Promise<void>;
+  rollDisadvantage: (modifier?: number) => Promise<void>;
+  rollCheck: (dc: number, modifier?: number) => Promise<CheckResult | null>;
   quickRoll: (type: '1d7' | '2d7' | '3d7') => Promise<void>;
   clearHistory: () => void;
   updateConfig: (updates: Partial<DiceConfig>) => void;
@@ -44,12 +41,22 @@ export function useDice(options: UseDiceOptions = {}): UseDiceReturn {
   const [history, setHistory] = useState<RollResult[]>([]);
   const [isRolling, setIsRolling] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [statistics, setStatistics] = useState({
-    average: 0,
-    highest: 0,
-    lowest: 0,
-    criticals: 0,
-    fumbles: 0
+  const [statistics, setStatistics] = useState<DiceStatistics>({
+    totalRolls: 0,
+    averageRoll: 0,
+    criticalSuccesses: 0,
+    criticalFailures: 0,
+    distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 },
+    successfulChecks: 0,
+    failedChecks: 0,
+    advantageRolls: 0,
+    disadvantageRolls: 0,
+    streaks: {
+      currentLucky: 0,
+      currentUnlucky: 0,
+      bestLucky: 0,
+      worstUnlucky: 0
+    }
   });
 
   // Refs
@@ -143,6 +150,86 @@ export function useDice(options: UseDiceOptions = {}): UseDiceReturn {
     }
   }, [isRolling, options]);
 
+  // Roll with advantage
+  const rollAdvantage = useCallback(async (modifier: number = 0) => {
+    if (!rollerRef.current || isRolling) return;
+    
+    try {
+      setIsRolling(true);
+      setError(null);
+      
+      const result = await rollerRef.current.rollAdvantage(modifier);
+      
+      // Brief delay to show rolling animation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setIsRolling(false);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Roll failed');
+      setError(error);
+      setIsRolling(false);
+      
+      if (options.onError) {
+        options.onError(error);
+      }
+    }
+  }, [isRolling, options]);
+
+  // Roll with disadvantage
+  const rollDisadvantage = useCallback(async (modifier: number = 0) => {
+    if (!rollerRef.current || isRolling) return;
+    
+    try {
+      setIsRolling(true);
+      setError(null);
+      
+      const result = await rollerRef.current.rollDisadvantage(modifier);
+      
+      // Brief delay to show rolling animation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setIsRolling(false);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Roll failed');
+      setError(error);
+      setIsRolling(false);
+      
+      if (options.onError) {
+        options.onError(error);
+      }
+    }
+  }, [isRolling, options]);
+
+  // Roll DC check
+  const rollCheck = useCallback(async (dc: number, modifier: number = 0): Promise<CheckResult | null> => {
+    if (!rollerRef.current || isRolling) return null;
+    
+    try {
+      setIsRolling(true);
+      setError(null);
+      
+      const result = await rollerRef.current.rollCheck(dc, modifier);
+      
+      // Brief delay to show rolling animation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setIsRolling(false);
+      updateStatistics();
+      
+      return result;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Check failed');
+      setError(error);
+      setIsRolling(false);
+      
+      if (options.onError) {
+        options.onError(error);
+      }
+      
+      return null;
+    }
+  }, [isRolling, options, updateStatistics]);
+
   // Quick roll shortcuts
   const quickRoll = useCallback(async (type: '1d7' | '2d7' | '3d7') => {
     await roll(type);
@@ -204,6 +291,9 @@ export function useDice(options: UseDiceOptions = {}): UseDiceReturn {
     // Actions
     roll,
     rollPool,
+    rollAdvantage,
+    rollDisadvantage,
+    rollCheck,
     quickRoll,
     clearHistory,
     updateConfig

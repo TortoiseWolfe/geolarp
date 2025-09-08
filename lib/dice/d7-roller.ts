@@ -1,13 +1,17 @@
-import { RollResult, DiceRoller, RollCallback } from './types';
+import { RollResult, DiceRoller, RollCallback, CheckResult, DiceStatistics } from './types';
 
 export class D7Roller implements DiceRoller {
   private history: RollResult[] = [];
   private callbacks: Set<RollCallback> = new Set();
   private maxHistory: number;
+  private statistics: DiceStatistics;
+  private checkHistory: CheckResult[] = [];
 
   constructor(maxHistory: number = 50) {
     this.maxHistory = maxHistory;
+    this.statistics = this.initializeStatistics();
     this.loadHistory();
+    this.loadStatistics();
   }
 
   /**
@@ -26,6 +30,9 @@ export class D7Roller implements DiceRoller {
     const diceTotal = dice.reduce((sum, die) => sum + die, 0);
     const total = diceTotal + parsed.modifier;
 
+    const hasSeven = dice.includes(7);
+    const allOnes = dice.length > 0 && dice.every(die => die === 1);
+
     const result: RollResult = {
       id: this.generateId(),
       formula: formula,
@@ -33,9 +40,12 @@ export class D7Roller implements DiceRoller {
       modifier: parsed.modifier,
       total: total,
       timestamp: Date.now(),
-      critical: dice.includes(7),
-      fumble: dice.every(die => die === 1)
+      critical: hasSeven ? 'success' : (allOnes ? 'failure' : null),
+      fumble: allOnes,
+      rollType: 'normal'
     };
+
+    this.updateStatistics(result);
 
     this.addToHistory(result);
     this.notifyCallbacks(result);
@@ -55,9 +65,112 @@ export class D7Roller implements DiceRoller {
   }
 
   /**
+   * Roll with advantage (roll 2d7, keep highest)
+   */
+  async rollAdvantage(modifier: number = 0): Promise<RollResult> {
+    const die1 = this.rollD7();
+    const die2 = this.rollD7();
+    const kept = Math.max(die1, die2);
+    const dropped = Math.min(die1, die2);
+    
+    const total = kept + modifier;
+    const formula = modifier !== 0 
+      ? `1d7adv${modifier > 0 ? '+' : ''}${modifier}`
+      : `1d7adv`;
+
+    const result: RollResult = {
+      id: this.generateId(),
+      formula: formula,
+      dice: [die1, die2],
+      keptDice: [kept],
+      droppedDice: [dropped],
+      modifier: modifier,
+      total: total,
+      timestamp: Date.now(),
+      critical: kept === 7 ? 'success' : (kept === 1 ? 'failure' : null),
+      rollType: 'advantage'
+    };
+
+    this.updateStatistics(result);
+    this.addToHistory(result);
+    this.notifyCallbacks(result);
+
+    return result;
+  }
+
+  /**
+   * Roll with disadvantage (roll 2d7, keep lowest)
+   */
+  async rollDisadvantage(modifier: number = 0): Promise<RollResult> {
+    const die1 = this.rollD7();
+    const die2 = this.rollD7();
+    const kept = Math.min(die1, die2);
+    const dropped = Math.max(die1, die2);
+    
+    const total = kept + modifier;
+    const formula = modifier !== 0 
+      ? `1d7dis${modifier > 0 ? '+' : ''}${modifier}`
+      : `1d7dis`;
+
+    const result: RollResult = {
+      id: this.generateId(),
+      formula: formula,
+      dice: [die1, die2],
+      keptDice: [kept],
+      droppedDice: [dropped],
+      modifier: modifier,
+      total: total,
+      timestamp: Date.now(),
+      critical: kept === 7 ? 'success' : (kept === 1 ? 'failure' : null),
+      rollType: 'disadvantage'
+    };
+
+    this.updateStatistics(result);
+    this.addToHistory(result);
+    this.notifyCallbacks(result);
+
+    return result;
+  }
+
+  /**
+   * Roll a skill check against a DC
+   */
+  async rollCheck(dc: number, modifier: number = 0): Promise<CheckResult> {
+    const die = this.rollD7();
+    const roll = die + modifier;
+    const success = roll >= dc;
+    const margin = roll - dc;
+
+    const result: CheckResult = {
+      success: success,
+      roll: roll,
+      modifier: modifier,
+      dc: dc,
+      critical: die === 7 ? 'success' : (die === 1 ? 'failure' : null),
+      margin: margin,
+      dice: [die]
+    };
+
+    // Update check statistics
+    if (success) {
+      this.statistics.successfulChecks++;
+    } else {
+      this.statistics.failedChecks++;
+    }
+
+    this.checkHistory.unshift(result);
+    if (this.checkHistory.length > this.maxHistory) {
+      this.checkHistory = this.checkHistory.slice(0, this.maxHistory);
+    }
+
+    this.saveStatistics();
+    return result;
+  }
+
+  /**
    * Placeholder for animation (handled by renderer components)
    */
-  async animateRoll(_result: RollResult): Promise<void> {
+  async animateRoll(): Promise<void> {
     // Animation is handled by the renderer components
     return Promise.resolve();
   }
@@ -86,9 +199,15 @@ export class D7Roller implements DiceRoller {
   }
 
   /**
-   * Roll a single D7
+   * Roll a single D7 with cryptographically secure RNG
    */
   private rollD7(): number {
+    if (typeof window !== 'undefined' && window.crypto) {
+      const array = new Uint32Array(1);
+      window.crypto.getRandomValues(array);
+      return (array[0] % 7) + 1;
+    }
+    // Fallback for non-browser environments
     return Math.floor(Math.random() * 7) + 1;
   }
 
@@ -191,40 +310,147 @@ export class D7Roller implements DiceRoller {
   }
 
   /**
-   * Calculate statistics for recent rolls
+   * Get comprehensive D7 statistics
    */
-  getStatistics(count: number = 10): {
-    average: number;
-    highest: number;
-    lowest: number;
-    criticals: number;
-    fumbles: number;
-  } {
-    const recent = this.history.slice(0, count);
+  getStatistics(): DiceStatistics {
+    return { ...this.statistics };
+  }
+
+  /**
+   * Initialize statistics object
+   */
+  private initializeStatistics(): DiceStatistics {
+    return {
+      totalRolls: 0,
+      averageRoll: 0,
+      criticalSuccesses: 0,
+      criticalFailures: 0,
+      distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 },
+      successfulChecks: 0,
+      failedChecks: 0,
+      advantageRolls: 0,
+      disadvantageRolls: 0,
+      streaks: {
+        currentLucky: 0,
+        currentUnlucky: 0,
+        bestLucky: 0,
+        worstUnlucky: 0
+      }
+    };
+  }
+
+  /**
+   * Update statistics with new roll
+   */
+  private updateStatistics(result: RollResult): void {
+    // Update roll counts
+    this.statistics.totalRolls++;
     
-    if (recent.length === 0) {
-      return {
-        average: 0,
-        highest: 0,
-        lowest: 0,
-        criticals: 0,
-        fumbles: 0
-      };
+    if (result.rollType === 'advantage') {
+      this.statistics.advantageRolls++;
+    } else if (result.rollType === 'disadvantage') {
+      this.statistics.disadvantageRolls++;
     }
 
-    const totals = recent.map(r => r.total);
-    const average = totals.reduce((sum, t) => sum + t, 0) / totals.length;
-    const highest = Math.max(...totals);
-    const lowest = Math.min(...totals);
-    const criticals = recent.filter(r => r.critical).length;
-    const fumbles = recent.filter(r => r.fumble).length;
+    // Update distribution for each die rolled
+    result.dice.forEach(die => {
+      if (die >= 1 && die <= 7) {
+        this.statistics.distribution[die]++;
+      }
+    });
 
+    // Update criticals
+    if (result.critical === 'success') {
+      this.statistics.criticalSuccesses++;
+    } else if (result.critical === 'failure') {
+      this.statistics.criticalFailures++;
+    }
+
+    // Update streaks
+    const mainDie = result.keptDice ? result.keptDice[0] : result.dice[0];
+    if (mainDie >= 6) {
+      this.statistics.streaks.currentLucky++;
+      this.statistics.streaks.currentUnlucky = 0;
+      if (this.statistics.streaks.currentLucky > this.statistics.streaks.bestLucky) {
+        this.statistics.streaks.bestLucky = this.statistics.streaks.currentLucky;
+      }
+    } else if (mainDie <= 2) {
+      this.statistics.streaks.currentUnlucky++;
+      this.statistics.streaks.currentLucky = 0;
+      if (this.statistics.streaks.currentUnlucky > this.statistics.streaks.worstUnlucky) {
+        this.statistics.streaks.worstUnlucky = this.statistics.streaks.currentUnlucky;
+      }
+    } else {
+      this.statistics.streaks.currentLucky = 0;
+      this.statistics.streaks.currentUnlucky = 0;
+    }
+
+    // Calculate average roll
+    const totalDiceValues = Object.entries(this.statistics.distribution)
+      .reduce((sum, [face, count]) => sum + (parseInt(face) * count), 0);
+    const totalDiceRolled = Object.values(this.statistics.distribution)
+      .reduce((sum, count) => sum + count, 0);
+    
+    if (totalDiceRolled > 0) {
+      this.statistics.averageRoll = Math.round((totalDiceValues / totalDiceRolled) * 100) / 100;
+    }
+
+    this.saveStatistics();
+  }
+
+  /**
+   * Save statistics to localStorage
+   */
+  private saveStatistics(): void {
+    try {
+      localStorage.setItem('dice_statistics', JSON.stringify(this.statistics));
+    } catch (error) {
+      console.warn('[Dice] Failed to save statistics:', error);
+    }
+  }
+
+  /**
+   * Load statistics from localStorage
+   */
+  private loadStatistics(): void {
+    try {
+      const stored = localStorage.getItem('dice_statistics');
+      if (stored) {
+        const loaded = JSON.parse(stored);
+        // Merge loaded statistics with initialized structure to handle missing fields
+        this.statistics = { ...this.initializeStatistics(), ...loaded };
+      }
+    } catch (error) {
+      console.warn('[Dice] Failed to load statistics:', error);
+      this.statistics = this.initializeStatistics();
+    }
+  }
+
+  /**
+   * Calculate chi-square test for distribution uniformity
+   */
+  getDistributionTest(): { chiSquare: number; pValue: string } {
+    const totalRolls = Object.values(this.statistics.distribution)
+      .reduce((sum, count) => sum + count, 0);
+    
+    if (totalRolls < 30) {
+      return { chiSquare: 0, pValue: 'Insufficient data (need 30+ rolls)' };
+    }
+
+    const expected = totalRolls / 7;
+    let chiSquare = 0;
+
+    Object.values(this.statistics.distribution).forEach(observed => {
+      chiSquare += Math.pow(observed - expected, 2) / expected;
+    });
+
+    // Degrees of freedom = 6 (7 categories - 1)
+    // Critical value at 0.05 significance = 12.592
+    const isUniform = chiSquare < 12.592;
+    
     return {
-      average: Math.round(average * 10) / 10,
-      highest,
-      lowest,
-      criticals,
-      fumbles
+      chiSquare: Math.round(chiSquare * 100) / 100,
+      pValue: isUniform ? 'Distribution appears uniform' : 'Distribution may be non-uniform'
     };
   }
 }

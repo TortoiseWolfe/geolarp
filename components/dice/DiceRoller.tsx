@@ -1,16 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DiceFace } from './DiceFace';
-import { RollResult } from '@/lib/dice/types';
+import { RollResult, CheckResult } from '@/lib/dice/types';
 
 interface DiceRollerProps {
   result: RollResult | null;
   isRolling: boolean;
   onRoll: (formula: string) => Promise<void>;
   onQuickRoll: (type: '1d7' | '2d7' | '3d7') => Promise<void>;
+  onRollAdvantage?: (modifier?: number) => Promise<void>;
+  onRollDisadvantage?: (modifier?: number) => Promise<void>;
+  onRollCheck?: (dc: number, modifier?: number) => Promise<CheckResult | null>;
   theme?: 'classic' | 'fantasy' | 'neon';
   enableSound?: boolean;
+  enableHaptics?: boolean;
   onSoundToggle?: () => void;
 }
 
@@ -19,12 +23,20 @@ export function DiceRoller({
   isRolling,
   onRoll,
   onQuickRoll,
+  onRollAdvantage,
+  onRollDisadvantage,
+  onRollCheck,
   theme = 'classic',
   enableSound = true,
+  enableHaptics = true,
   onSoundToggle
 }: DiceRollerProps) {
   const [customFormula, setCustomFormula] = useState('');
   const [showCustom, setShowCustom] = useState(false);
+  const [showDCCheck, setShowDCCheck] = useState(false);
+  const [selectedDC, setSelectedDC] = useState(4); // Default moderate
+  const [dcModifier, setDCModifier] = useState(0);
+  const [lastCheckResult, setLastCheckResult] = useState<CheckResult | null>(null);
 
   const handleCustomRoll = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +49,68 @@ export function DiceRoller({
   const handleShake = () => {
     if (!isRolling) {
       onQuickRoll('3d7');
+      triggerHaptic('medium');
+    }
+  };
+
+  const triggerHaptic = useCallback((pattern: 'light' | 'medium' | 'heavy' | 'success' | 'failure') => {
+    if (!enableHaptics || typeof navigator === 'undefined' || !navigator.vibrate) return;
+    
+    const patterns = {
+      light: [50],
+      medium: [100],
+      heavy: [200],
+      success: [50, 50, 50], // Double buzz
+      failure: [500] // Long buzz
+    };
+    
+    navigator.vibrate(patterns[pattern]);
+  }, [enableHaptics]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (isRolling) return;
+      
+      // Space: Standard roll
+      if (e.code === 'Space' && !e.shiftKey && !e.ctrlKey) {
+        e.preventDefault();
+        onQuickRoll('1d7');
+      }
+      // Shift+Space: Advantage
+      else if (e.code === 'Space' && e.shiftKey && onRollAdvantage) {
+        e.preventDefault();
+        onRollAdvantage(0);
+      }
+      // Ctrl+Space: Disadvantage
+      else if (e.code === 'Space' && e.ctrlKey && onRollDisadvantage) {
+        e.preventDefault();
+        onRollDisadvantage(0);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isRolling, onQuickRoll, onRollAdvantage, onRollDisadvantage]);
+
+  // Trigger haptics for criticals
+  useEffect(() => {
+    if (result && !isRolling) {
+      if (result.critical === 'success') {
+        triggerHaptic('success');
+      } else if (result.critical === 'failure') {
+        triggerHaptic('failure');
+      }
+    }
+  }, [result, isRolling, triggerHaptic]);
+
+  const handleDCCheck = async () => {
+    if (onRollCheck && !isRolling) {
+      const checkResult = await onRollCheck(selectedDC, dcModifier);
+      if (checkResult) {
+        setLastCheckResult(checkResult);
+        triggerHaptic(checkResult.success ? 'success' : 'failure');
+      }
     }
   };
 
@@ -145,6 +219,112 @@ export function DiceRoller({
           3d7
         </button>
       </div>
+
+      {/* Advantage/Disadvantage Buttons */}
+      {(onRollAdvantage || onRollDisadvantage) && (
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          {onRollAdvantage && (
+            <button
+              onClick={() => onRollAdvantage(0)}
+              disabled={isRolling}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-bold py-3 rounded transition-colors flex items-center justify-center gap-2"
+              title="Roll 2d7, keep highest (Shift+Space)"
+            >
+              <span>↑</span> Advantage
+            </button>
+          )}
+          {onRollDisadvantage && (
+            <button
+              onClick={() => onRollDisadvantage(0)}
+              disabled={isRolling}
+              className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-bold py-3 rounded transition-colors flex items-center justify-center gap-2"
+              title="Roll 2d7, keep lowest (Ctrl+Space)"
+            >
+              <span>↓</span> Disadvantage
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* DC Check Section */}
+      {onRollCheck && (
+        <div className="mb-4">
+          <button
+            onClick={() => setShowDCCheck(!showDCCheck)}
+            className="text-blue-400 hover:text-blue-300 text-sm mb-2"
+          >
+            {showDCCheck ? 'Hide' : 'Show'} DC Check
+          </button>
+          
+          {showDCCheck && (
+            <div className="bg-gray-700 rounded p-4">
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                  <label className="text-sm text-gray-400 block mb-1">Difficulty Class</label>
+                  <select
+                    value={selectedDC}
+                    onChange={(e) => setSelectedDC(Number(e.target.value))}
+                    className="w-full bg-gray-800 text-white px-3 py-2 rounded"
+                  >
+                    <option value={2}>Trivial (DC 2 - 85.7%)</option>
+                    <option value={3}>Easy (DC 3 - 71.4%)</option>
+                    <option value={4}>Moderate (DC 4 - 57.1%)</option>
+                    <option value={5}>Hard (DC 5 - 42.9%)</option>
+                    <option value={6}>Very Hard (DC 6 - 28.6%)</option>
+                    <option value={7}>Extreme (DC 7 - 14.3%)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400 block mb-1">Modifier</label>
+                  <input
+                    type="number"
+                    value={dcModifier}
+                    onChange={(e) => setDCModifier(Number(e.target.value))}
+                    min={-5}
+                    max={5}
+                    className="w-full bg-gray-800 text-white px-3 py-2 rounded"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleDCCheck}
+                disabled={isRolling}
+                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white font-bold py-2 rounded transition-colors"
+              >
+                Roll DC {selectedDC} Check {dcModifier !== 0 && `(${dcModifier > 0 ? '+' : ''}${dcModifier})`}
+              </button>
+              
+              {/* DC Check Result */}
+              {lastCheckResult && (
+                <div className={`mt-3 p-3 rounded ${
+                  lastCheckResult.success ? 'bg-green-900/50' : 'bg-red-900/50'
+                }`}>
+                  <div className="flex justify-between items-center">
+                    <span className={`font-bold ${
+                      lastCheckResult.success ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {lastCheckResult.success ? '✓ Success!' : '✗ Failed'}
+                    </span>
+                    <span className="text-white">
+                      {lastCheckResult.dice[0]} + {lastCheckResult.modifier} = {lastCheckResult.roll} vs DC {lastCheckResult.dc}
+                    </span>
+                  </div>
+                  {lastCheckResult.critical && (
+                    <p className={`text-sm mt-1 ${
+                      lastCheckResult.critical === 'success' ? 'text-yellow-400' : 'text-orange-400'
+                    }`}>
+                      {lastCheckResult.critical === 'success' ? '⭐ Critical Success!' : '💀 Critical Failure!'}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-400 mt-1">
+                    Margin: {lastCheckResult.margin > 0 ? '+' : ''}{lastCheckResult.margin}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Custom Formula */}
       <div>

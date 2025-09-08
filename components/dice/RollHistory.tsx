@@ -1,17 +1,11 @@
 'use client';
 
 import React from 'react';
-import { RollResult } from '@/lib/dice/types';
+import { RollResult, DiceStatistics } from '@/lib/dice/types';
 
 interface RollHistoryProps {
   history: RollResult[];
-  statistics: {
-    average: number;
-    highest: number;
-    lowest: number;
-    criticals: number;
-    fumbles: number;
-  };
+  statistics: DiceStatistics;
   onClearHistory: () => void;
   maxDisplay?: number;
 }
@@ -55,24 +49,28 @@ export function RollHistory({
           </h4>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
+              <span className="text-gray-400">Total Rolls:</span>
+              <span className="text-white ml-2 font-mono">{statistics.totalRolls}</span>
+            </div>
+            <div>
               <span className="text-gray-400">Average:</span>
-              <span className="text-white ml-2 font-mono">{statistics.average}</span>
+              <span className="text-white ml-2 font-mono">{statistics.averageRoll.toFixed(2)}</span>
             </div>
             <div>
-              <span className="text-gray-400">Highest:</span>
-              <span className="text-green-400 ml-2 font-mono">{statistics.highest}</span>
+              <span className="text-gray-400">Lucky 7s:</span>
+              <span className="text-yellow-400 ml-2 font-mono">{statistics.criticalSuccesses}</span>
             </div>
             <div>
-              <span className="text-gray-400">Lowest:</span>
-              <span className="text-red-400 ml-2 font-mono">{statistics.lowest}</span>
+              <span className="text-gray-400">Unlucky 1s:</span>
+              <span className="text-red-400 ml-2 font-mono">{statistics.criticalFailures}</span>
             </div>
             <div>
-              <span className="text-gray-400">Criticals:</span>
-              <span className="text-yellow-400 ml-2 font-mono">{statistics.criticals}</span>
+              <span className="text-gray-400">Advantage:</span>
+              <span className="text-green-400 ml-2 font-mono">{statistics.advantageRolls}</span>
             </div>
             <div>
-              <span className="text-gray-400">Fumbles:</span>
-              <span className="text-red-400 ml-2 font-mono">{statistics.fumbles}</span>
+              <span className="text-gray-400">Disadvantage:</span>
+              <span className="text-orange-400 ml-2 font-mono">{statistics.disadvantageRolls}</span>
             </div>
           </div>
         </div>
@@ -119,17 +117,17 @@ export function RollHistory({
               </div>
               <div className="text-right">
                 <div className={`text-xl font-bold ${
-                  roll.critical ? 'text-yellow-400' :
-                  roll.fumble ? 'text-red-400' :
+                  roll.critical === 'success' ? 'text-yellow-400' :
+                  roll.critical === 'failure' ? 'text-red-400' :
                   'text-white'
                 }`}>
                   {roll.total}
                 </div>
-                {roll.critical && (
-                  <span className="text-yellow-400 text-xs">CRIT</span>
+                {roll.critical === 'success' && (
+                  <span className="text-yellow-400 text-xs">LUCKY 7</span>
                 )}
-                {roll.fumble && (
-                  <span className="text-red-400 text-xs">FUMBLE</span>
+                {roll.critical === 'failure' && (
+                  <span className="text-red-400 text-xs">UNLUCKY 1</span>
                 )}
               </div>
             </div>
