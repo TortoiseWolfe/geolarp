@@ -1,15 +1,19 @@
 # PRP-001: Next.js Project Setup
 
 ## Status
+
 Queue
 
 ## Priority
+
 Critical
 
 ## Overview
+
 Create the Next.js 14+ application foundation with TypeScript, Tailwind CSS, and DaisyUI. This establishes the base application that will be containerized in PRP-002.
 
 ## Success Criteria
+
 - [ ] Next.js 14+ with App Router initialized
 - [ ] TypeScript with strict mode configured
 - [ ] ESLint and Prettier configured
@@ -24,6 +28,7 @@ Create the Next.js 14+ application foundation with TypeScript, Tailwind CSS, and
 ## Technical Requirements
 
 ### Project Initialization
+
 ```bash
 #!/bin/bash
 # Initialize Next.js project with TypeScript
@@ -70,6 +75,7 @@ pnpm add -D \
 ```
 
 ### Project Structure
+
 ```
 geolarp/
 ├── src/
@@ -111,6 +117,7 @@ geolarp/
 ```
 
 ### TypeScript Configuration (Strict Mode)
+
 ```json
 // tsconfig.json
 {
@@ -155,6 +162,7 @@ geolarp/
 ```
 
 ### Tailwind Configuration with DaisyUI
+
 ```javascript
 // tailwind.config.ts
 import type { Config } from 'tailwindcss'
@@ -215,6 +223,7 @@ export default config
 ```
 
 ### ESLint Configuration
+
 ```json
 // .eslintrc.json
 {
@@ -233,6 +242,7 @@ export default config
 ```
 
 ### Prettier Configuration
+
 ```json
 // .prettierrc
 {
@@ -249,6 +259,7 @@ export default config
 ```
 
 ### Package.json Scripts
+
 ```json
 {
   "scripts": {
@@ -270,6 +281,7 @@ export default config
 ```
 
 ### Git Hooks Setup
+
 ```bash
 # .husky/pre-commit
 #!/usr/bin/env sh
@@ -287,22 +299,19 @@ pnpm commitlint --edit $1
 ```
 
 ### Lint-staged Configuration
+
 ```json
 // package.json
 {
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,css}": [
-      "prettier --write"
-    ]
+    "*.{js,jsx,ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,md,css}": ["prettier --write"]
   }
 }
 ```
 
 ### Commitlint Configuration
+
 ```javascript
 // commitlint.config.js
 module.exports = {
@@ -322,14 +331,15 @@ module.exports = {
         'build',
         'ci',
         'chore',
-        'revert'
-      ]
-    ]
-  }
-}
+        'revert',
+      ],
+    ],
+  },
+};
 ```
 
 ### VS Code Settings
+
 ```json
 // .vscode/settings.json
 {
@@ -343,6 +353,7 @@ module.exports = {
 ```
 
 ## Testing Requirements
+
 - Project initializes without errors
 - TypeScript compiles with no errors
 - ESLint and Prettier run successfully
@@ -351,6 +362,7 @@ module.exports = {
 - Development server starts successfully
 
 ## Acceptance Criteria
+
 1. Next.js app runs locally with `pnpm dev`
 2. TypeScript strict mode catches type errors
 3. Code quality tools are configured
@@ -359,16 +371,19 @@ module.exports = {
 6. DaisyUI components are available
 
 ## Dependencies
+
 - Node.js 20+
 - pnpm 8+
 - Git
 
 ## Notes
+
 - This PRP creates the base application that will be containerized in PRP-002
 - All development after this will happen in Docker containers
 - Storybook and testing setup will be completed in subsequent PRPs
 
 ---
-*Created: 2024-01-08*
-*Updated: 2024-01-08*
-*Estimated effort: 0.5 days*
+
+_Created: 2024-01-08_
+_Updated: 2024-01-08_
+_Estimated effort: 0.5 days_

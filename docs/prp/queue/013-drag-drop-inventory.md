@@ -1,15 +1,19 @@
 # PRP-012: Drag and Drop Inventory
 
 ## Status
+
 Queue
 
 ## Priority
+
 Low
 
 ## Overview
+
 Build an inventory management system using @dnd-kit with grid-based slots, drag-drop between containers, and item management.
 
 ## Success Criteria
+
 - [ ] Grid-based inventory slots
 - [ ] Drag-drop between inventory and equipment
 - [ ] Ground drops working
@@ -22,6 +26,7 @@ Build an inventory management system using @dnd-kit with grid-based slots, drag-
 - [ ] Categories and filtering
 
 ## Technical Requirements
+
 - @dnd-kit/core for drag-drop
 - Grid layout system
 - Touch and mouse support
@@ -29,6 +34,7 @@ Build an inventory management system using @dnd-kit with grid-based slots, drag-
 - LocalStorage persistence
 
 ## Acceptance Criteria
+
 1. Smooth drag-drop experience
 2. Items persist properly
 3. Trading functional
@@ -36,5 +42,6 @@ Build an inventory management system using @dnd-kit with grid-based slots, drag-
 5. Accessible
 
 ---
-*Created: 2024-12-07*
-*Estimated effort: 3 days*
+
+_Created: 2024-12-07_
+_Estimated effort: 3 days_

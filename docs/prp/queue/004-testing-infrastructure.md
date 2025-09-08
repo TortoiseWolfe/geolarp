@@ -1,20 +1,25 @@
 # PRP-004: Testing Infrastructure
 
 ## Status
+
 Queue
 
 ## Priority
+
 High
 
 ## Prerequisites
+
 - PRP-001: Next.js Project Setup completed
 - PRP-002: Docker Development Environment completed
 - PRP-003: Storybook Component System completed
 
 ## Overview
+
 Establish comprehensive testing infrastructure with Playwright for E2E testing, Jest for unit testing, and TypeScript in strict mode. All testing will run in Docker containers to ensure consistency and enable visual feedback loops.
 
 ## Success Criteria
+
 - [ ] Playwright configured for E2E testing in Docker
 - [ ] Jest and React Testing Library setup
 - [ ] TypeScript in strict mode from the start
@@ -31,6 +36,7 @@ Establish comprehensive testing infrastructure with Playwright for E2E testing, 
 ## Technical Requirements
 
 ### TypeScript Configuration
+
 Note: TypeScript strict mode configuration is already set up in PRP-001. This PRP focuses on testing-specific TypeScript configurations.
 
 ```json
@@ -51,6 +57,7 @@ Note: TypeScript strict mode configuration is already set up in PRP-001. This PR
 ```
 
 ### Playwright Configuration
+
 ```typescript
 // playwright.config.ts
 import { defineConfig, devices } from '@playwright/test'
@@ -71,7 +78,7 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    
+
     // Geolocation mocking
     geolocation: { longitude: -73.9855, latitude: 40.7580 },
     permissions: ['geolocation'],
@@ -141,13 +148,14 @@ CMD ["pnpm", "test:e2e"]
 ```
 
 ### Jest Configuration
+
 ```javascript
 // jest.config.js
-const nextJest = require('next/jest')
+const nextJest = require('next/jest');
 
 const createJestConfig = nextJest({
   dir: './',
-})
+});
 
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
@@ -181,22 +189,22 @@ const customJestConfig = {
     'jest-watch-typeahead/filename',
     'jest-watch-typeahead/testname',
   ],
-}
+};
 
-module.exports = createJestConfig(customJestConfig)
+module.exports = createJestConfig(customJestConfig);
 
 // jest.setup.js
-import '@testing-library/jest-dom'
-import { mockGeolocation } from './test-utils/mocks'
+import '@testing-library/jest-dom';
+import { mockGeolocation } from './test-utils/mocks';
 
 // Mock geolocation
 beforeAll(() => {
   mockGeolocation({
-    latitude: 40.7580,
+    latitude: 40.758,
     longitude: -73.9855,
     accuracy: 10,
-  })
-})
+  });
+});
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
@@ -205,12 +213,13 @@ global.IntersectionObserver = class IntersectionObserver {
   observe() {}
   unobserve() {}
   takeRecords() {
-    return []
+    return [];
   }
-}
+};
 ```
 
 ### Test Utils and Factories
+
 ```typescript
 // test-utils/test-factory.ts
 import { faker } from '@faker-js/faker'
@@ -262,100 +271,110 @@ export { render }
 ```
 
 ### E2E Test Examples
+
 ```typescript
 // e2e/location.spec.ts
-import { test, expect } from '@playwright/test'
+import { test, expect } from '@playwright/test';
 
 test.describe('Location Features', () => {
   test.beforeEach(async ({ context }) => {
     // Grant permission before each test
-    await context.grantPermissions(['geolocation'])
-  })
+    await context.grantPermissions(['geolocation']);
+  });
 
   test('should request location permission', async ({ page }) => {
-    await page.goto('/test-location')
-    
+    await page.goto('/test-location');
+
     // Check permission UI
-    await expect(page.getByText('Location permission required')).toBeVisible()
-    
+    await expect(page.getByText('Location permission required')).toBeVisible();
+
     // Click enable
-    await page.getByRole('button', { name: 'Enable' }).click()
-    
+    await page.getByRole('button', { name: 'Enable' }).click();
+
     // Verify location is displayed
-    await expect(page.getByText(/40\.7580/)).toBeVisible()
-  })
+    await expect(page.getByText(/40\.7580/)).toBeVisible();
+  });
 
   test('should work offline', async ({ page, context }) => {
     // Go to page first
-    await page.goto('/test-location')
-    
+    await page.goto('/test-location');
+
     // Go offline
-    await context.setOffline(true)
-    
+    await context.setOffline(true);
+
     // Should show cached content
-    await expect(page.getByText('Offline Mode')).toBeVisible()
-  })
+    await expect(page.getByText('Offline Mode')).toBeVisible();
+  });
 
   test('mobile viewport', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 })
-    await page.goto('/test-location')
-    
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/test-location');
+
     // Check mobile-specific UI
-    await expect(page.getByTestId('bottom-nav')).toBeVisible()
-    await expect(page.getByTestId('desktop-sidebar')).not.toBeVisible()
-  })
-})
+    await expect(page.getByTestId('bottom-nav')).toBeVisible();
+    await expect(page.getByTestId('desktop-sidebar')).not.toBeVisible();
+  });
+});
 ```
 
 ### Visual Regression Testing
+
 ```typescript
 // e2e/visual.spec.ts
-import { test, expect } from '@playwright/test'
+import { test, expect } from '@playwright/test';
 
 test.describe('Visual Regression', () => {
   test('homepage snapshot', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/');
     await expect(page).toHaveScreenshot('homepage.png', {
       fullPage: true,
       animations: 'disabled',
-    })
-  })
+    });
+  });
 
   test('dark mode snapshot', async ({ page }) => {
-    await page.goto('/')
-    await page.click('[data-testid="theme-toggle"]')
-    await expect(page).toHaveScreenshot('homepage-dark.png')
-  })
-})
+    await page.goto('/');
+    await page.click('[data-testid="theme-toggle"]');
+    await expect(page).toHaveScreenshot('homepage-dark.png');
+  });
+});
 ```
 
 ### Accessibility Testing
+
 ```typescript
 // e2e/a11y.spec.ts
-import { test, expect } from '@playwright/test'
-import AxeBuilder from '@axe-core/playwright'
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 test.describe('Accessibility', () => {
   test('should not have violations on homepage', async ({ page }) => {
-    await page.goto('/')
-    const results = await new AxeBuilder({ page }).analyze()
-    expect(results.violations).toEqual([])
-  })
+    await page.goto('/');
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations).toEqual([]);
+  });
 
   test('should be keyboard navigable', async ({ page }) => {
-    await page.goto('/')
-    
+    await page.goto('/');
+
     // Tab through interactive elements
-    await page.keyboard.press('Tab')
-    await expect(page.locator(':focus')).toHaveAttribute('data-testid', 'start-button')
-    
-    await page.keyboard.press('Tab')
-    await expect(page.locator(':focus')).toHaveAttribute('data-testid', 'settings-button')
-  })
-})
+    await page.keyboard.press('Tab');
+    await expect(page.locator(':focus')).toHaveAttribute(
+      'data-testid',
+      'start-button',
+    );
+
+    await page.keyboard.press('Tab');
+    await expect(page.locator(':focus')).toHaveAttribute(
+      'data-testid',
+      'settings-button',
+    );
+  });
+});
 ```
 
 ## CI/CD Integration
+
 ```yaml
 # .github/workflows/test.yml
 name: Test
@@ -365,7 +384,7 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:16
@@ -379,34 +398,34 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Type check
         run: npm run type-check
-      
+
       - name: Lint
         run: npm run lint
-      
+
       - name: Unit tests
         run: npm run test:unit -- --coverage
-      
+
       - name: Install Playwright
         run: npx playwright install --with-deps
-      
+
       - name: E2E tests
         run: npm run test:e2e
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
-      
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v3
@@ -416,6 +435,7 @@ jobs:
 ```
 
 ## Testing Strategy
+
 1. **Unit Tests**: Pure functions, utilities, hooks
 2. **Integration Tests**: Component interactions, API calls
 3. **E2E Tests**: User journeys, critical paths
@@ -424,6 +444,7 @@ jobs:
 6. **Accessibility Tests**: WCAG compliance
 
 ## Acceptance Criteria
+
 1. All tests run in Docker containers
 2. TypeScript catches type errors at compile time
 3. 80%+ code coverage maintained
@@ -433,6 +454,7 @@ jobs:
 7. Mobile devices properly emulated
 
 ### Docker Compose Addition
+
 ```yaml
 # Add to docker-compose.yml
 services:
@@ -453,6 +475,7 @@ services:
 ```
 
 ---
-*Created: 2024-01-08*
-*Updated: 2024-01-08*
-*Estimated effort: 2 days*
+
+_Created: 2024-01-08_
+_Updated: 2024-01-08_
+_Estimated effort: 2 days_

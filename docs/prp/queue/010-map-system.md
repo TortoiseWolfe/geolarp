@@ -1,15 +1,19 @@
 # PRP-009: Map System
 
 ## Status
+
 Queue
 
 ## Priority
+
 Medium
 
 ## Overview
+
 Create an offline-capable map component using React that displays OpenStreetMap tiles, caches them for offline use, and shows game elements.
 
 ## Success Criteria
+
 - [ ] OpenStreetMap tiles displayed
 - [ ] Tiles cached in IndexedDB
 - [ ] Player position and heading shown
@@ -24,6 +28,7 @@ Create an offline-capable map component using React that displays OpenStreetMap 
 ## Technical Requirements
 
 ### Map Component
+
 ```typescript
 interface MapProps {
   center: Coordinates;
@@ -46,6 +51,7 @@ interface MapTile {
 ```
 
 ### Caching Strategy
+
 - Cache tiles within 1 mile initially
 - Expand to 3 miles over time
 - 500 tile limit
@@ -54,6 +60,7 @@ interface MapTile {
 - Progressive download
 
 ### Offline Fallback
+
 - Vector shapes for roads
 - Simplified polygons
 - Cached POI data
@@ -61,6 +68,7 @@ interface MapTile {
 - Compass rose
 
 ## Testing Requirements
+
 - Tile caching tests
 - Offline mode validation
 - Zoom/pan performance
@@ -68,6 +76,7 @@ interface MapTile {
 - Touch interaction tests
 
 ## Acceptance Criteria
+
 1. Map loads and displays
 2. Tiles cache for offline
 3. Player tracking works
@@ -75,11 +84,13 @@ interface MapTile {
 5. Offline fallback works
 
 ## Rotation Plan
+
 - Extract tile strategy to ADR
 - Offline approach documented
 - Archive after implementation
 - Tests validate caching
 
 ---
-*Created: 2024-12-07*
-*Estimated effort: 4 days*
+
+_Created: 2024-12-07_
+_Estimated effort: 4 days_

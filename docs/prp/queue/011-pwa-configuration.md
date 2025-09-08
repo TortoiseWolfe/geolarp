@@ -1,15 +1,19 @@
 # PRP-010: PWA Configuration
 
 ## Status
+
 Queue
 
 ## Priority
+
 High
 
 ## Overview
+
 Configure complete PWA setup for Next.js including manifest, install prompts, splash screens, and all PWA features.
 
 ## Success Criteria
+
 - [ ] Manifest.json with all icon sizes
 - [ ] Custom install prompt component
 - [ ] iOS installation instructions
@@ -23,6 +27,7 @@ Configure complete PWA setup for Next.js including manifest, install prompts, sp
 ## Technical Requirements
 
 ### Manifest Configuration
+
 ```json
 {
   "name": "geoLARP",
@@ -35,7 +40,12 @@ Configure complete PWA setup for Next.js including manifest, install prompts, sp
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
     { "name": "New Character", "url": "/character/new" },
@@ -45,6 +55,7 @@ Configure complete PWA setup for Next.js including manifest, install prompts, sp
 ```
 
 ### Install Prompt Component
+
 - Detect install capability
 - Custom UI for install
 - iOS instructions modal
@@ -52,6 +63,7 @@ Configure complete PWA setup for Next.js including manifest, install prompts, sp
 - Success tracking
 
 ## Testing Requirements
+
 - Lighthouse PWA audit
 - Install flow testing
 - iOS/Android validation
@@ -59,6 +71,7 @@ Configure complete PWA setup for Next.js including manifest, install prompts, sp
 - Deep linking tests
 
 ## Acceptance Criteria
+
 1. PWA installable on all platforms
 2. Lighthouse score > 90
 3. Updates handled gracefully
@@ -66,11 +79,13 @@ Configure complete PWA setup for Next.js including manifest, install prompts, sp
 5. iOS instructions clear
 
 ## Rotation Plan
+
 - PWA decisions to ADR
 - Platform quirks documented
 - Archive after implementation
 - Tests validate PWA features
 
 ---
-*Created: 2024-12-07*
-*Estimated effort: 2 days*
+
+_Created: 2024-12-07_
+_Estimated effort: 2 days_

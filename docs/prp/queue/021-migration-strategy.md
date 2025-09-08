@@ -1,15 +1,19 @@
 # PRP-020: Migration Strategy
 
 ## Status
+
 Queue
 
 ## Priority
+
 Low
 
 ## Overview
+
 Design migration system for future backend that preserves player progress and enables account creation.
 
 ## Success Criteria
+
 - [ ] LocalStorage export working
 - [ ] Migration tokens generated
 - [ ] Character progression preserved
@@ -22,5 +26,6 @@ Design migration system for future backend that preserves player progress and en
 - [ ] Beta benefits preserved
 
 ---
-*Created: 2024-12-07*
-*Estimated effort: 2 days*
+
+_Created: 2024-12-07_
+_Estimated effort: 2 days_

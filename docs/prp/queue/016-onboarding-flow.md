@@ -1,15 +1,19 @@
 # PRP-015: Onboarding Flow
 
 ## Status
+
 Queue
 
 ## Priority
+
 Medium
 
 ## Overview
+
 Create a player onboarding experience that completes in <60 seconds with instant character generation.
 
 ## Success Criteria
+
 - [ ] Complete in <60 seconds
 - [ ] Instant character generation
 - [ ] Progressive mechanic explanation
@@ -22,5 +26,6 @@ Create a player onboarding experience that completes in <60 seconds with instant
 - [ ] Skip option available
 
 ---
-*Created: 2024-12-07*
-*Estimated effort: 2 days*
+
+_Created: 2024-12-07_
+_Estimated effort: 2 days_

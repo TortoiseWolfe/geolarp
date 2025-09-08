@@ -1,15 +1,19 @@
 # PRP-006: Character System
 
 ## Status
+
 Active
 
 ## Priority
+
 High
 
 ## Overview
+
 Build a character management system with rapid generation, D7-based attributes (1-7 scale), location-based classes, and multiple backup/restore options. The D7 system provides balanced character progression with meaningful attribute modifiers.
 
 ## Success Criteria
+
 - [ ] Random character generation < 10 seconds
 - [ ] D7 system for attributes (1-7 scale with modifiers)
 - [ ] Attribute generation methods (standard array, random, point buy)
@@ -25,6 +29,7 @@ Build a character management system with rapid generation, D7-based attributes (
 ## Technical Requirements
 
 ### Character Model
+
 ```typescript
 interface Character {
   id: string;
@@ -33,23 +38,23 @@ interface Character {
   level: number;
   experience: number;
   attributes: {
-    strength: number;     // 1-7 scale
-    agility: number;      // 1-7 scale
-    intellect: number;    // 1-7 scale
-    spirit: number;       // 1-7 scale
-    luck: number;         // 1-7 scale
+    strength: number; // 1-7 scale
+    agility: number; // 1-7 scale
+    intellect: number; // 1-7 scale
+    spirit: number; // 1-7 scale
+    luck: number; // 1-7 scale
   };
   attributeModifiers: {
-    strength: number;     // -1 to +2 based on attribute
+    strength: number; // -1 to +2 based on attribute
     agility: number;
     intellect: number;
     spirit: number;
     luck: number;
   };
   derivedStats: {
-    hitPoints: number;    // 7 + (level * strength modifier)
-    defense: number;      // 4 + (level/3) + agility modifier
-    initiative: number;   // agility modifier
+    hitPoints: number; // 7 + (level * strength modifier)
+    defense: number; // 4 + (level/3) + agility modifier
+    initiative: number; // agility modifier
     carryCapacity: number; // 7 * strength
   };
   inventory: Item[];
@@ -62,14 +67,15 @@ interface Character {
 }
 
 interface AttributeModifiers {
-  '1-2': -1;  // Weak
-  '3-4': 0;   // Average
-  '5-6': 1;   // Strong
-  '7': 2;     // Exceptional
+  '1-2': -1; // Weak
+  '3-4': 0; // Average
+  '5-6': 1; // Strong
+  '7': 2; // Exceptional
 }
 ```
 
 ### Location-Based Classes
+
 - **Urban area → Rogue**: +1 Agility, Advantage on stealth in cities
 - **Park/Forest → Ranger**: +1 Spirit, Advantage on nature/tracking
 - **Commercial → Merchant**: +1 Intellect, Advantage on negotiation
@@ -78,6 +84,7 @@ interface AttributeModifiers {
 - **Waterfront → Mariner**: +1 Agility, Advantage near water
 
 ### Attribute Generation Methods
+
 1. **Standard Array**: [5, 5, 4, 4, 3] - assign as desired
 2. **Random Roll**: Roll 3D7, drop lowest, for each attribute
 3. **Point Buy**: 20 points, costs:
@@ -88,6 +95,7 @@ interface AttributeModifiers {
    - Score 7: 14 points (max 1 at creation)
 
 ### Character Sheet Features
+
 - Drag-drop inventory slots with weight tracking
 - Equipment management with D7 bonuses
 - Skill specialization display (1d7 → 1d7+mod → 2d7)
@@ -98,6 +106,7 @@ interface AttributeModifiers {
 - Critical success (7) and failure (1) tracking
 
 ### Backup Methods
+
 1. JSON file download
 2. QR code generation
 3. Clipboard copy
@@ -105,6 +114,7 @@ interface AttributeModifiers {
 5. Local browser storage
 
 ## Testing Requirements
+
 - Generation speed tests (<10s)
 - Attribute modifier calculations
 - D7 probability validation for rolls
@@ -116,6 +126,7 @@ interface AttributeModifiers {
 - Data recovery tests
 
 ## Acceptance Criteria
+
 1. Characters generated quickly with valid D7 attributes
 2. Attribute modifiers calculated correctly (-1 to +2)
 3. Classes assigned by location with unique abilities
@@ -126,12 +137,14 @@ interface AttributeModifiers {
 8. Clear data warnings shown
 
 ## Rotation Plan
+
 - Extract class system to game docs
 - Attribute formulas to ADR
 - Archive after implementation
 - Tests validate generation
 
 ---
-*Created: 2024-12-07*
-*Updated: 2025-01-08*
-*Estimated effort: 4 days*
+
+_Created: 2024-12-07_
+_Updated: 2025-01-08_
+_Estimated effort: 4 days_

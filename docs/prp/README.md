@@ -1,9 +1,11 @@
 # Punk Rock Prompts (PRPs)
 
 ## What are PRPs?
+
 PRPs are temporary, actionable specifications that guide feature implementation. They're "punk rock" because they:
+
 - Challenge conventional documentation
-- Focus on action over perfection  
+- Focus on action over perfection
 - Rotate into code, not documents
 - Die gracefully when complete
 
@@ -31,16 +33,19 @@ graph LR
 ## Quick Start
 
 ### Creating a New PRP
+
 1. Copy `PRP-TEMPLATE.md` to `queue/XXX-feature-name.md`
 2. Fill out requirements and success criteria
 3. Keep it actionable and measurable
 
 ### Activating a PRP
+
 1. Move from `queue/` to `active/`
 2. Maximum 3 active PRPs (WIP limit)
 3. Assign to developer/team
 
 ### Completing a PRP
+
 1. Ensure all tests pass
 2. Add completion notes
 3. Move to `/archive/prp/YYYY-QQ/`
@@ -49,12 +54,15 @@ graph LR
 ## Key Principles
 
 ### 1. Temporary by Design
+
 PRPs aren't permanent documentation. They guide implementation then archive.
 
 ### 2. Code is Truth
+
 Once implemented, the code (with its tests and comments) becomes the source of truth.
 
 ### 3. Test-Driven Validation
+
 PRP requirements become test specifications:
 
 ```typescript
@@ -67,7 +75,9 @@ describe('Theme System (PRP-001)', () => {
 ```
 
 ### 4. Rotation Over Accumulation
+
 PRPs rotate into:
+
 - **Source code** (implementation)
 - **Tests** (validation)
 - **Comments** (context)
@@ -77,31 +87,36 @@ PRPs rotate into:
 ## Current Status
 
 ### Active PRPs
+
 - None (starting fresh)
 
 ### Queued PRPs
+
 - None (starting fresh)
 
 ### Completed This Quarter
+
 - None (starting fresh)
 
 ## Metrics
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Active PRPs | 0 | ≤3 |
-| Avg Cycle Time | - | <2 weeks |
-| Completion Rate | - | >90% |
-| Test Coverage | - | 100% |
+| Metric          | Current | Target   |
+| --------------- | ------- | -------- |
+| Active PRPs     | 0       | ≤3       |
+| Avg Cycle Time  | -       | <2 weeks |
+| Completion Rate | -       | >90%     |
+| Test Coverage   | -       | 100%     |
 
 ## Common Patterns
 
 ### Good PRP Titles
+
 - ✅ `001-user-authentication.md`
 - ✅ `002-theme-system.md`
 - ✅ `003-map-integration.md`
 
 ### Bad PRP Titles
+
 - ❌ `update-stuff.md`
 - ❌ `fix-things.md`
 - ❌ `misc-changes.md`
@@ -138,4 +153,4 @@ A: Anyone, but activation requires team agreement.
 
 ---
 
-*Remember: PRPs are scaffolding. Once the building stands, the scaffolding comes down.*
+_Remember: PRPs are scaffolding. Once the building stands, the scaffolding comes down._

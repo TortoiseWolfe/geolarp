@@ -1,19 +1,24 @@
 # PRP-003: Storybook Component System
 
 ## Status
+
 Queue
 
 ## Priority
+
 Critical
 
 ## Prerequisites
+
 - PRP-001: Next.js Project Setup completed
 - PRP-002: Docker Development Environment completed
 
 ## Overview
+
 Establish a component-driven development workflow using Storybook for visual development and DaisyUI for consistent, mobile-first design. All components will be developed in isolation with visual testing before integration.
 
 ## Success Criteria
+
 - [ ] Storybook running in Docker container
 - [ ] DaisyUI properly configured with custom theme
 - [ ] Mobile-first responsive components
@@ -29,6 +34,7 @@ Establish a component-driven development workflow using Storybook for visual dev
 ## Technical Requirements
 
 ### Storybook Configuration
+
 ```javascript
 // .storybook/main.js
 module.exports = {
@@ -50,10 +56,10 @@ module.exports = {
     buildStoriesJson: true,
   },
   staticDirs: ['../public'],
-}
+};
 
 // .storybook/preview.js
-import '../app/globals.css'
+import '../app/globals.css';
 
 export const parameters = {
   actions: { argTypesRegex: '^on[A-Z].*' },
@@ -84,10 +90,11 @@ export const parameters = {
       { name: 'emerald', class: 'emerald', color: '#10b981' },
     ],
   },
-}
+};
 ```
 
 ### DaisyUI Theme Configuration
+
 ```javascript
 // tailwind.config.js
 module.exports = {
@@ -102,32 +109,32 @@ module.exports = {
     themes: [
       {
         geolarp: {
-          'primary': '#10b981',
+          primary: '#10b981',
           'primary-focus': '#059669',
           'primary-content': '#ffffff',
-          
-          'secondary': '#3b82f6',
+
+          secondary: '#3b82f6',
           'secondary-focus': '#2563eb',
           'secondary-content': '#ffffff',
-          
-          'accent': '#f59e0b',
+
+          accent: '#f59e0b',
           'accent-focus': '#d97706',
           'accent-content': '#ffffff',
-          
-          'neutral': '#1f2937',
+
+          neutral: '#1f2937',
           'neutral-focus': '#111827',
           'neutral-content': '#f3f4f6',
-          
+
           'base-100': '#ffffff',
           'base-200': '#f3f4f6',
           'base-300': '#e5e7eb',
           'base-content': '#1f2937',
-          
-          'info': '#3b82f6',
-          'success': '#10b981',
-          'warning': '#f59e0b',
-          'error': '#ef4444',
-          
+
+          info: '#3b82f6',
+          success: '#10b981',
+          warning: '#f59e0b',
+          error: '#ef4444',
+
           '--rounded-box': '1rem',
           '--rounded-btn': '0.5rem',
           '--rounded-badge': '1.9rem',
@@ -144,10 +151,11 @@ module.exports = {
       'light',
     ],
   },
-}
+};
 ```
 
 ### Component Structure
+
 ```typescript
 // components/Button/Button.tsx
 import { forwardRef } from 'react'
@@ -253,6 +261,7 @@ export const Mobile: Story = {
 ```
 
 ### Mobile-First Components
+
 - Navigation: Bottom tab bar for mobile, sidebar for desktop
 - Cards: Full-width on mobile, grid on desktop
 - Forms: Stacked on mobile, inline on desktop
@@ -260,26 +269,28 @@ export const Mobile: Story = {
 - Tables: Scrollable on mobile, fixed on desktop
 
 ### Visual Testing
+
 ```javascript
 // .storybook/test-runner.js
 module.exports = {
   async postRender(page, context) {
     // Visual regression snapshot
-    await page.screenshot({ 
+    await page.screenshot({
       path: `screenshots/${context.id}.png`,
-      fullPage: true 
-    })
-    
+      fullPage: true,
+    });
+
     // Accessibility audit
-    const accessibilityReport = await page.accessibility()
+    const accessibilityReport = await page.accessibility();
     if (accessibilityReport.violations.length > 0) {
-      throw new Error('Accessibility violations found')
+      throw new Error('Accessibility violations found');
     }
   },
-}
+};
 ```
 
 ### Component Categories
+
 1. **Layout Components**
    - Container, Grid, Stack, Divider
    - MobileNav, DesktopNav, BottomBar
@@ -306,6 +317,7 @@ module.exports = {
    - GeofenceZone, BatteryIndicator
 
 ## Testing Requirements
+
 - All components have stories
 - Visual regression tests pass
 - Accessibility score > 95
@@ -315,6 +327,7 @@ module.exports = {
 - RTL support validated
 
 ## Acceptance Criteria
+
 1. Developers can build UI without running full app
 2. Designers can review and approve components
 3. Components are consistent across app
@@ -323,6 +336,7 @@ module.exports = {
 6. Documentation is auto-generated
 
 ## Docker Integration
+
 ```dockerfile
 # Dockerfile.storybook
 FROM node:20-alpine AS base
@@ -352,6 +366,7 @@ CMD ["pnpm", "storybook"]
 ```
 
 ### Docker Compose Addition
+
 ```yaml
 # Add to docker-compose.yml
 services:
@@ -363,7 +378,7 @@ services:
       - .:/app
       - /app/node_modules
     ports:
-      - "6006:6006"
+      - '6006:6006'
     environment:
       - NODE_ENV=development
     stdin_open: true
@@ -371,5 +386,6 @@ services:
 ```
 
 ---
-*Created: 2024-01-08*
-*Estimated effort: 3 days*
+
+_Created: 2024-01-08_
+_Estimated effort: 3 days_

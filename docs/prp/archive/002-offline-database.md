@@ -1,15 +1,19 @@
 # PRP-002: Offline Database
 
 ## Status
+
 Complete
 
 ## Priority
+
 Critical
 
 ## Overview
+
 Build an IndexedDB database wrapper using Dexie for PWA game storage with automatic quota management and TypeScript support.
 
 ## Success Criteria
+
 - [x] IndexedDB wrapper implemented with Dexie
 - [x] Map tiles stored with automatic cleanup
 - [x] Character data persisted with versioning
@@ -21,6 +25,7 @@ Build an IndexedDB database wrapper using Dexie for PWA game storage with automa
 ## Technical Requirements
 
 ### Database Schema
+
 ```typescript
 interface MapTile {
   id: string; // "x,y,zoom"
@@ -58,6 +63,7 @@ interface Encounter {
 ```
 
 ### Storage Management
+
 - Automatic cleanup when > 80% full
 - LRU cache for map tiles
 - 30-day expiry for tiles
@@ -65,6 +71,7 @@ interface Encounter {
 - Version migration support
 
 ### API Methods
+
 - `saveCharacter(character: Character): Promise<void>`
 - `loadCharacter(id: string): Promise<Character>`
 - `cacheTile(tile: MapTile): Promise<void>`
@@ -74,6 +81,7 @@ interface Encounter {
 - `clearOldData(daysOld: number): Promise<void>`
 
 ## Testing Requirements
+
 - Unit tests for all database operations
 - Storage quota handling tests
 - Migration tests between versions
@@ -81,6 +89,7 @@ interface Encounter {
 - Offline functionality tests
 
 ## Acceptance Criteria
+
 1. Database operations work offline
 2. Storage limits handled gracefully
 3. Data persists between sessions
@@ -88,11 +97,13 @@ interface Encounter {
 5. TypeScript types enforced
 
 ## Rotation Plan
+
 - Extract storage decisions to ADR
 - Move encryption approach to ADR
 - Archive after implementation
 - Tests become permanent validation
 
 ---
-*Created: 2024-12-07*
-*Estimated effort: 3 days*
+
+_Created: 2024-12-07_
+_Estimated effort: 3 days_

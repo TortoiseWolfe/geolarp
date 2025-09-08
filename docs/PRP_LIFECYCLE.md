@@ -1,6 +1,7 @@
 # PRP (Punk Rock Prompts) Lifecycle
 
 ## Philosophy
+
 PRPs are **temporary specifications** that guide implementation, not permanent documentation. They are scaffolding - necessary during construction but archived once the building stands.
 
 ## Directory Structure
@@ -21,16 +22,19 @@ PRPs are **temporary specifications** that guide implementation, not permanent d
 ## Lifecycle Stages
 
 ### 1. Creation (Queue)
+
 - New PRPs start in `/docs/prp/queue/`
 - Numbered sequentially: `001-feature-name.md`
 - Contains detailed specifications and success criteria
 
 ### 2. Activation (Active)
+
 - Move to `/docs/prp/active/` when work begins
 - Only 1-3 PRPs active at once (WIP limit)
 - Team actively implementing these specs
 
 ### 3. Implementation (Code)
+
 - PRP requirements become:
   - Source code with reference comments
   - Test specifications
@@ -38,6 +42,7 @@ PRPs are **temporary specifications** that guide implementation, not permanent d
   - Type definitions
 
 ### 4. Validation (Tests)
+
 ```typescript
 // Tests validate PRP requirements
 describe('Feature X - PRP-001', () => {
@@ -48,6 +53,7 @@ describe('Feature X - PRP-001', () => {
 ```
 
 ### 5. Archival (Complete)
+
 - Move to `/docs/archive/prp/YYYY-QQ/`
 - Add completion notes
 - Extract decisions to ADRs
@@ -72,17 +78,20 @@ Queue → Active → Implementation → Tests → Archive
 ## Example Flow
 
 ### Week 1: PRP Created
+
 ```
 /docs/prp/queue/001-theme-system.md
 ```
 
 ### Week 2: PRP Active
+
 ```
 /docs/prp/active/001-theme-system.md
 Developer implements theme system
 ```
 
 ### Week 3: PRP Implemented
+
 ```typescript
 // src/components/ThemeProvider.tsx
 /**
@@ -93,6 +102,7 @@ Developer implements theme system
 ```
 
 ### Week 4: PRP Archived
+
 ```
 /docs/archive/prp/2024-Q1/001-theme-system.md
 Status: COMPLETED

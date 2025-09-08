@@ -1,15 +1,19 @@
 # PRP-013: Game State Management
 
 ## Status
+
 Active
 
 ## Priority
+
 High
 
 ## Overview
+
 Create a Zustand store for centralized game state management with automatic persistence, migrations, TypeScript support, and comprehensive D7 statistics tracking for game balance analysis.
 
 ## Success Criteria
+
 - [ ] Zustand store configured with D7 mechanics
 - [ ] Automatic LocalStorage persistence
 - [ ] State migrations working
@@ -25,13 +29,14 @@ Create a Zustand store for centralized game state management with automatic pers
 ## Technical Requirements
 
 ### Store Structure
+
 ```typescript
 interface GameStore {
   // Character State
   character: Character | null;
   setCharacter: (character: Character) => void;
   updateCharacter: (updates: Partial<Character>) => void;
-  
+
   // D7 Dice State
   rollHistory: RollResult[];
   diceStatistics: D7Statistics;
@@ -39,37 +44,37 @@ interface GameStore {
   rollAdvantage: (modifier?: number) => RollResult;
   rollDisadvantage: (modifier?: number) => RollResult;
   rollSkillCheck: (dc: number, modifier?: number) => CheckResult;
-  
+
   // Game State
   currentQuest: Quest | null;
-  questDifficulty: number;      // Current quest DC (2-7)
+  questDifficulty: number; // Current quest DC (2-7)
   encounters: Encounter[];
   inventory: Item[];
-  
+
   // Location State
   position: Coordinates;
-  environmentModifier: number;  // -1 to +2 based on location
+  environmentModifier: number; // -1 to +2 based on location
   updatePosition: (coords: Coordinates) => void;
-  
+
   // Combat State
   inCombat: boolean;
   combatLog: CombatEvent[];
   initiativeOrder: Combatant[];
-  
+
   // Settings
   settings: GameSettings;
   updateSettings: (settings: Partial<GameSettings>) => void;
-  
+
   // Actions
   completeQuest: (questId: string, rollResult: number) => void;
   addItem: (item: Item, lootRoll?: number) => void;
-  gainXP: (amount: number) => void;  // Uses 7x multiplier
-  
+  gainXP: (amount: number) => void; // Uses 7x multiplier
+
   // Statistics Tracking
   updateD7Stats: (result: RollResult) => void;
   getSuccessRate: () => number;
   getCriticalRate: () => { success: number; failure: number };
-  
+
   // Persistence
   save: () => void;
   load: () => void;
@@ -79,17 +84,17 @@ interface GameStore {
 
 interface D7Statistics {
   totalRolls: number;
-  distribution: Record<1|2|3|4|5|6|7, number>;
+  distribution: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, number>;
   averageRoll: number;
-  criticalSuccesses: number;  // Natural 7s
-  criticalFailures: number;   // Natural 1s
+  criticalSuccesses: number; // Natural 7s
+  criticalFailures: number; // Natural 1s
   advantageRolls: number;
   disadvantageRolls: number;
   successfulChecks: number;
   failedChecks: number;
   streaks: {
-    currentLucky: number;     // Consecutive 6-7 rolls
-    currentUnlucky: number;   // Consecutive 1-2 rolls
+    currentLucky: number; // Consecutive 6-7 rolls
+    currentUnlucky: number; // Consecutive 1-2 rolls
     bestLucky: number;
     worstUnlucky: number;
   };
@@ -101,11 +106,12 @@ interface CheckResult {
   modifier: number;
   dc: number;
   critical: 'success' | 'failure' | null;
-  margin: number;  // How much over/under DC
+  margin: number; // How much over/under DC
 }
 ```
 
 ### Persistence Layer
+
 ```typescript
 interface PersistenceConfig {
   autoSaveInterval: 30000;     // 30 seconds
@@ -136,6 +142,7 @@ interface Migration {
 ```
 
 ### Performance Optimizations
+
 - Debounce D7 statistics updates (100ms)
 - Batch roll history updates
 - Lazy load encounter data
@@ -143,6 +150,7 @@ interface Migration {
 - Selective component subscriptions
 
 ## Testing Requirements
+
 - State update tests with D7 mechanics
 - D7 roll distribution validation (14.3% per face)
 - Critical success/failure tracking accuracy
@@ -155,6 +163,7 @@ interface Migration {
 - Statistics accuracy over 10,000+ rolls
 
 ## Acceptance Criteria
+
 1. All game state centralized in Zustand
 2. D7 mechanics fully integrated
 3. Roll statistics accurately tracked
@@ -167,12 +176,14 @@ interface Migration {
 10. Behavioral adaptation data tracked
 
 ## Rotation Plan
+
 - State architecture to ADR
 - Migration strategy documented
 - Archive after implementation
 - Tests validate state logic
 
 ---
-*Created: 2024-12-07*
-*Updated: 2025-01-08*
-*Estimated effort: 3 days*
+
+_Created: 2024-12-07_
+_Updated: 2025-01-08_
+_Estimated effort: 3 days_

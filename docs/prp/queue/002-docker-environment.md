@@ -1,18 +1,23 @@
 # PRP-002: Docker Development Environment
 
 ## Status
+
 Queue
 
 ## Priority
+
 Critical
 
 ## Overview
+
 Containerize the Next.js application using Docker with Brett Fisher's Node.js best practices. All future development will occur within containers to ensure consistency and avoid host machine conflicts.
 
 ## Prerequisites
+
 - PRP-001: Next.js Project Setup completed
 
 ## Success Criteria
+
 - [ ] Multi-stage Dockerfile with development and production targets
 - [ ] Docker Compose for local development orchestration
 - [ ] Hot-reload working in development container
@@ -27,6 +32,7 @@ Containerize the Next.js application using Docker with Brett Fisher's Node.js be
 ## Technical Requirements
 
 ### Multi-Stage Dockerfile (Brett Fisher's Best Practices)
+
 ```dockerfile
 # Dockerfile
 # syntax=docker/dockerfile:1
@@ -107,6 +113,7 @@ CMD ["node", "server.js"]
 ```
 
 ### Docker Compose Configuration
+
 ```yaml
 # docker-compose.yml
 version: '3.8'
@@ -126,7 +133,7 @@ services:
       # Prevent .next from being overwritten
       - /app/.next
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
@@ -139,7 +146,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3000']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -156,9 +163,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - '5432:5432'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U geolarp"]
+      test: ['CMD-SHELL', 'pg_isready -U geolarp']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -166,11 +173,11 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -181,6 +188,7 @@ volumes:
 ```
 
 ### Docker Ignore File
+
 ```
 # .dockerignore
 .git
@@ -203,6 +211,7 @@ coverage
 ```
 
 ### VS Code Dev Container Configuration
+
 ```json
 // .devcontainer/devcontainer.json
 {
@@ -242,6 +251,7 @@ coverage
 ```
 
 ### Development Scripts Update
+
 ```json
 // package.json additions
 {
@@ -259,6 +269,7 @@ coverage
 ```
 
 ### Makefile for Common Commands
+
 ```makefile
 # Makefile
 .PHONY: up down build clean shell logs
@@ -295,27 +306,28 @@ typecheck:
 ```
 
 ### Health Check Implementation
+
 ```typescript
 // src/app/api/health/route.ts
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
 
 export async function GET() {
   // Check database connection
-  let dbStatus = 'unknown'
+  let dbStatus = 'unknown';
   try {
     // Add actual database check here when Prisma is set up
-    dbStatus = 'healthy'
+    dbStatus = 'healthy';
   } catch (error) {
-    dbStatus = 'unhealthy'
+    dbStatus = 'unhealthy';
   }
 
   // Check Redis connection
-  let redisStatus = 'unknown'
+  let redisStatus = 'unknown';
   try {
     // Add actual Redis check here when Redis client is set up
-    redisStatus = 'healthy'
+    redisStatus = 'healthy';
   } catch (error) {
-    redisStatus = 'unhealthy'
+    redisStatus = 'unhealthy';
   }
 
   const health = {
@@ -325,13 +337,14 @@ export async function GET() {
       database: dbStatus,
       redis: redisStatus,
     },
-  }
+  };
 
-  return NextResponse.json(health)
+  return NextResponse.json(health);
 }
 ```
 
 ## Security Considerations
+
 - Never run containers as root user
 - Use multi-stage builds to minimize attack surface
 - Scan images with Trivy or Snyk regularly
@@ -340,6 +353,7 @@ export async function GET() {
 - Implement resource limits in production
 
 ## Development Workflow
+
 ```bash
 # Initial setup
 git clone <repo>
@@ -358,12 +372,14 @@ docker-compose up --build     # Rebuild and start
 ```
 
 ## File Permissions Solution
+
 - Use `--chown=nextjs:nodejs` in COPY commands
 - Set USER before running commands
 - Use named volumes for node_modules
 - Ensure UID/GID match between container and host if needed
 
 ## Testing Requirements
+
 - Container builds successfully in < 2 minutes
 - Hot-reload responds in < 1 second
 - No permission errors when editing files
@@ -372,6 +388,7 @@ docker-compose up --build     # Rebuild and start
 - VS Code devcontainer opens correctly
 
 ## Acceptance Criteria
+
 1. Development happens entirely in Docker
 2. No Node.js installation required on host
 3. Single command starts entire environment
@@ -380,19 +397,23 @@ docker-compose up --build     # Rebuild and start
 6. Production build is optimized (< 200MB)
 
 ## Dependencies
+
 - Docker 24.0+
 - Docker Compose 2.20+
 - BuildKit enabled
 - 8GB RAM minimum for development
 
 ## Troubleshooting Guide
+
 ### Permission Issues
+
 ```bash
 # Fix ownership if needed
 docker-compose exec app chown -R nextjs:nodejs /app
 ```
 
 ### Port Conflicts
+
 ```bash
 # Check what's using ports
 lsof -i :3000
@@ -401,6 +422,7 @@ lsof -i :6379
 ```
 
 ### Clean Restart
+
 ```bash
 # Complete cleanup and rebuild
 docker-compose down -v
@@ -409,6 +431,7 @@ docker-compose up --build
 ```
 
 ---
-*Created: 2024-01-08*
-*Updated: 2024-01-08*
-*Estimated effort: 1 day*
+
+_Created: 2024-01-08_
+_Updated: 2024-01-08_
+_Estimated effort: 1 day_
