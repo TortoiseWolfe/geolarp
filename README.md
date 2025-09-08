@@ -12,7 +12,7 @@ The Next.js prototype has been removed to make way for a proper implementation t
 
 ### Dice Pool Mechanics
 - Attributes use dice pools (1D7 to 7D7) instead of static values
-- West End Games style pips system (+1, +2, converts to dice at +3)
+- Pips modifier system (+1, +2, converts to additional die at +3)
 - Maximum of 7D7 for heroic-level characters
 - Skills add dice to attribute pools
 - Exponential advancement with level progression
