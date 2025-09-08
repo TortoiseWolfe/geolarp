@@ -1,23 +1,40 @@
 # GeoLARP
 
-A location-based Live Action Role Playing game built with Next.js using PRP-driven development.
+A location-based Live Action Role Playing game with D7 dice mechanics.
 
-## 🔗 Demo Pages
+## Project Status
 
-- [Database Demo](http://localhost:3000/database-demo) - IndexedDB integration demo
-- [Dice Demo](http://localhost:3000/dice-demo) - D7 Dice System (Boggle-style dice roller)
-- [Geolocation Demo](http://localhost:3000/geolocation-demo) - Privacy-first geolocation system
-- [Offline Page](http://localhost:3000/offline) - Offline functionality demo
+🧹 **Clean Slate** - Ready for fresh implementation
+
+The Next.js prototype has been removed to make way for a proper implementation that aligns with the Product Requirement Plans.
+
+## D7 System Features
+
+### Dice Pool Mechanics
+- Attributes use dice pools (1D7 to 7D7) instead of static values
+- West End Games style pips system (+1, +2, converts to dice at +3)
+- Maximum of 7D7 for heroic-level characters
+- Skills add dice to attribute pools
+- Exponential advancement with level progression
+
+### Core Attributes
+- **Strength** - Physical prowess
+- **Agility** - Speed and dexterity  
+- **Intellect** - Mental acuity
+- **Spirit** - Willpower and awareness
+- **Luck** - Fortune and fate
+
+### Location-Based Classes
+- **Rogue** - Urban environments
+- **Ranger** - Parks and forests
+- **Merchant** - Commercial districts
+- **Guardian** - Residential areas
+- **Artificer** - Industrial zones
+- **Mariner** - Waterfront areas
 
 ## Development Philosophy: PRP-Driven
 
-This project uses **Punk Rock Prompts (PRPs)** - temporary specifications that guide implementation then rotate into code, tests, and archives. 
-
-### Why PRPs?
-- **No documentation drift** - Code is the source of truth
-- **Clear lifecycle** - Specs → Code → Tests → Archive
-- **Fast iteration** - No duplicate documentation
-- **Quality gates** - Tests validate requirements
+This project uses **Product Requirement Plans (PRPs)** - specifications that guide implementation through a clear lifecycle.
 
 ### PRP Workflow
 ```
@@ -33,79 +50,79 @@ This project uses **Punk Rock Prompts (PRPs)** - temporary specifications that g
 ```
 geolarp/
 ├── docs/
-│   ├── prp/              # Punk Rock Prompts
-│   │   ├── active/       # Currently implementing
-│   │   └── queue/        # Backlog
-│   ├── archive/          # Completed PRPs
-│   └── decisions/        # Architecture Decision Records
-├── src/                  # Source code (when created)
-├── tests/                # Test specifications (when created)
+│   └── prp/              # Product Requirement Plans
+│       ├── active/       # Currently implementing
+│       ├── archive/      # Completed PRPs
+│       └── queue/        # Backlog
+├── .git/                 # Version control
+├── .github/              # GitHub workflows
+├── LICENSE               # MIT License
 └── README.md            # You are here
 ```
 
-## Getting Started
+## Product Requirement Plans
 
-### Prerequisites
-- Node.js 18+
-- npm or yarn
-- Git
+All PRPs are preserved in `/docs/prp/`:
 
-### Installation
-```bash
-# Clone the repository
-git clone https://github.com/TortoiseWolfe/geolarp.git
-cd geolarp
+### Completed PRPs (Archive)
+- **PRP-001**: Project Setup ✅
+- **PRP-002**: Offline Database ✅
+- **PRP-003**: Service Worker ✅
+- **PRP-004**: Geolocation System ✅
+- **PRP-005**: D7 Dice System ✅
 
-# Install Next.js (when ready)
-npx create-next-app@latest . --typescript --tailwind --app
-```
+### Active PRPs
+- **PRP-006**: Character System 🚧
 
-### Development Process
+### Queued PRPs
+- PRP-007: Encounter Engine
+- PRP-008: Quest System
+- PRP-009: Map System
+- PRP-010: PWA Configuration
+- PRP-011: Email Capture
+- PRP-012: Drag & Drop Inventory
+- PRP-013: Game State Management
+- PRP-014: Privacy UI
+- PRP-015: Onboarding Flow
+- PRP-016: Performance Optimization
+- PRP-017: Testing Setup
+- PRP-018: Deployment Pipeline
+- PRP-019: Analytics Without Tracking
+- PRP-020: Migration Strategy
 
-1. **Check active PRPs**: `ls docs/prp/active/`
-2. **Pick a PRP**: Move from queue to active
-3. **Implement**: Build the feature
-4. **Test**: Validate PRP requirements
-5. **Archive**: Complete the cycle
+## Next Steps
 
-## Resources
+1. **Choose Technology Stack**
+   - Select framework that aligns with D7 dice pool system
+   - Consider mobile-first, offline-capable architecture
+   - Ensure privacy-first approach
 
-### Saved Components
-Located in backup:
-- `SpinningDice/` - Animated dice component
-- `images/` - Global map and assets
+2. **Implement Core Mechanics**
+   - D7 dice pool system (not static values!)
+   - Pips system (+1, +2, converts at +3)
+   - Proper attribute scaling (1D7 to 7D7)
 
-### Documentation
-- [PRP Lifecycle Guide](docs/PRP_LIFECYCLE.md)
-- [PRP Directory](docs/prp/)
-- [Architecture Decisions](docs/decisions/)
-- [Archive](docs/archive/)
+3. **Build Character System**
+   - Dice pool attributes
+   - Location-based class detection
+   - Skill system with dice additions
 
-## Tech Stack (Planned)
-
-- **Framework**: Next.js 14+ (App Router)
-- **Styling**: Tailwind CSS + DaisyUI
-- **Testing**: Vitest + Testing Library
-- **Maps**: Mapbox/Leaflet
-- **Database**: TBD via PRP
-- **Auth**: TBD via PRP
+4. **Develop Location Features**
+   - Privacy-respecting geolocation
+   - Zone-based gameplay
+   - Offline capability
 
 ## Contributing
 
-1. Create a PRP for your feature
-2. Get PRP approved
-3. Move to active and implement
-4. Ensure tests validate PRP
-5. Archive on completion
+1. Review the PRPs in `/docs/prp/queue/`
+2. Understand the D7 dice pool system
+3. Ensure any implementation uses dice pools, not static values
+4. Follow the PRP workflow for new features
 
 ## License
 
-MIT - See [LICENSE](LICENSE)
-
-## Status
-
-🚧 **Project Restructuring** - Setting up PRP-driven development workflow
+MIT - See [LICENSE](LICENSE) file for details
 
 ---
 
-*Built with Punk Rock Prompts - where specifications become code, not documentation.*
+*Built with Product Requirement Plans - where specifications guide proper implementation.*
