@@ -1,7 +1,7 @@
 # PRP-001: Project Setup
 
 ## Status
-Queue
+Complete
 
 ## Priority
 Critical

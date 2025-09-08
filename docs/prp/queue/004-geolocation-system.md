@@ -1,7 +1,7 @@
 # PRP-004: Geolocation System
 
 ## Status
-Queue
+Active
 
 ## Priority
 High

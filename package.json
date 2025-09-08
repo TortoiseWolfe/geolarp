@@ -35,12 +35,14 @@
     "@serwist/sw": "^9.2.1",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/qrcode": "^1.5.5",
+    "daisyui": "^5.1.8",
     "dexie": "^4.2.0",
     "localforage": "^1.10.0",
     "next": "^15.5.2",
     "qrcode": "^1.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "serwist": "^9.2.1",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
