@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import SignInForm from '@/components/auth/SignInForm';
 import OAuthButtons from '@/components/auth/OAuthButtons';
-import { LayeredgeoLARPLogo } from '@/components/atomic/SpinningLogo';
+import { LayeredGeoLARPLogo } from '@/components/atomic/SpinningLogo';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -94,7 +94,7 @@ export default function SignInPage() {
               }}
             >
               <div className="h-[76%] w-[76%]">
-                <LayeredgeoLARPLogo pauseOnHover />
+                <LayeredGeoLARPLogo pauseOnHover />
               </div>
             </div>
             <span className="font-display text-base-content text-lg tracking-[-0.01em]">

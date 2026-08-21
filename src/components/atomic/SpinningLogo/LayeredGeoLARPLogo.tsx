@@ -20,7 +20,7 @@ const INK = '#2E353B';
 const KEYLINE = 5;
 const SILHOUETTE = 7;
 
-export interface LayeredgeoLARPLogoProps {
+export interface LayeredGeoLARPLogoProps {
   className?: string;
   /**
    * Cut "SCRIPTHAMMER.COM" out of the gear ring, as panel 8e does.
@@ -89,8 +89,8 @@ export interface LayeredgeoLARPLogoProps {
  * So it is a prop rather than a default: on for the hero, off for the nav and
  * sign-in. Turn it on wherever the mark is drawn at roughly 256px or more.
  */
-export const LayeredgeoLARPLogo: React.FC<
-  LayeredgeoLARPLogoProps
+export const LayeredGeoLARPLogo: React.FC<
+  LayeredGeoLARPLogoProps
 > = ({
   className = '',
   animated = true,
@@ -246,4 +246,4 @@ export const LayeredgeoLARPLogo: React.FC<
   );
 };
 
-LayeredgeoLARPLogo.displayName = 'LayeredgeoLARPLogo';
+LayeredGeoLARPLogo.displayName = 'LayeredGeoLARPLogo';

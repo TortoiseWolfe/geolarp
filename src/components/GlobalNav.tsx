@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useId } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayeredgeoLARPLogo } from '@/components/atomic/SpinningLogo';
+import { LayeredGeoLARPLogo } from '@/components/atomic/SpinningLogo';
 import { AnimatedLogo } from '@/components/atomic/AnimatedLogo';
 import { ColorVisionPanel } from '@/components/molecular/ColorblindToggle';
 import { TextSettingsPanel } from '@/components/navigation/FontSizeControl';
@@ -411,7 +411,7 @@ export function GlobalNav() {
                   image (#379). */}
               <span className="bg-base-100 sh-groove flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
                 <span className="h-[30px] w-[30px]">
-                  <LayeredgeoLARPLogo />
+                  <LayeredGeoLARPLogo />
                 </span>
               </span>
               <span className="hidden sm:block">

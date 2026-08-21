@@ -13,7 +13,7 @@
  * extraction pay for itself rather than just being tidy.
  */
 export const FOOTER_LINKS = [
-  { href: 'https://crudgames.com', label: 'CRUDgames.com' },
+  { href: 'https://github.com/TortoiseWolfe', label: 'TortoiseWolfe' },
   { href: 'https://geolarp.com', label: 'geoLARP.com' },
   {
     href: 'https://github.com/TortoiseWolfe/ScriptHammer', // rebrand:keep

@@ -1,13 +1,13 @@
 import React from 'react';
 import Image from 'next/image';
 
-export interface geoLARPLogoProps {
+export interface GeoLARPLogoProps {
   className?: string;
   width?: number;
   height?: number;
 }
 
-export const geoLARPLogo: React.FC<geoLARPLogoProps> = ({
+export const GeoLARPLogo: React.FC<GeoLARPLogoProps> = ({
   className = 'w-full h-full',
   width = 400,
   height = 400,
@@ -25,4 +25,4 @@ export const geoLARPLogo: React.FC<geoLARPLogoProps> = ({
   );
 };
 
-geoLARPLogo.displayName = 'geoLARPLogo';
+GeoLARPLogo.displayName = 'GeoLARPLogo';

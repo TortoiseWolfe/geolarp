@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { SpinningLogo } from './SpinningLogo';
-import { geoLARPLogo } from './geoLARPLogo';
-import { LayeredgeoLARPLogo } from './LayeredgeoLARPLogo';
+import { GeoLARPLogo } from './GeoLARPLogo';
+import { LayeredGeoLARPLogo } from './LayeredGeoLARPLogo';
 
 const meta = {
   title: 'Components/Atomic/SpinningLogo',
@@ -47,13 +47,13 @@ export const Default: Story = {
   args: {
     children: null,
   },
-  render: () => <LayeredgeoLARPLogo pauseOnHover={true} />,
+  render: () => <LayeredGeoLARPLogo pauseOnHover={true} />,
 };
 
 // Original simple geoLARP Logo
 export const SimplegeoLARP: Story = {
   args: {
-    children: <geoLARPLogo />,
+    children: <GeoLARPLogo />,
     size: 250,
     pauseOnHover: true,
   },
@@ -64,19 +64,19 @@ export const LayeredgeoLARP: Story = {
   args: {
     children: null,
   },
-  render: () => <LayeredgeoLARPLogo pauseOnHover={true} />,
+  render: () => <LayeredGeoLARPLogo pauseOnHover={true} />,
 };
 
 export const LayeredgeoLARPLarge: Story = {
   args: {
     children: null,
   },
-  render: () => <LayeredgeoLARPLogo pauseOnHover={true} />,
+  render: () => <LayeredGeoLARPLogo pauseOnHover={true} />,
 };
 
 export const geoLARPLarge: Story = {
   args: {
-    children: <geoLARPLogo />,
+    children: <GeoLARPLogo />,
     size: 350,
     pauseOnHover: true,
   },
@@ -84,7 +84,7 @@ export const geoLARPLarge: Story = {
 
 export const geoLARPFast: Story = {
   args: {
-    children: <geoLARPLogo />,
+    children: <GeoLARPLogo />,
     size: 250,
     speed: 'fast',
     pauseOnHover: true,
@@ -93,7 +93,7 @@ export const geoLARPFast: Story = {
 
 export const geoLARPVerySlow: Story = {
   args: {
-    children: <geoLARPLogo />,
+    children: <GeoLARPLogo />,
     size: 250,
     speed: 60, // 60 second rotation - ultra smooth
     pauseOnHover: true,
@@ -102,7 +102,7 @@ export const geoLARPVerySlow: Story = {
 
 export const geoLARPStatic: Story = {
   args: {
-    children: <geoLARPLogo />,
+    children: <GeoLARPLogo />,
     size: 250,
     isSpinning: false,
   },
@@ -110,7 +110,7 @@ export const geoLARPStatic: Story = {
 
 export const geoLARPCounterClockwise: Story = {
   args: {
-    children: <geoLARPLogo />,
+    children: <GeoLARPLogo />,
     size: 250,
     direction: 'counter-clockwise',
     pauseOnHover: true,
@@ -235,23 +235,23 @@ export const ThemeShowcase: Story = {
           geoLARP logo — adapts to current theme via text-primary
         </p>
         <div className="flex items-center gap-8">
-          <LayeredgeoLARPLogo pauseOnHover />
-          <LayeredgeoLARPLogo pauseOnHover />
+          <LayeredGeoLARPLogo pauseOnHover />
+          <LayeredGeoLARPLogo pauseOnHover />
         </div>
       </div>
       <div className="flex flex-col gap-3">
         <p className="text-base-content text-sm">On surfaces</p>
         <div className="bg-base-100 flex items-center gap-6 rounded-lg p-4">
           <span className="text-base-content text-sm">base-100:</span>
-          <LayeredgeoLARPLogo pauseOnHover />
+          <LayeredGeoLARPLogo pauseOnHover />
         </div>
         <div className="bg-base-200 flex items-center gap-6 rounded-lg p-4">
           <span className="text-base-content text-sm">base-200:</span>
-          <LayeredgeoLARPLogo pauseOnHover />
+          <LayeredGeoLARPLogo pauseOnHover />
         </div>
         <div className="bg-neutral flex items-center gap-6 rounded-lg p-4">
           <span className="text-neutral-content/80 text-sm">neutral:</span>
-          <LayeredgeoLARPLogo pauseOnHover />
+          <LayeredGeoLARPLogo pauseOnHover />
         </div>
       </div>
     </div>

@@ -1,2 +1,2 @@
 export { SpinningLogo } from './SpinningLogo';
-export { LayeredgeoLARPLogo } from './LayeredgeoLARPLogo';
+export { LayeredGeoLARPLogo } from './LayeredGeoLARPLogo';
