@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   // This route claims its own URL (#668).
   alternates: { canonical: '/credits/' },
   openGraph: { url: '/credits/' },
-  title: 'Credits & Model Licensing - ScriptHammer',
+  title: 'Credits & Model Licensing - geoLARP',
   description:
     'Every 3D model in the Chattanooga digital twin, its author, and a link to the original — plus what the 3D Warehouse license does and does not permit.',
 };
@@ -123,7 +123,7 @@ export default function CreditsPage() {
         <section className="mb-8">
           <h2>Licensing these models yourself</h2>
           <p>
-            <strong>This is not legal advice.</strong> ScriptHammer is a
+            <strong>This is not legal advice.</strong> geoLARP is a
             template meant to be forked, so anyone forking it inherits these
             assets and the questions below. Read the{' '}
             <a
@@ -170,7 +170,7 @@ export default function CreditsPage() {
             Warehouse models is close to what it describes, which is why it is
             tracked openly as an unresolved question in{' '}
             <a
-              href="https://github.com/TortoiseWolfe/ScriptHammer/issues/714"
+              href="https://github.com/TortoiseWolfe/geoLARP/issues/714"
               rel="noreferrer noopener"
               target="_blank"
             >

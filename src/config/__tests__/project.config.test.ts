@@ -39,7 +39,7 @@ describe('Project Configuration', () => {
 
       const config = getProjectConfig();
 
-      expect(config.projectName).toBe('ScriptHammer');
+      expect(config.projectName).toBe('geoLARP');
       expect(config.projectOwner).toBe('TortoiseWolfe');
       expect(config.projectDescription).toContain(
         'production Next.js and Supabase platform'
@@ -287,8 +287,8 @@ describe('Project Configuration', () => {
     it('should generate a valid PWA manifest', () => {
       const manifest = generateManifest();
 
-      expect(manifest.name).toContain('ScriptHammer');
-      expect(manifest.short_name).toBe('ScriptHammer');
+      expect(manifest.name).toContain('geoLARP');
+      expect(manifest.short_name).toBe('geoLARP');
       expect(manifest.description).toContain(
         'production Next.js and Supabase platform'
       );
@@ -379,7 +379,7 @@ describe('Project Configuration', () => {
   describe('projectConfig singleton', () => {
     it('should export a singleton configuration object', () => {
       expect(projectConfig).toBeDefined();
-      expect(projectConfig.projectName).toBe('ScriptHammer');
+      expect(projectConfig.projectName).toBe('geoLARP');
       expect(projectConfig.projectOwner).toBe('TortoiseWolfe');
     });
 
@@ -405,7 +405,7 @@ describe('Project Configuration', () => {
       const config = getProjectConfig();
 
       // Should fall back to defaults
-      expect(config.projectName).toBe('ScriptHammer');
+      expect(config.projectName).toBe('geoLARP');
       expect(config.projectOwner).toBe('TortoiseWolfe');
     });
 
@@ -416,7 +416,7 @@ describe('Project Configuration', () => {
       const config = getProjectConfig();
 
       // Should fall back to defaults
-      expect(config.projectName).toBe('ScriptHammer');
+      expect(config.projectName).toBe('geoLARP');
       expect(config.projectOwner).toBe('TortoiseWolfe');
     });
 

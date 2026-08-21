@@ -14,9 +14,9 @@
  * asserts this list still matches it.
  */
 export const THEMES = [
-  'scripthammer-dark',
-  'scripthammer-light',
-  'scripthammer-forge',
+  'geolarp-dark',
+  'geolarp-light',
+  'geolarp-forge',
   'light',
   'dark',
   'cupcake',
@@ -67,7 +67,7 @@ export const THEME_COUNT = THEMES.length;
  * has to be typed by hand.
  */
 export const HOUSE_THEME_COUNT = THEMES.filter((t) =>
-  t.startsWith('scripthammer-')
+  t.startsWith('geolarp-')
 ).length;
 
 /** DaisyUI's own themes — the total minus the two we ship. */
@@ -82,7 +82,7 @@ export const DAISYUI_THEME_COUNT = THEME_COUNT - HOUSE_THEME_COUNT;
  * to curate ten real ones instead; the proposed palettes are recorded on #379
  * so the intent survives.
  *
- * `scripthammer-dark` leads because it is the site default (`--default` in
+ * `geolarp-dark` leads because it is the site default (`--default` in
  * globals.css) and the theme the whole design is drawn in.
  *
  * ONE list, used by both surfaces. Two hand-maintained copies of these ten is
@@ -90,8 +90,8 @@ export const DAISYUI_THEME_COUNT = THEME_COUNT - HOUSE_THEME_COUNT;
  * of which silently excluded the default theme from a test.
  */
 export const CURATED_THEMES = [
-  'scripthammer-dark',
-  'scripthammer-light',
+  'geolarp-dark',
+  'geolarp-light',
   'synthwave',
   'retro',
   'forest',

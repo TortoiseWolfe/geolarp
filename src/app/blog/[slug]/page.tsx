@@ -191,7 +191,7 @@ export default async function BlogPostPage({
     text: post.excerpt || post.title,
     // Deliberately WITHOUT the trailing slash, unlike postCanonicalUrl(). This
     // string is also handed to DisqusComments, whose own fallback at
-    // DisqusComments.tsx:70-72 is `https://scripthammer.com/blog/${slug}`.
+    // DisqusComments.tsx:70-72 is `https://geolarp.com/blog/${slug}`.
     // Matching it byte for byte keeps `page.url` identical for every existing
     // thread. (Threads key on `page.identifier = slug`, so they would survive
     // either way — but there is no reason to move the URL.) See #667.

@@ -68,7 +68,7 @@ interface AxeResults {
 // Both custom themes covered — Pa11y's headless Chromium defaults to
 // prefers-color-scheme: light, so before this spec the dark palette had
 // no automated contrast coverage at all.
-const THEMES = ['scripthammer-light', 'scripthammer-dark'] as const;
+const THEMES = ['geolarp-light', 'geolarp-dark'] as const;
 
 /**
  * ROUTES ARE ENUMERATED, NOT LISTED (#411).

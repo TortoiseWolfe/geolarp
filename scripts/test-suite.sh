@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Test Suite Runner for ScriptHammer
+# Test Suite Runner for geoLARP
 # Runs all tests with clear feedback and actionable results
 
 # Colors for output
@@ -66,7 +66,7 @@ START_TIME=$(date +%s)
 # Main header
 echo ""
 echo -e "${BLUE}${BOLD}╔══════════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}${BOLD}║                  ScriptHammer Comprehensive Test Suite               ║${NC}"
+echo -e "${BLUE}${BOLD}║                  geoLARP Comprehensive Test Suite               ║${NC}"
 echo -e "${BLUE}${BOLD}╚══════════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${CYAN}Running all tests to ensure code quality and functionality...${NC}"
@@ -75,7 +75,7 @@ echo -e "${CYAN}Running all tests to ensure code quality and functionality...${N
 if in_docker; then
     CMD_PREFIX=""
 else
-    CMD_PREFIX="docker compose exec scripthammer"
+    CMD_PREFIX="docker compose exec geolarp"
 fi
 
 # 1. TypeScript Type Checking
@@ -158,7 +158,7 @@ fi
 # 7. Build Test
 print_header "7. Production Build"
 echo "Testing production build..."
-# In its OWN container (#293), not $CMD_PREFIX: `docker compose exec scripthammer
+# In its OWN container (#293), not $CMD_PREFIX: `docker compose exec geolarp
 # pnpm build` wipes the .next the dev server is serving from, which is why this
 # step used to be followed by a container restart. See docker-compose.yml.
 # (The in-docker path can't drive docker; there it stays a plain build.)
@@ -178,7 +178,7 @@ fi
 # 8. Accessibility Tests (only if server is running)
 print_header "8. Accessibility Tests"
 
-# NOTE: step 7 used to be followed by a `docker compose restart scripthammer`
+# NOTE: step 7 used to be followed by a `docker compose restart geolarp`
 # here, to "restore dev server after build" — the build ran in the dev container
 # and clobbered its .next. That was misfiled as a permissions problem; it was
 # #293. The build now runs in its own container, so there is nothing to restore.

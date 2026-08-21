@@ -263,11 +263,11 @@ export type DetectedConfig = typeof detectedConfig;
 
       // Should fall back to defaults
       const fallbackConfig = {
-        projectName: 'ScriptHammer',
+        projectName: 'geoLARP',
         projectOwner: 'TortoiseWolfe',
       };
 
-      expect(fallbackConfig.projectName).toBe('ScriptHammer');
+      expect(fallbackConfig.projectName).toBe('geoLARP');
     });
 
     it('should handle malformed JSON in detected config', () => {
@@ -283,11 +283,11 @@ export type DetectedConfig = typeof detectedConfig;
 
       // Should fall back to defaults on parse error
       const fallbackConfig = {
-        projectName: 'ScriptHammer',
+        projectName: 'geoLARP',
         projectOwner: 'TortoiseWolfe',
       };
 
-      expect(fallbackConfig.projectName).toBe('ScriptHammer');
+      expect(fallbackConfig.projectName).toBe('geoLARP');
     });
 
     it('should handle file system errors', () => {
@@ -303,11 +303,11 @@ export type DetectedConfig = typeof detectedConfig;
 
       // Should continue with defaults on file system error
       const fallbackConfig = {
-        projectName: 'ScriptHammer',
+        projectName: 'geoLARP',
         projectOwner: 'TortoiseWolfe',
       };
 
-      expect(fallbackConfig.projectName).toBe('ScriptHammer');
+      expect(fallbackConfig.projectName).toBe('geoLARP');
     });
   });
 });

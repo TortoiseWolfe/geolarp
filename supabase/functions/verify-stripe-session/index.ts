@@ -101,7 +101,7 @@ serve(async (req) => {
       return jsonResponse(
         req,
         {
-          error: 'session is not associated with a ScriptHammer payment_intent',
+          error: 'session is not associated with a geoLARP payment_intent',
         },
         403
       );

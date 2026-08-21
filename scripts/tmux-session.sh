@@ -1,8 +1,8 @@
 #!/bin/bash
-# ScriptHammer tmux session launcher
+# geoLARP tmux session launcher
 # Usage: ./tmux-session.sh [--all|--council|--wireframe|--implement|--coord|ROLE...] [--audit]
 
-SESSION="scripthammer"
+SESSION="geolarp"
 # Derive project dir from script location (scripts/ is one level down from root)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"

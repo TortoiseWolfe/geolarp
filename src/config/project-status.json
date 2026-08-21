@@ -1,8 +1,8 @@
 {
   "project": {
-    "name": "ScriptHammer",
+    "name": "geoLARP",
     "description": "A production Next.js and Supabase platform with auth, payments, encrypted messaging, and an accessible offline-capable PWA",
-    "repository": "https://github.com/TortoiseWolfe/ScriptHammer",
+    "repository": "https://github.com/TortoiseWolfe/geoLARP",
     "startDate": "2025-09-10",
     "isTemplate": false,
     "version": "0.0.1",

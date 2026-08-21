@@ -1,7 +1,7 @@
 # Design-sync bundle generator
 
 Generates a [Claude Design](https://claude.ai/design) **design-system** bundle from
-ScriptHammer's real DaisyUI components and brand themes, then you push it with Claude
+geoLARP's real DaisyUI components and brand themes, then you push it with Claude
 Code's `/design-sync`.
 
 ## What this is (and isn't)
@@ -11,8 +11,8 @@ uploads **self-contained preview HTML cards** into a claude.ai design-system pro
 Each card's first line is a marker comment — `<!-- @dsCard group="Buttons" -->` — and
 the Design System pane compiles those markers into its card index automatically.
 
-ScriptHammer's atomic/presentational components style purely from DaisyUI classes +
-the two brand themes (`scripthammer-dark`, `scripthammer-light`). So each card just
+geoLARP's atomic/presentational components style purely from DaisyUI classes +
+the two brand themes (`geolarp-dark`, `geolarp-light`). So each card just
 needs the brand CSS attached and the real DaisyUI class markup — no hand-written CSS,
 full fidelity.
 
@@ -30,7 +30,7 @@ full fidelity.
 `@tailwindcss/postcss` + DaisyUI live in the container, so the build runs there:
 
 ```bash
-docker compose exec -w /app scripthammer node scripts/design-sync/build.js
+docker compose exec -w /app geolarp node scripts/design-sync/build.js
 ```
 
 Output defaults to `/tmp/ds-bundle` **inside the container** (it's a build artifact,
@@ -38,14 +38,14 @@ not source — nothing is written into the repo). To get it onto the host, eithe
 it out:
 
 ```bash
-docker compose cp scripthammer:/tmp/ds-bundle ./ds-bundle
+docker compose cp geolarp:/tmp/ds-bundle ./ds-bundle
 ```
 
 …or point `DS_OUT` at a path under the repo (which is bind-mounted at `/app`) — but
 remember to keep it out of git:
 
 ```bash
-DS_OUT=/app/.ds-bundle docker compose exec -w /app scripthammer \
+DS_OUT=/app/.ds-bundle docker compose exec -w /app geolarp \
   node scripts/design-sync/build.js
 ```
 
@@ -57,7 +57,7 @@ From Claude Code, in this repo:
 /design-sync
 ```
 
-It will `list_projects` (first run grants design scope), `create_project "ScriptHammer"`
+It will `list_projects` (first run grants design scope), `create_project "geoLARP"`
 if none exists, `finalize_plan`, then `write_files` from the bundle dir. Re-running with
 an existing project updates it incrementally — one component at a time is fine.
 
@@ -70,9 +70,9 @@ Plan paths to finalize: `theme.css`, `tokens/**`, `components/**/*.html`.
 3. Rebuild and eyeball before pushing:
 
 ```bash
-docker compose exec -w /app scripthammer node scripts/design-sync/build.js
+docker compose exec -w /app geolarp node scripts/design-sync/build.js
 # screenshot a card to confirm it renders (OKLCH resolves, dark ≠ light):
-docker compose exec scripthammer chromium --headless --no-sandbox \
+docker compose exec geolarp chromium --headless --no-sandbox \
   --screenshot=/tmp/shot.png "file:///tmp/ds-bundle/components/<slug>/index.html"
 ```
 

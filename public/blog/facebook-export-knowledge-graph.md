@@ -23,7 +23,7 @@ twitterCard: summary_large_image
 
 In November 2025 two people in a Cleveland TN group asked who builds websites around here.
 
-I answered both of them. I said scripthammer.com, I write custom software, websites or mobile applications.. and then I never followed up with either one.
+I answered both of them. I said geolarp.com, I write custom software, websites or mobile applications.. and then I never followed up with either one.
 
 I didn't know that until last night, when I finally parsed my own Facebook export. Nine months those sat there.. two local people who raised their hand, got a pitch, and then silence.
 

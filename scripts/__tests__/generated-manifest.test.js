@@ -10,16 +10,16 @@
  * WHAT ACTUALLY GOES WRONG. `DISABLE_BASE_PATH=true` is the documented recipe for a
  * local CI-matching E2E run, and running it rewrites this file:
  *
- *     -  "start_url": "/ScriptHammer/",      +  "start_url": "/",
- *     -  "scope":     "/ScriptHammer/",      +  "scope":     "/",
- *     -  "src": "/ScriptHammer/icon-72.svg"  +  "src": "/icon-72.svg"
+ *     -  "start_url": "/geoLARP/",      +  "start_url": "/",
+ *     -  "scope":     "/geoLARP/",      +  "scope":     "/",
+ *     -  "src": "/geoLARP/icon-72.svg"  +  "src": "/icon-72.svg"
  *
  * `git add -A` is the natural way to lose that, and the diff reads as harmless
- * config churn. On GitHub Pages under `/ScriptHammer/` it breaks PWA install and
+ * config churn. On GitHub Pages under `/geoLARP/` it breaks PWA install and
  * offline. This test is what turns that into a failing check.
  *
  * WHAT THIS DOES **NOT** CLAIM. The committed copy is not what production serves.
- * scripthammer.com runs at the apex with no base path, and its deploy regenerates
+ * geolarp.com runs at the apex with no base path, and its deploy regenerates
  * the file — live values are `/`, while the committed copy is the default GitHub
  * Pages variant. So this pins the tracked artifact to the repo's DEFAULT
  * configuration, which is the thing a reviewer sees; production correctness is the
@@ -104,7 +104,7 @@ test('the generator applies the base path it is given, to every field', () => {
   // The companion to the pin above: the committed copy could be correct while the
   // generator that produces it is not, and a reviewer would never see it.
   const fixture = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'scripthammer-manifest-')
+    path.join(os.tmpdir(), 'geolarp-manifest-')
   );
   fs.mkdirSync(path.join(fixture, 'public'), { recursive: true });
 

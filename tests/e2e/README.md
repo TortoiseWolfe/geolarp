@@ -327,7 +327,7 @@ pnpm exec playwright install --list
 pnpm exec playwright test homepage.spec.ts --debug
 
 # Generate codegen
-pnpm exec playwright codegen http://localhost:3000/ScriptHammer
+pnpm exec playwright codegen http://localhost:3000/geoLARP
 ```
 
 ## Performance
@@ -380,4 +380,4 @@ pnpm exec playwright codegen http://localhost:3000/ScriptHammer
 
 ## License
 
-Part of the ScriptHammer project. See main LICENSE file.
+Part of the geoLARP project. See main LICENSE file.

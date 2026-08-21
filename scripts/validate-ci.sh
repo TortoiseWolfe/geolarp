@@ -51,7 +51,7 @@ run_check() {
         fi
     else
         # Running outside Docker, use docker compose exec
-        if docker compose exec -T scripthammer $command; then
+        if docker compose exec -T geolarp $command; then
             echo -e "${GREEN}✅ ${name} passed${NC}"
         else
             echo -e "${RED}❌ ${name} failed${NC}"
@@ -106,7 +106,7 @@ fi
 
 # 5. Production build — in its OWN container (#293).
 #
-# This must never be `docker compose exec scripthammer pnpm build`. That is the
+# This must never be `docker compose exec geolarp pnpm build`. That is the
 # dev server's container; `next dev` and `next build` both own /app/.next, so the
 # build wipes what the dev server is serving and every route 500s until it
 # recompiles. That is what this script did on every push for months.

@@ -36,11 +36,11 @@ You have a notebook — or a Notes app, or a Discord full of half-finished pitch
 
 So here is the bet I am making out loud: **don't build one game. Build the engine that builds all of them.** Solve the boring 20% once, in the open, and every idea after that gets cheaper.
 
-It is real, it is open source ([React Three Fiber](https://r3f.docs.pmnd.rs/) on [Three.js](https://threejs.org/)), and you can [clone it today](https://github.com/TortoiseWolfe/ScriptHammer). And because a game engine with no game is just a README, I built a whole playable 3D city on it as proof. You can **[walk it right now](https://scripthammer.com/chatt/?diorama&walk)** — first person, in a browser tab, nothing to install.
+It is real, it is open source ([React Three Fiber](https://r3f.docs.pmnd.rs/) on [Three.js](https://threejs.org/)), and you can [clone it today](https://github.com/TortoiseWolfe/geoLARP). And because a game engine with no game is just a README, I built a whole playable 3D city on it as proof. You can **[walk it right now](https://geolarp.com/chatt/?diorama&walk)** — first person, in a browser tab, nothing to install.
 
 ![Open-source Three.js game engine running a tilt-shift 3D city built from real open data](/blog-images/ride-the-open-source-city/diorama.png)
 
-_The city is the demo, not the point. The point is the engine underneath it — the same one that runs [a bare test level](https://scripthammer.com/game/cod-skeleton) with no city at all._
+_The city is the demo, not the point. The point is the engine underneath it — the same one that runs [a bare test level](https://geolarp.com/game/cod-skeleton) with no city at all._
 
 ## 🎮 The engine is the actual point
 
@@ -62,9 +62,9 @@ Now the honest part, because overpromising is exactly the thing I want to teach 
 
 A toolkit that only runs the thing its author built is a lie you tell yourself. So here is the check: the exact same engine drives **two completely different scenes**.
 
-One is a bare [test level](https://scripthammer.com/game/cod-skeleton) — a floor, a step, a wall, a crate, and a low bar you have to crouch under. No city, no data, just the engine proving it walks, collides, and crouches.
+One is a bare [test level](https://geolarp.com/game/cod-skeleton) — a floor, a step, a wall, a crate, and a low bar you have to crouch under. No city, no data, just the engine proving it walks, collides, and crouches.
 
-The other is [Chattanooga](https://scripthammer.com/chatt/?diorama&walk): roughly **8,000 buildings** at real rooftop heights, pulled from [OpenStreetMap](https://www.openstreetmap.org/) footprints, lidar heights, and [United States Geological Survey](https://www.usgs.gov/3d-elevation-program) elevation. Same physics, same controller, same sky and audio, pointed at a real city instead of a box. If it can carry 8,000 real buildings and a bike, it can carry your idea.
+The other is [Chattanooga](https://geolarp.com/chatt/?diorama&walk): roughly **8,000 buildings** at real rooftop heights, pulled from [OpenStreetMap](https://www.openstreetmap.org/) footprints, lidar heights, and [United States Geological Survey](https://www.usgs.gov/3d-elevation-program) elevation. Same physics, same controller, same sky and audio, pointed at a real city instead of a box. If it can carry 8,000 real buildings and a bike, it can carry your idea.
 
 ## 🧪 It's a beta — here's the first bug
 
@@ -74,7 +74,7 @@ Shipping something rough and asking people to break it is itself a best practice
 
 _You press B to ride the bike, and the bike rides off through the sky. Spawned below the city, falling — at a smooth 60 fps, so the frame rate is fine and the spawn is just wrong. This is the reason to play a beta, not the reason to skip it._
 
-So I did the exact thing I am about to ask you to do. I filed it as a bug report: **[issue #651](https://github.com/TortoiseWolfe/ScriptHammer/issues/651)**. Open it and look at the _shape_ of it, because that shape is the whole ask:
+So I did the exact thing I am about to ask you to do. I filed it as a bug report: **[issue #651](https://github.com/TortoiseWolfe/geoLARP/issues/651)**. Open it and look at the _shape_ of it, because that shape is the whole ask:
 
 - **Where** you were — the URL (`/chatt?diorama&walk`).
 - **What you did** — opened it, clicked to look, pressed WASD.
@@ -86,8 +86,8 @@ That's it. A boring, specific report like that is worth more than a hundred "it'
 
 Here's the ask, concretely:
 
-1. 🎯 **[Play it](https://scripthammer.com/chatt/?diorama&walk)** — and yes, you might fall through the world first. Try anyway: press **B** for the bike, **V** to watch yourself go.
-2. 🐛 **File what broke** on the [issues page](https://github.com/TortoiseWolfe/ScriptHammer/issues), in the shape above. Finding a new one is genuinely helpful.
+1. 🎯 **[Play it](https://geolarp.com/chatt/?diorama&walk)** — and yes, you might fall through the world first. Try anyway: press **B** for the bike, **V** to watch yourself go.
+2. 🐛 **File what broke** on the [issues page](https://github.com/TortoiseWolfe/geoLARP/issues), in the shape above. Finding a new one is genuinely helpful.
 3. 💬 **Not sure it's worth a full report?** File it anyway — a rough note beats staying quiet.
 
 ## 🧠 The skill isn't prompting. It's telling slop from craft.
@@ -98,7 +98,7 @@ Fluent versus true is the whole game, and it's the actual skill I want to teach 
 
 - **Slop** says "it works." **Craft** writes a test that fails when it doesn't.
 - **Slop** makes a confident claim. **Craft** checks it against the source and links it.
-- **Slop** hides the rough edge. **Craft** files the bug with steps to reproduce, like [#651](https://github.com/TortoiseWolfe/ScriptHammer/issues/651).
+- **Slop** hides the rough edge. **Craft** files the bug with steps to reproduce, like [#651](https://github.com/TortoiseWolfe/geoLARP/issues/651).
 - **Slop** invents specifics. **Craft** says "I don't know yet," then finds out.
 
 None of that is advanced. It is verifying before you ship, reading the code you paste, and being willing to write "this is broken" in public. A real game engine is a great place to learn it, because the game either runs or it doesn't — the feedback is honest whether you like it or not.
@@ -107,22 +107,22 @@ None of that is advanced. It is verifying before you ship, reading the code you 
 
 Back to you and your notebook of ideas. Here's the part I care about most: **the price of admission isn't cash.** Learning is free, and the most valuable thing you can bring to an open-source engine isn't a credit card — it's another set of eyes and another game idea stress-testing it.
 
-The cheapest way in is also the best one. [Clone ScriptHammer](https://github.com/TortoiseWolfe/ScriptHammer), read the source, and [watch me build it live on Twitch](https://twitch.tv/TurtleWolfe). It is MIT — take it, ship it, keep it. No dollars required, ever.
+The cheapest way in is also the best one. [Clone geoLARP](https://github.com/TortoiseWolfe/geoLARP), read the source, and [watch me build it live on Twitch](https://twitch.tv/TurtleWolfe). It is MIT — take it, ship it, keep it. No dollars required, ever.
 
 Short on cash? **Trade instead.** Playtest this and file a good bug. Fork it and prototype your idea. Build one of those missing layers — a save system, a third-person camera, an enemy. Every playtester is another set of eyes, every fork is street cred you earn in public, and more people in the project make the engine better for everyone.
 
-If you'd rather have hands-on help on _your_ game, there's a paid lane too: live **Office Hours** (bring a goal, leave with something running, the recording is yours to keep), and [Field Study](https://scripthammer.com/pricing) for a bigger build done with you. Prices are on the [pricing page](https://scripthammer.com/pricing), and if cash is tight, see two paragraphs up — trade instead. The paid tiers exist to fund the free ones, not to gate them.
+If you'd rather have hands-on help on _your_ game, there's a paid lane too: live **Office Hours** (bring a goal, leave with something running, the recording is yours to keep), and [Field Study](https://geolarp.com/pricing) for a bigger build done with you. Prices are on the [pricing page](https://geolarp.com/pricing), and if cash is tight, see two paragraphs up — trade instead. The paid tiers exist to fund the free ones, not to gate them.
 
 ## 💬 Come build it
 
-- 🎮 **[Try the engine demo](https://scripthammer.com/game/cod-skeleton)** — the bare test level, no city.
-- 🚲 **[Play the city](https://scripthammer.com/chatt/?diorama&walk)** — first person, press **B** for the bike.
-- 📦 **[Clone the engine](https://github.com/TortoiseWolfe/ScriptHammer)** — MIT, asset-free, `@/lib/cod`.
+- 🎮 **[Try the engine demo](https://geolarp.com/game/cod-skeleton)** — the bare test level, no city.
+- 🚲 **[Play the city](https://geolarp.com/chatt/?diorama&walk)** — first person, press **B** for the bike.
+- 📦 **[Clone the engine](https://github.com/TortoiseWolfe/geoLARP)** — MIT, asset-free, `@/lib/cod`.
 - 📺 **[Watch me build it live](https://twitch.tv/TurtleWolfe)** — on Twitch, with the replays on [YouTube](https://youtube.com/@JonathanPohlner).
-- 💳 **[See what help costs](https://scripthammer.com/pricing)** — free to Office Hours to done-for-you.
+- 💳 **[See what help costs](https://geolarp.com/pricing)** — free to Office Hours to done-for-you.
 - 📅 **[Book 15 minutes](https://calendly.com/turtlewolfe/15min-1)** — bring a screenshot of what you have in mind.
-- 🗺️ **[Read the brainstorm that started this](https://scripthammer.com/blog/playable-city-chattanooga)**.
+- 🗺️ **[Read the brainstorm that started this](https://geolarp.com/blog/playable-city-chattanooga)**.
 
-Find me everywhere: [scripthammer.com](https://scripthammer.com) · [Twitch](https://twitch.tv/TurtleWolfe) · [YouTube](https://youtube.com/@JonathanPohlner) · [X](https://twitter.com/JonPohlner) · [LinkedIn](https://linkedin.com/in/pohlner) · [GitHub](https://github.com/TortoiseWolfe)
+Find me everywhere: [geolarp.com](https://geolarp.com) · [Twitch](https://twitch.tv/TurtleWolfe) · [YouTube](https://youtube.com/@JonathanPohlner) · [X](https://twitter.com/JonPohlner) · [LinkedIn](https://linkedin.com/in/pohlner) · [GitHub](https://github.com/TortoiseWolfe)
 
 Then tell me in the comments: what's the one game in your notebook you'd build first if the boring 20% were already done?

@@ -3,8 +3,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Question or idea
-    url: https://github.com/TortoiseWolfe/ScriptHammer/discussions
+    url: https://github.com/TortoiseWolfe/geoLARP/discussions
     about: For anything that isn't yet a specific bug or request — setup help, "is this a good fit for my project?", showing what you built.
   - name: Security issue
-    url: https://github.com/TortoiseWolfe/ScriptHammer/blob/main/.github/SECURITY.md
+    url: https://github.com/TortoiseWolfe/geoLARP/blob/main/.github/SECURITY.md
     about: Please do NOT open a public issue for a vulnerability. Follow the disclosure process here.

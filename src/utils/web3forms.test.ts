@@ -95,7 +95,7 @@ describe('Web3Forms Utilities', () => {
         body: JSON.stringify({
           access_key: WEB3FORMS_CONFIG.accessKey,
           ...validFormData,
-          from_name: 'ScriptHammer Contact Form',
+          from_name: 'geoLARP Contact Form',
           botcheck: false,
         }),
       });

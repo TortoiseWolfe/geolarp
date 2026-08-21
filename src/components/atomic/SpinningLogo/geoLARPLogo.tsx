@@ -1,21 +1,21 @@
 import React from 'react';
 import Image from 'next/image';
 
-export interface ScriptHammerLogoProps {
+export interface geoLARPLogoProps {
   className?: string;
   width?: number;
   height?: number;
 }
 
-export const ScriptHammerLogo: React.FC<ScriptHammerLogoProps> = ({
+export const geoLARPLogo: React.FC<geoLARPLogoProps> = ({
   className = 'w-full h-full',
   width = 400,
   height = 400,
 }) => {
   return (
     <Image
-      src="/scripthammer-logo.svg"
-      alt="ScriptHammer Logo"
+      src="/geolarp-logo.svg"
+      alt="geoLARP Logo"
       width={width}
       height={height}
       className={className}
@@ -25,4 +25,4 @@ export const ScriptHammerLogo: React.FC<ScriptHammerLogoProps> = ({
   );
 };
 
-ScriptHammerLogo.displayName = 'ScriptHammerLogo';
+geoLARPLogo.displayName = 'geoLARPLogo';

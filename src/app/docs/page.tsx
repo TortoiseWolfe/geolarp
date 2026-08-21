@@ -18,8 +18,8 @@ export const metadata: Metadata = {
   // This route claims its own URL (#668).
   alternates: { canonical: '/docs/' },
   openGraph: { url: '/docs/' },
-  title: 'Documentation - ScriptHammer',
-  description: 'Documentation index for ScriptHammer — configure, build, ship.',
+  title: 'Documentation - geoLARP',
+  description: 'Documentation index for geoLARP — configure, build, ship.',
 };
 
 const gh = (path: string) => `${detectedConfig.projectUrl}/blob/main/${path}`;

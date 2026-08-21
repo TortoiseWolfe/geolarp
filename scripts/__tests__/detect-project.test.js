@@ -135,17 +135,17 @@ describe('detect-project.js', () => {
   describe('Configuration Generation', () => {
     test('should generate default config when git is not available', () => {
       const config = {
-        projectName: process.env.NEXT_PUBLIC_PROJECT_NAME || 'ScriptHammer',
+        projectName: process.env.NEXT_PUBLIC_PROJECT_NAME || 'geoLARP',
         projectOwner: process.env.NEXT_PUBLIC_PROJECT_OWNER || 'TortoiseWolfe',
         projectHost: 'github.com',
-        projectUrl: 'https://github.com/TortoiseWolfe/ScriptHammer',
+        projectUrl: 'https://github.com/TortoiseWolfe/geoLARP',
         basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
         isGitHub: true,
         detectionSource: 'fallback',
         generatedAt: new Date().toISOString(),
       };
 
-      assert.strictEqual(config.projectName, 'ScriptHammer');
+      assert.strictEqual(config.projectName, 'geoLARP');
       assert.strictEqual(config.projectOwner, 'TortoiseWolfe');
       assert.strictEqual(config.detectionSource, 'fallback');
     });
@@ -157,7 +157,7 @@ describe('detect-project.js', () => {
       process.env.NEXT_PUBLIC_BASE_PATH = '/test';
 
       const config = {
-        projectName: process.env.NEXT_PUBLIC_PROJECT_NAME || 'ScriptHammer',
+        projectName: process.env.NEXT_PUBLIC_PROJECT_NAME || 'geoLARP',
         projectOwner: process.env.NEXT_PUBLIC_PROJECT_OWNER || 'TortoiseWolfe',
         basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
       };
@@ -277,11 +277,11 @@ export type DetectedConfig = typeof detectedConfig;
       process.env.NEXT_PUBLIC_PROJECT_OWNER = '';
 
       const config = {
-        projectName: process.env.NEXT_PUBLIC_PROJECT_NAME || 'ScriptHammer',
+        projectName: process.env.NEXT_PUBLIC_PROJECT_NAME || 'geoLARP',
         projectOwner: process.env.NEXT_PUBLIC_PROJECT_OWNER || 'TortoiseWolfe',
       };
 
-      assert.strictEqual(config.projectName, 'ScriptHammer');
+      assert.strictEqual(config.projectName, 'geoLARP');
       assert.strictEqual(config.projectOwner, 'TortoiseWolfe');
 
       // Restore environment
@@ -330,7 +330,7 @@ export type DetectedConfig = typeof detectedConfig;
       const envOwner = 'EnvOwner';
 
       const config = {
-        projectName: envName || gitInfo?.repo || 'ScriptHammer',
+        projectName: envName || gitInfo?.repo || 'geoLARP',
         projectOwner: envOwner || gitInfo?.owner || 'TortoiseWolfe',
       };
 
@@ -365,9 +365,9 @@ export type DetectedConfig = typeof detectedConfig;
           isGitHubActions: true,
           isGitHub: true,
           cnameExists: false,
-          projectName: 'ScriptHammer',
+          projectName: 'geoLARP',
         }),
-        '/ScriptHammer'
+        '/geoLARP'
       );
 
       // DISABLE_BASE_PATH=true wins over the auto-detection so the E2E build
@@ -379,7 +379,7 @@ export type DetectedConfig = typeof detectedConfig;
           isGitHubActions: true,
           isGitHub: true,
           cnameExists: false,
-          projectName: 'ScriptHammer',
+          projectName: 'geoLARP',
         }),
         ''
       );
@@ -388,11 +388,11 @@ export type DetectedConfig = typeof detectedConfig;
       assert.strictEqual(
         resolveBasePath({
           disableBasePath: true,
-          envBasePath: '/ScriptHammer',
+          envBasePath: '/geoLARP',
           isGitHubActions: true,
           isGitHub: true,
           cnameExists: false,
-          projectName: 'ScriptHammer',
+          projectName: 'geoLARP',
         }),
         ''
       );
@@ -407,7 +407,7 @@ export type DetectedConfig = typeof detectedConfig;
           isGitHubActions: true,
           isGitHub: true,
           cnameExists: true,
-          projectName: 'ScriptHammer',
+          projectName: 'geoLARP',
         }),
         ''
       );
@@ -420,7 +420,7 @@ export type DetectedConfig = typeof detectedConfig;
           isGitHubActions: true,
           isGitHub: true,
           cnameExists: false,
-          projectName: 'ScriptHammer',
+          projectName: 'geoLARP',
         }),
         '/custom'
       );
@@ -433,7 +433,7 @@ export type DetectedConfig = typeof detectedConfig;
           isGitHubActions: false,
           isGitHub: true,
           cnameExists: false,
-          projectName: 'ScriptHammer',
+          projectName: 'geoLARP',
         }),
         ''
       );

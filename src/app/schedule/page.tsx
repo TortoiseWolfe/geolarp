@@ -133,7 +133,7 @@ export default function SchedulePage() {
                 <p>Powered by scheduling integration</p>
                 <p>
                   <a
-                    href="https://github.com/TortoiseWolfe/ScriptHammer/tree/main/src/components/atomic/CalendarEmbed"
+                    href="https://github.com/TortoiseWolfe/geoLARP/tree/main/src/components/atomic/CalendarEmbed"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline hover:opacity-80"

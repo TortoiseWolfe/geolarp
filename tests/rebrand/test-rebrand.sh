@@ -2,7 +2,7 @@
 # Test harness for scripts/rebrand.sh
 #
 # SAFETY: All tests run in isolated temporary directories.
-#         The actual ScriptHammer repo is NEVER modified.
+#         The actual geoLARP repo is NEVER modified.
 #
 # Usage: ./tests/rebrand/test-rebrand.sh [test_name]
 # Run all tests: ./tests/rebrand/test-rebrand.sh
@@ -16,7 +16,7 @@ REBRAND_SCRIPT="$REPO_ROOT/scripts/rebrand.sh"
 
 # SAFETY CHECK: Never run rebrand on the actual repo
 SAFETY_FILE="$REPO_ROOT/.git/config"
-if [ -f "$SAFETY_FILE" ] && grep -q "ScriptHammer" "$SAFETY_FILE" 2>/dev/null; then
+if [ -f "$SAFETY_FILE" ] && grep -q "geoLARP" "$SAFETY_FILE" 2>/dev/null; then
     ACTUAL_REPO=true
 else
     ACTUAL_REPO=false
@@ -68,22 +68,22 @@ run_test() {
     echo -e "\n${YELLOW}Running${NC}: $test_name"
 }
 
-# Create temporary test directory with mock ScriptHammer structure
+# Create temporary test directory with mock geoLARP structure
 setup_temp_dir() {
     TEMP_DIR=$(mktemp -d)
     trap "rm -rf $TEMP_DIR" EXIT
 
-    # Create mock ScriptHammer repo structure in temp dir
+    # Create mock geoLARP repo structure in temp dir
     cd "$TEMP_DIR"
     git init -q
-    git remote add origin "https://github.com/TortoiseWolfe/ScriptHammer.git"
+    git remote add origin "https://github.com/TortoiseWolfe/geoLARP.git"
 
-    # Create essential files with ScriptHammer references
+    # Create essential files with geoLARP references
     mkdir -p src/components
-    echo '{"name": "scripthammer", "description": "ScriptHammer template"}' > package.json
-    echo "# ScriptHammer" > README.md
-    echo "scripthammer.com" > CNAME
-    echo "export const projectName = 'ScriptHammer';" > src/components/Logo.tsx
+    echo '{"name": "geolarp", "description": "geoLARP template"}' > package.json
+    echo "# geoLARP" > README.md
+    echo "geolarp.com" > CNAME
+    echo "export const projectName = 'geoLARP';" > src/components/Logo.tsx
     mkdir -p src/config
     cat > src/config/footer-links.ts <<'FOOTER'
 export const FOOTER_LINKS = [
@@ -293,16 +293,16 @@ test_attribution_preserved() {
 
     local footer="$TEMP_DIR/src/config/footer-links.ts"
 
-    if grep -q "TortoiseWolfe/ScriptHammer" "$footer"; then
+    if grep -q "TortoiseWolfe/geoLARP" "$footer"; then
         log_pass "Attribution URL survives a rebrand"
     else
-        log_fail "Attribution URL" "TortoiseWolfe/ScriptHammer intact" "$(cat "$footer")"
+        log_fail "Attribution URL" "TortoiseWolfe/geoLARP intact" "$(cat "$footer")"
     fi
 
-    if grep -q "label: 'ScriptHammer'" "$footer"; then
+    if grep -q "label: 'geoLARP'" "$footer"; then
         log_pass "Attribution label survives a rebrand"
     else
-        log_fail "Attribution label" "label: 'ScriptHammer' intact" "$(cat "$footer")"
+        log_fail "Attribution label" "label: 'geoLARP' intact" "$(cat "$footer")"
     fi
 
     # The guard must be surgical: everything NOT marked still rebrands.
@@ -385,7 +385,7 @@ test_brand_icons() {
 # #734: the same shape as the icons above, one layer down. `auth-config.json` is
 # the DESIRED STATE `auth-config-drift.yml` compares a live Supabase project
 # against, daily. A fork that never sets its own values gets its project measured
-# against ScriptHammer's identity, and the gate fails on values that were never
+# against geoLARP's identity, and the gate fails on values that were never
 # theirs — whereupon the rational response is to stop believing the gate.
 #
 # The script cannot know a fork's OAuth client ids or SMTP sender; they are
@@ -431,17 +431,17 @@ test_auth_config_desired_state() {
 test_rerebrand_detection() {
     run_test "test_rerebrand_detection"
 
-    # Create a DIFFERENT temp dir for this test (without ScriptHammer refs)
+    # Create a DIFFERENT temp dir for this test (without geoLARP refs)
     local REREBRAND_TEMP
     REREBRAND_TEMP=$(mktemp -d)
     trap "rm -rf $REREBRAND_TEMP" RETURN
 
-    # Create a repo WITHOUT "ScriptHammer" references (simulating already rebranded)
+    # Create a repo WITHOUT "geoLARP" references (simulating already rebranded)
     cd "$REREBRAND_TEMP"
     git init -q
     git remote add origin "https://github.com/testuser/other-project.git"
 
-    # Create files WITHOUT ScriptHammer (already rebranded scenario)
+    # Create files WITHOUT geoLARP (already rebranded scenario)
     mkdir -p scripts src/components
     echo '{"name": "otherproject", "description": "Other project"}' > package.json
     echo "# OtherProject" > README.md
@@ -454,7 +454,7 @@ test_rerebrand_detection() {
     local output
     output=$("$REREBRAND_TEMP/scripts/rebrand.sh" "MyApp" "testuser" "Test desc" --dry-run --no-icon 2>&1 || true)
 
-    if echo "$output" | grep -qi "already.*rebranded\|no.*scripthammer.*found\|WARNING"; then
+    if echo "$output" | grep -qi "already.*rebranded\|no.*geolarp.*found\|WARNING"; then
         log_pass "Re-rebrand scenario detected and warned"
     else
         log_fail "Re-rebrand detection" "warning about already rebranded" "${output:0:200}"

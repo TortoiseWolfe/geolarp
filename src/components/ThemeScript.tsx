@@ -4,9 +4,9 @@ export default function ThemeScript() {
       function getSystemTheme() {
         // Check if user prefers dark mode
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          return 'scripthammer-dark';
+          return 'geolarp-dark';
         }
-        return 'scripthammer-light';
+        return 'geolarp-light';
       }
 
       function applyTheme(theme) {

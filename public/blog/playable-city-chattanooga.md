@@ -22,9 +22,9 @@ twitterCard: summary_large_image
 
 # 🌆 What If Your City Were Playable? A Chattanooga Brainstorm
 
-A while back I built a 3D digital twin of Chattanooga. It's about eight thousand buildings at real rooftop heights, floating over the actual street grid and terrain, running in a browser tab. You can [walk the atlas yourself](https://scripthammer.com/chatt/); it's the honest version of the city, drawn from open data with no server behind it.
+A while back I built a 3D digital twin of Chattanooga. It's about eight thousand buildings at real rooftop heights, floating over the actual street grid and terrain, running in a browser tab. You can [walk the atlas yourself](https://geolarp.com/chatt/); it's the honest version of the city, drawn from open data with no server behind it.
 
-> 🚲 **Update (August 2026):** the twin isn't read-only anymore. You can now [walk and ride a bike through it](https://scripthammer.com/blog/ride-the-open-source-city) in first person. This post is the brainstorm that came first; that one is where it actually started moving.
+> 🚲 **Update (August 2026):** the twin isn't read-only anymore. You can now [walk and ride a bike through it](https://geolarp.com/blog/ride-the-open-source-city) in first person. This post is the brainstorm that came first; that one is where it actually started moving.
 
 Then I made the mistake of leaving it open on a second monitor for a week. And a question started nagging at me that I can't shake:
 
@@ -36,7 +36,7 @@ This post is me thinking out loud. It isn't a launch or a pitch. It's a brainsto
 
 Start with what actually exists, because everything else is speculation built on top of it.
 
-The [atlas](https://scripthammer.com/chatt/) is a **[digital twin](https://en.wikipedia.org/wiki/Digital_twin)**: a spatial, data-driven model of a real place. Chattanooga's version stitches together building footprints and street data from [OpenStreetMap](https://www.openstreetmap.org/), rooftop heights from [Light Detection and Ranging (lidar)](https://en.wikipedia.org/wiki/Lidar) surveys, and ground elevation from the [United States Geological Survey 3D Elevation Program (USGS 3DEP)](https://www.usgs.gov/3d-elevation-program). No login, no backend, no invented numbers. Every building sits where the open data says it does, at the height the survey measured.
+The [atlas](https://geolarp.com/chatt/) is a **[digital twin](https://en.wikipedia.org/wiki/Digital_twin)**: a spatial, data-driven model of a real place. Chattanooga's version stitches together building footprints and street data from [OpenStreetMap](https://www.openstreetmap.org/), rooftop heights from [Light Detection and Ranging (lidar)](https://en.wikipedia.org/wiki/Lidar) surveys, and ground elevation from the [United States Geological Survey 3D Elevation Program (USGS 3DEP)](https://www.usgs.gov/3d-elevation-program). No login, no backend, no invented numbers. Every building sits where the open data says it does, at the height the survey measured.
 
 ![The live /chatt atlas: about 8,000 Chattanooga buildings shaded by type over aerial imagery, with the Tennessee River curving through and a pop-up reading 38.7 meters of measured lidar height for one downtown building](/blog-images/playable-city-chattanooga/chatt-atlas.jpg)
 
@@ -78,7 +78,7 @@ Instead of simulating decisions, it hands out **missions tied to real open data*
 
 ![The Civic League board in a dark theme, showing the live city score up top, data vitals including a live air-quality reading, mission cards with point values, and a crew leaderboard down the side](/blog-images/playable-city-chattanooga/civic-league-board.svg)
 
-_Civic League (concept mockup): the mission board and crew leaderboard, rebuilt in ScriptHammer's own theme. The air-quality reading is already live; the rest is a prototype to pressure-test._
+_Civic League (concept mockup): the mission board and crew leaderboard, rebuilt in geoLARP's own theme. The air-quality reading is already live; the rest is a prototype to pressure-test._
 
 Every one of those is a real action against a real feed. And the mechanic that ties it together is simple: **the city has a score, and finishing a mission moves it.** In the prototype, that score is a transparent formula: data completeness, air quality, transit coverage, landmark captures. The air-quality piece is already live, pulled every few minutes from the free [Open-Meteo](https://open-meteo.com/) Air Quality Index (AQI) endpoint. No invented numbers here either; each metric wears a little dot saying whether it's live, simulated, or locally computed.
 
@@ -118,6 +118,6 @@ So: three questions, no answers, and an open door. If any of this snagged on som
 
 - **Leave a comment right here** on this post. The messy first thought is the useful one.
 - **Come find the project at [Chattanooga.Digital](https://chattanooga.digital)**, where this civic-twin work lives and where "join in" is an actual invitation.
-- **Open a discussion or an issue** on the [ScriptHammer repository](https://github.com/TortoiseWolfe/ScriptHammer) if you're the kind of person who'd rather file a well-formed thread than write a paragraph.
+- **Open a discussion or an issue** on the [geoLARP repository](https://github.com/TortoiseWolfe/geoLARP) if you're the kind of person who'd rather file a well-formed thread than write a paragraph.
 
-Go [explore the twin](https://scripthammer.com/chatt/) first if you haven't. It's the shared reference point for all of this. Then tell me what your city should let you do.
+Go [explore the twin](https://geolarp.com/chatt/) first if you haven't. It's the shared reference point for all of this. Then tell me what your city should let you do.

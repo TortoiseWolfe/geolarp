@@ -35,7 +35,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const SCOPE = 'https://scripthammer.com/';
+const SCOPE = 'https://geolarp.com/';
 const IMAGE = `${SCOPE}blog-images/auto-config/featured.svg`;
 
 const SW_SOURCE = readFileSync(resolve(process.cwd(), 'public/sw.js'), 'utf-8');
@@ -193,7 +193,7 @@ describe('image cache naming (#438)', () => {
     expect(decl![1]).not.toContain('CACHE_VERSION');
   });
 
-  it('keeps the scripthammer- prefix so activate still purges it', () => {
+  it('keeps the geolarp- prefix so activate still purges it', () => {
     // activate's cleanup filters on this prefix. A name without it would leak
     // storage instead of being cleaned up — trading one bug for another.
     const decl = /const IMAGE_CACHE = '([^']+)';/.exec(SW_SOURCE);
@@ -201,7 +201,7 @@ describe('image cache naming (#438)', () => {
       decl,
       'IMAGE_CACHE is no longer a plain string literal'
     ).not.toBeNull();
-    expect(decl![1].startsWith('scripthammer-')).toBe(true);
+    expect(decl![1].startsWith('geolarp-')).toBe(true);
   });
 
   it('is preserved by the activate cleanup rather than deleted', () => {

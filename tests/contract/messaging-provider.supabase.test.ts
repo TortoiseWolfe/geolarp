@@ -40,10 +40,10 @@ import {
 
 // Dedicated emails so this suite never collides with the RLS suite's userA/userB.
 const EMAILS = {
-  a: 'provider-contract-a@scripthammer.test',
-  b: 'provider-contract-b@scripthammer.test',
-  outsider: 'provider-contract-outsider@scripthammer.test',
-  pending: 'provider-contract-pending@scripthammer.test',
+  a: 'provider-contract-a@geolarp.test',
+  b: 'provider-contract-b@geolarp.test',
+  outsider: 'provider-contract-outsider@geolarp.test',
+  pending: 'provider-contract-pending@geolarp.test',
 } as const;
 const PASSWORD = 'ContractPassword123!';
 

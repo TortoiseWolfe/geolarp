@@ -28,7 +28,7 @@ A collaborator joins your project. They work in [Cursor](https://cursor.com/), t
 
 That single question hides a trap. The lazy answer — hand them a copy of yours — quietly breaks three things at once: attribution, security, and your ability to ever cleanly revoke access. The correct answer costs five minutes of setup and gets all three right.
 
-This post is the long version of a conversation we actually had while building [RescueDogs](https://github.com/TortoiseWolfe/RescueDogs), a pet-adoption tracker forked from ScriptHammer. A collaborator (GitHub handle `schlajo`) needed Cursor to open issues and pull requests **in his name**, on a repository **we** own. Getting that right is a small masterclass in how GitHub authentication actually works — and it generalizes to any template fork where more than one human, and more than one agent, touch the same code.
+This post is the long version of a conversation we actually had while building [RescueDogs](https://github.com/TortoiseWolfe/RescueDogs), a pet-adoption tracker forked from geoLARP. A collaborator (GitHub handle `schlajo`) needed Cursor to open issues and pull requests **in his name**, on a repository **we** own. Getting that right is a small masterclass in how GitHub authentication actually works — and it generalizes to any template fork where more than one human, and more than one agent, touch the same code.
 
 ## 🤔 The Problem: An AI Agent Needs Hands, but Whose?
 
@@ -232,7 +232,7 @@ Here is the whole discipline as a checklist:
 
 ## 🎯 Takeaways for Template Forkers
 
-If you fork ScriptHammer — or any template — and bring on a collaborator who works with an AI agent, the pattern is the same every time:
+If you fork geoLARP — or any template — and bring on a collaborator who works with an AI agent, the pattern is the same every time:
 
 1. **Never share credentials.** A token is an identity; sharing one erases attribution, bypasses 2FA, and makes clean revocation impossible.
 2. **Let each person authenticate as themselves**, ideally through Cursor's built-in GitHub sign-in, or with a fine-grained, single-repo token if they want explicit control.

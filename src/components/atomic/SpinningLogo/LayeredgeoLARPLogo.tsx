@@ -20,7 +20,7 @@ const INK = '#2E353B';
 const KEYLINE = 5;
 const SILHOUETTE = 7;
 
-export interface LayeredScriptHammerLogoProps {
+export interface LayeredgeoLARPLogoProps {
   className?: string;
   /**
    * Cut "SCRIPTHAMMER.COM" out of the gear ring, as panel 8e does.
@@ -52,16 +52,16 @@ export interface LayeredScriptHammerLogoProps {
 }
 
 /**
- * The ScriptHammer brand mark, animated.
+ * The geoLARP brand mark, animated.
  *
- * Ported from the Claude Design "ScriptHammer Logo v3" export, panel 8e
+ * Ported from the Claude Design "geoLARP Logo v3" export, panel 8e
  * ("Motion — gear turns, mallet strikes the brackets"). Geometry comes from
- * docs/design/brand-marks/scripthammer-lockup.svg; timings live with the
+ * docs/design/brand-marks/geolarp-lockup.svg; timings live with the
  * keyframes in globals.css.
  *
  * ## Why this is inline SVG rather than three <Image> layers
  *
- * It used to stack printing-mallet.svg, scripthammer-logo.svg and
+ * It used to stack printing-mallet.svg, geolarp-logo.svg and
  * script-tags.svg as three absolutely-positioned next/image elements, spinning
  * only the middle one. That cannot express 8e: the mallet has to swing about
  * its own handle pivot, the brackets flash on the strike, and sparks appear at
@@ -89,8 +89,8 @@ export interface LayeredScriptHammerLogoProps {
  * So it is a prop rather than a default: on for the hero, off for the nav and
  * sign-in. Turn it on wherever the mark is drawn at roughly 256px or more.
  */
-export const LayeredScriptHammerLogo: React.FC<
-  LayeredScriptHammerLogoProps
+export const LayeredgeoLARPLogo: React.FC<
+  LayeredgeoLARPLogoProps
 > = ({
   className = '',
   animated = true,
@@ -246,4 +246,4 @@ export const LayeredScriptHammerLogo: React.FC<
   );
 };
 
-LayeredScriptHammerLogo.displayName = 'LayeredScriptHammerLogo';
+LayeredgeoLARPLogo.displayName = 'LayeredgeoLARPLogo';

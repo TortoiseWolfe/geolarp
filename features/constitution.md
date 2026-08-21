@@ -1,4 +1,4 @@
-# ScriptHammer Constitution
+# geoLARP Constitution
 
 ## Core Principles
 

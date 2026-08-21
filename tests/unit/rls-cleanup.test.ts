@@ -76,8 +76,8 @@ describe('cleanupStaleScripthammerUsers (#50)', () => {
   it('deletes the FK chain in correct order per matching user', async () => {
     const client = makeMockClient({
       users: [
-        { id: 'user-a-id', email: 'test-user-a@scripthammer.test' },
-        { id: 'user-b-id', email: 'test-user-b@scripthammer.test' },
+        { id: 'user-a-id', email: 'test-user-a@geolarp.test' },
+        { id: 'user-b-id', email: 'test-user-b@geolarp.test' },
       ],
     });
 
@@ -107,7 +107,7 @@ describe('cleanupStaleScripthammerUsers (#50)', () => {
 
   it('skips webhook_events when the user has no subscriptions', async () => {
     const client = makeMockClient({
-      users: [{ id: 'user-y', email: 'test-user-a@scripthammer.test' }],
+      users: [{ id: 'user-y', email: 'test-user-a@geolarp.test' }],
       noSubs: true,
     });
 
@@ -123,12 +123,12 @@ describe('cleanupStaleScripthammerUsers (#50)', () => {
     expect(deleteUserCalls).toEqual(['user-y']);
   });
 
-  it('ignores users whose email does not match @scripthammer.test', async () => {
+  it('ignores users whose email does not match @geolarp.test', async () => {
     const client = makeMockClient({
       users: [
         { id: 'prod-id', email: 'real-user@example.com' },
-        { id: 'admin-id', email: 'admin@scripthammer.com' }, // .com, not .test
-        { id: 'sh-id', email: 'test-user-a@scripthammer.test' },
+        { id: 'admin-id', email: 'admin@geolarp.com' }, // .com, not .test
+        { id: 'sh-id', email: 'test-user-a@geolarp.test' },
       ],
     });
 
@@ -142,7 +142,7 @@ describe('cleanupStaleScripthammerUsers (#50)', () => {
 
   it('continues to subsequent steps when a DELETE fails (best-effort)', async () => {
     const client = makeMockClient({
-      users: [{ id: 'user-x', email: 'test-user-a@scripthammer.test' }],
+      users: [{ id: 'user-x', email: 'test-user-a@geolarp.test' }],
       failOn: { table: 'payment_intents' },
     });
 
@@ -164,7 +164,7 @@ describe('cleanupStaleScripthammerUsers (#50)', () => {
     expect(summary.errorsLogged).toBe(1);
   });
 
-  it('is a no-op when no @scripthammer.test users exist', async () => {
+  it('is a no-op when no @geolarp.test users exist', async () => {
     const client = makeMockClient({
       users: [{ id: 'prod-id', email: 'real@example.com' }],
     });

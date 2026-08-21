@@ -107,5 +107,5 @@ Both RFCs strengthen the security posture without introducing new vulnerabilitie
 ---
 
 **Security Lead**
-ScriptHammer Council
+geoLARP Council
 2026-01-15

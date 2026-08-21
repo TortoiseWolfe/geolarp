@@ -40,11 +40,11 @@ import {
 } from '../fixtures/test-users';
 
 const ALICE = {
-  email: 'blocked-send-alice@scripthammer.test',
+  email: 'blocked-send-alice@geolarp.test',
   password: 'BlockedSendAlice1!',
 };
 const BOB = {
-  email: 'blocked-send-bob@scripthammer.test',
+  email: 'blocked-send-bob@geolarp.test',
   password: 'BlockedSendBob1!',
 };
 

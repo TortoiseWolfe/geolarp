@@ -180,7 +180,7 @@ describe('manifest assets', () => {
     const tsx = fs.readFileSync(
       path.join(
         ROOT,
-        'src/components/atomic/SpinningLogo/LayeredScriptHammerLogo.tsx'
+        'src/components/atomic/SpinningLogo/LayeredgeoLARPLogo.tsx'
       ),
       'utf8'
     );
@@ -245,7 +245,7 @@ describe('manifest assets', () => {
     // where Oswald is loaded — inside an <img>, a favicon, or a vector editor
     // the renderer substitutes a default sans and squeezes it to
     // textLength="300". Measured, that is 5.5% of pixels wrong versus a correct
-    // render. public/scripthammer-wordmark.svg carries the same wordmark baked
+    // render. public/geolarp-wordmark.svg carries the same wordmark baked
     // to paths and must stay that way.
     //
     // This used to sweep only `icon*.svg`, which left favicon.svg — the SOURCE
@@ -256,7 +256,7 @@ describe('manifest assets', () => {
       (name.startsWith('icon') ||
         name.startsWith('favicon') ||
         name.startsWith('apple-touch-icon') ||
-        name.startsWith('scripthammer-') ||
+        name.startsWith('geolarp-') ||
         name === 'printing-mallet.svg' ||
         name === 'script-tags.svg');
 

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Payment Demo - ScriptHammer',
+  title: 'Payment Demo - geoLARP',
   description: 'Payment integration demonstration',
   robots: {
     index: false,

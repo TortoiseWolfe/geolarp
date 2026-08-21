@@ -1,4 +1,4 @@
-// ScriptHammer Service Worker v1.0.0
+// geoLARP Service Worker v1.0.0
 // Provides offline support, caching, and background sync
 // Note: Cache name includes project name - updated by rebrand script
 
@@ -12,10 +12,10 @@
 // trailing-slash cache miss into a permanent offline page rather than a
 // one-deploy blip.
 //
-// MUST keep the `scripthammer-` prefix: the activate handler purges old caches
+// MUST keep the `geolarp-` prefix: the activate handler purges old caches
 // by matching that prefix, so a different one would leak storage instead of
 // cleaning up.
-const CACHE_VERSION = 'scripthammer-v1.0.0';
+const CACHE_VERSION = 'geolarp-v1.0.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
@@ -38,9 +38,9 @@ const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 //
 // Bump this by hand only when the image CACHING BEHAVIOUR changes; a content
 // change does not need it, since entries are keyed by request URL. Keeps the
-// `scripthammer-` prefix so the activate purge below still owns it rather than
+// `geolarp-` prefix so the activate purge below still owns it rather than
 // leaking it.
-const IMAGE_CACHE = 'scripthammer-images-v1';
+const IMAGE_CACHE = 'geolarp-images-v1';
 
 // Assets to cache on install. Paths are relative to this script's location
 // (self.registration.scope), so they resolve correctly whether the app is
@@ -84,7 +84,7 @@ self.addEventListener('activate', (event) => {
           cacheNames
             .filter((cacheName) => {
               return (
-                cacheName.startsWith('scripthammer-') &&
+                cacheName.startsWith('geolarp-') &&
                 cacheName !== STATIC_CACHE &&
                 cacheName !== DYNAMIC_CACHE &&
                 cacheName !== IMAGE_CACHE
@@ -160,7 +160,7 @@ self.addEventListener('fetch', (event) => {
   // Never intercept Next's OWN router traffic.
   //
   // This is what made clicking "Blog" land the user on
-  // `https://scripthammer.com/blog/index.txt` — the raw RSC flight payload —
+  // `https://geolarp.com/blog/index.txt` — the raw RSC flight payload —
   // instead of the blog.
   //
   // Under `output: 'export'` the App Router fetches a per-route `index.txt`
@@ -417,7 +417,7 @@ self.addEventListener('message', (event) => {
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames
-            .filter((cacheName) => cacheName.startsWith('scripthammer-'))
+            .filter((cacheName) => cacheName.startsWith('geolarp-'))
             .map((cacheName) => caches.delete(cacheName))
         );
       })
@@ -439,7 +439,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification('ScriptHammer Notification', options)
+    self.registration.showNotification('geoLARP Notification', options)
   );
 });
 

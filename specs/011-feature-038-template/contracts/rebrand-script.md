@@ -22,13 +22,13 @@
 | ---- | ---------------------------------------------------------- |
 | 0    | Success                                                    |
 | 1    | Invalid arguments                                          |
-| 2    | Re-rebrand scenario (no ScriptHammer found), user declined |
+| 2    | Re-rebrand scenario (no geoLARP found), user declined |
 | 3    | Git not installed or not a git repo                        |
 
 ## Output Format
 
 ```
-Rebranding ScriptHammer → MyApp
+Rebranding geoLARP → MyApp
 Owner: myuser
 Description: My awesome app
 
@@ -41,8 +41,8 @@ Updating file contents...
   ... (200+ files)
 
 Renaming files...
-  ✓ ScriptHammerLogo.tsx → MyAppLogo.tsx
-  ✓ LayeredScriptHammerLogo.tsx → LayeredMyAppLogo.tsx
+  ✓ geoLARPLogo.tsx → MyAppLogo.tsx
+  ✓ LayeredgeoLARPLogo.tsx → LayeredMyAppLogo.tsx
 
 Updating git remote...
   ✓ origin → github.com/myuser/my-app
@@ -73,11 +73,11 @@ Input               → Output
 
 ### Re-rebrand Detection
 
-If grep finds 0 occurrences of "ScriptHammer":
+If grep finds 0 occurrences of "geoLARP":
 
 ```
 WARNING: This repository appears to have been rebranded already.
-No "ScriptHammer" references found.
+No "geoLARP" references found.
 
 Current project name appears to be: OtherProject
 Do you want to rebrand from "OtherProject" to "MyApp"? [y/N]

@@ -6,7 +6,7 @@
  * prioritizes NEXT_PUBLIC_DEPLOY_URL, so these emitted artifacts must too.
  *
  * This intentionally does not derive an origin from public/CNAME: that file
- * uses www.scripthammer.com while the canonical application origin is the
+ * uses www.geolarp.com while the canonical application origin is the
  * apex. A generated URL at the wrong host is the same SEO failure in a new
  * place. The fallback keeps forks working when they have not set a custom
  * domain, and callers print its source so the fallback is visible in build
@@ -24,7 +24,7 @@ function resolveSiteUrl(env = process.env) {
   const owner = (
     env.NEXT_PUBLIC_PROJECT_OWNER || 'TortoiseWolfe'
   ).toLowerCase();
-  const name = env.NEXT_PUBLIC_PROJECT_NAME || 'ScriptHammer';
+  const name = env.NEXT_PUBLIC_PROJECT_NAME || 'geoLARP';
   const basePath = env.NEXT_PUBLIC_BASE_PATH;
 
   return {

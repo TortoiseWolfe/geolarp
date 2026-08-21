@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { SpinningLogo } from './SpinningLogo';
-import { ScriptHammerLogo } from './ScriptHammerLogo';
-import { LayeredScriptHammerLogo } from './LayeredScriptHammerLogo';
+import { geoLARPLogo } from './geoLARPLogo';
+import { LayeredgeoLARPLogo } from './LayeredgeoLARPLogo';
 
 const meta = {
   title: 'Components/Atomic/SpinningLogo',
@@ -42,75 +42,75 @@ const ReactLogo = () => (
   </svg>
 );
 
-// Layered ScriptHammer Logo as the primary/default story
+// Layered geoLARP Logo as the primary/default story
 export const Default: Story = {
   args: {
     children: null,
   },
-  render: () => <LayeredScriptHammerLogo pauseOnHover={true} />,
+  render: () => <LayeredgeoLARPLogo pauseOnHover={true} />,
 };
 
-// Original simple ScriptHammer Logo
-export const SimpleScriptHammer: Story = {
+// Original simple geoLARP Logo
+export const SimplegeoLARP: Story = {
   args: {
-    children: <ScriptHammerLogo />,
+    children: <geoLARPLogo />,
     size: 250,
     pauseOnHover: true,
   },
 };
 
-// Layered ScriptHammer Logo - the new composite logo
-export const LayeredScriptHammer: Story = {
+// Layered geoLARP Logo - the new composite logo
+export const LayeredgeoLARP: Story = {
   args: {
     children: null,
   },
-  render: () => <LayeredScriptHammerLogo pauseOnHover={true} />,
+  render: () => <LayeredgeoLARPLogo pauseOnHover={true} />,
 };
 
-export const LayeredScriptHammerLarge: Story = {
+export const LayeredgeoLARPLarge: Story = {
   args: {
     children: null,
   },
-  render: () => <LayeredScriptHammerLogo pauseOnHover={true} />,
+  render: () => <LayeredgeoLARPLogo pauseOnHover={true} />,
 };
 
-export const ScriptHammerLarge: Story = {
+export const geoLARPLarge: Story = {
   args: {
-    children: <ScriptHammerLogo />,
+    children: <geoLARPLogo />,
     size: 350,
     pauseOnHover: true,
   },
 };
 
-export const ScriptHammerFast: Story = {
+export const geoLARPFast: Story = {
   args: {
-    children: <ScriptHammerLogo />,
+    children: <geoLARPLogo />,
     size: 250,
     speed: 'fast',
     pauseOnHover: true,
   },
 };
 
-export const ScriptHammerVerySlow: Story = {
+export const geoLARPVerySlow: Story = {
   args: {
-    children: <ScriptHammerLogo />,
+    children: <geoLARPLogo />,
     size: 250,
     speed: 60, // 60 second rotation - ultra smooth
     pauseOnHover: true,
   },
 };
 
-export const ScriptHammerStatic: Story = {
+export const geoLARPStatic: Story = {
   args: {
-    children: <ScriptHammerLogo />,
+    children: <geoLARPLogo />,
     size: 250,
     isSpinning: false,
   },
 };
 
-export const ScriptHammerCounterClockwise: Story = {
+export const geoLARPCounterClockwise: Story = {
   args: {
-    children: <ScriptHammerLogo />,
+    children: <geoLARPLogo />,
     size: 250,
     direction: 'counter-clockwise',
     pauseOnHover: true,
@@ -232,26 +232,26 @@ export const ThemeShowcase: Story = {
     <div className="flex flex-col gap-8">
       <div>
         <p className="text-base-content mb-2 text-sm">
-          ScriptHammer logo — adapts to current theme via text-primary
+          geoLARP logo — adapts to current theme via text-primary
         </p>
         <div className="flex items-center gap-8">
-          <LayeredScriptHammerLogo pauseOnHover />
-          <LayeredScriptHammerLogo pauseOnHover />
+          <LayeredgeoLARPLogo pauseOnHover />
+          <LayeredgeoLARPLogo pauseOnHover />
         </div>
       </div>
       <div className="flex flex-col gap-3">
         <p className="text-base-content text-sm">On surfaces</p>
         <div className="bg-base-100 flex items-center gap-6 rounded-lg p-4">
           <span className="text-base-content text-sm">base-100:</span>
-          <LayeredScriptHammerLogo pauseOnHover />
+          <LayeredgeoLARPLogo pauseOnHover />
         </div>
         <div className="bg-base-200 flex items-center gap-6 rounded-lg p-4">
           <span className="text-base-content text-sm">base-200:</span>
-          <LayeredScriptHammerLogo pauseOnHover />
+          <LayeredgeoLARPLogo pauseOnHover />
         </div>
         <div className="bg-neutral flex items-center gap-6 rounded-lg p-4">
           <span className="text-neutral-content/80 text-sm">neutral:</span>
-          <LayeredScriptHammerLogo pauseOnHover />
+          <LayeredgeoLARPLogo pauseOnHover />
         </div>
       </div>
     </div>

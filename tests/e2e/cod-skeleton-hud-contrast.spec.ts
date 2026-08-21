@@ -39,7 +39,7 @@ import { join } from 'node:path';
  */
 
 const AAA = 7;
-const THEMES = ['scripthammer-light', 'scripthammer-dark'] as const;
+const THEMES = ['geolarp-light', 'geolarp-dark'] as const;
 
 /** The classes the HUD actually ships. Kept as data so the source guard can check them. */
 const HUD_SURFACE = 'bg-base-300/90';

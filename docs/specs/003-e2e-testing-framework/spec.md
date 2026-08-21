@@ -70,7 +70,7 @@ import { render } from '@testing-library/react';
 ```yaml
 # docker-compose.yml
 services:
-  scripthammer:
+  geolarp:
     build:
       context: .
       dockerfile: Dockerfile

@@ -6,7 +6,7 @@ import { THEMES } from '@/config/themes';
  *
  * The design was authored dark-only against literal `rgba(0,0,0,.8-.9)`. The
  * risk this file exists to catch is a depth system that looks right on the two
- * ScriptHammer themes and is invisible or inverted on the other thirty.
+ * geoLARP themes and is invisible or inverted on the other thirty.
  *
  * WHY THE ASSERTION IS "EITHER INK", NOT "BOTH INKS".
  * Measured across every registered theme, base-100 lightness spans the whole
@@ -249,7 +249,7 @@ test.describe('#377 depth tokens', () => {
    * two themes most people see. Found by applying it to the home page (#379).
    *
    * MUTATION CHECK: drop the `:not(.sh-plate):not(.sh-well):not(.sh-groove)`
-   * chain from that block. This fails on both ScriptHammer themes, reporting
+   * chain from that block. This fails on both geoLARP themes, reporting
    * a literal-black shadow on the migrated element.
    */
   test('a depth utility beats component styles on the default themes', async ({
@@ -283,7 +283,7 @@ test.describe('#377 depth tokens', () => {
         return out;
       },
       {
-        themes: ['scripthammer-dark', 'scripthammer-light'],
+        themes: ['geolarp-dark', 'geolarp-light'],
         plateCls: NAMES[0],
       }
     );
@@ -364,12 +364,12 @@ test.describe('#377 depth tokens', () => {
   test('buttons lift on hover and press on active, on every house theme', async ({
     page,
   }) => {
-    const HOUSE = THEMES.filter((t) => t.startsWith('scripthammer-'));
+    const HOUSE = THEMES.filter((t) => t.startsWith('geolarp-'));
     // Non-vacuity: if the house themes are ever renamed this must fail loudly
     // rather than pass having looped over nothing.
     expect(
       HOUSE.length,
-      'no scripthammer-* themes found'
+      'no geolarp-* themes found'
     ).toBeGreaterThanOrEqual(3);
 
     for (const theme of HOUSE) {

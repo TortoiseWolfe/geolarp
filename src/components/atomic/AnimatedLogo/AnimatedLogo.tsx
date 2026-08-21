@@ -26,7 +26,7 @@ const speedMultipliers = {
 };
 
 export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
-  text = 'ScriptHammer',
+  text = 'geoLARP',
   className = '',
   size = 'xl',
   animationSpeed = 'normal',

@@ -36,11 +36,11 @@ import {
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 const SENDER = {
-  email: 'guard281-sender@scripthammer.test',
+  email: 'guard281-sender@geolarp.test',
   password: 'Guard281Sender!',
 };
 const RECIPIENT = {
-  email: 'guard281-recipient@scripthammer.test',
+  email: 'guard281-recipient@geolarp.test',
   password: 'Guard281Recip!',
 };
 

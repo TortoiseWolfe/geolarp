@@ -76,7 +76,7 @@ The steps that follow have a **Pages path** and a **Vercel path** where they dif
 
 A Next.js app deployed to `github.io/YourApp` runs under a **basePath** of `/YourApp` — every asset and link is prefixed with it. A custom apex domain serves from the **root** (`/`), so the basePath must be **dropped**. If you forget, every asset 404s at the new domain.
 
-Well-built templates automate this. In ScriptHammer-based apps, the basePath is auto-detected: it's set to `/RepoName` **only when no `public/CNAME` file exists**. So adding the CNAME file is the single switch that both configures the domain _and_ drops the basePath:
+Well-built templates automate this. In geoLARP-based apps, the basePath is auto-detected: it's set to `/RepoName` **only when no `public/CNAME` file exists**. So adding the CNAME file is the single switch that both configures the domain _and_ drops the basePath:
 
 ```js
 // scripts/detect-project.js — the load-bearing line

@@ -1,16 +1,16 @@
-# ScriptHammer
+# geoLARP
 
 **An accessible web platform with auth, payments, and encrypted messaging. Running live, and free to fork.**
 
-[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/TortoiseWolfe/ScriptHammer)
-[![Live App](https://img.shields.io/badge/Live-scripthammer.com-2ea44f)](https://www.scripthammer.com/)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/TortoiseWolfe/geoLARP)
+[![Live App](https://img.shields.io/badge/Live-geolarp.com-2ea44f)](https://www.geolarp.com/)
 [![WCAG 2.1 AA](https://img.shields.io/badge/WCAG%202.1-AA%20Compliant-success)](https://www.w3.org/WAI/WCAG21/quickref/)
-[![Stars](https://img.shields.io/github/stars/TortoiseWolfe/ScriptHammer?style=social)](https://github.com/TortoiseWolfe/ScriptHammer)
+[![Stars](https://img.shields.io/github/stars/TortoiseWolfe/geoLARP?style=social)](https://github.com/TortoiseWolfe/geoLARP)
 
 <p align="center">
   <img
     src="./docs/architecture/architecture-simple.png"
-    alt="ScriptHammer architecture overview. Your code is built ahead of time by pnpm into a Next.js static export served from GitHub Pages, so there's no application server. In the browser, a React app with a service worker and local storage talks directly to a managed Supabase backend providing Postgres with Row-Level Security, auth, realtime, and file storage. Twelve Deno Edge Functions handle anything needing a secret, including payments, subscriptions, and email, and call out to Stripe, PayPal, and Resend, which webhook their results back."
+    alt="geoLARP architecture overview. Your code is built ahead of time by pnpm into a Next.js static export served from GitHub Pages, so there's no application server. In the browser, a React app with a service worker and local storage talks directly to a managed Supabase backend providing Postgres with Row-Level Security, auth, realtime, and file storage. Twelve Deno Edge Functions handle anything needing a secret, including payments, subscriptions, and email, and call out to Stripe, PayPal, and Resend, which webhook their results back."
     width="900">
 </p>
 
@@ -18,7 +18,7 @@
   <sub><b>How it fits together.</b> The <a href="./docs/architecture/architecture-detailed.png">full reference diagram</a> adds every table, Edge Function, and route. Or read <a href="./docs/architecture/README.md">the architecture guide</a>.</sub>
 </p>
 
-This is a real product, not a scaffold. It runs at [scripthammer.com](https://www.scripthammer.com/) with OAuth and email sign-in, Stripe and PayPal payments, end-to-end encrypted messaging, an admin surface, and an installable offline-capable app that meets WCAG AA.
+This is a real product, not a scaffold. It runs at [geolarp.com](https://www.geolarp.com/) with OAuth and email sign-in, Stripe and PayPal payments, end-to-end encrypted messaging, an admin surface, and an installable offline-capable app that meets WCAG AA.
 
 You can also fork it and build your own thing on top. That takes about five minutes.
 
@@ -26,17 +26,17 @@ You can also fork it and build your own thing on top. That takes about five minu
 
 |                       |                                                                       |
 | --------------------- | --------------------------------------------------------------------- |
-| **The app**           | [scripthammer.com](https://www.scripthammer.com/)                     |
-| **Component library** | [scripthammer.com/storybook](https://www.scripthammer.com/storybook/) |
-| **Status dashboard**  | [scripthammer.com/status](https://www.scripthammer.com/status)        |
+| **The app**           | [geolarp.com](https://www.geolarp.com/)                     |
+| **Component library** | [geolarp.com/storybook](https://www.geolarp.com/storybook/) |
+| **Status dashboard**  | [geolarp.com/status](https://www.geolarp.com/status)        |
 
 ## Run it locally
 
 You need Docker and git. That's it. Local pnpm and npm aren't supported, because everything runs in the container.
 
 ```bash
-git clone https://github.com/TortoiseWolfe/ScriptHammer.git
-cd ScriptHammer
+git clone https://github.com/TortoiseWolfe/geoLARP.git
+cd geoLARP
 cp .env.example .env      # then set UID and GID: run  id -u && id -g
 docker compose up         # first build takes 5 to 10 minutes
 ```
@@ -47,9 +47,9 @@ That gives you the dev server on http://localhost:3000. It runs without any acco
 <summary><b>Everyday commands</b></summary>
 
 ```bash
-docker compose exec scripthammer pnpm run dev         # dev server
-docker compose exec scripthammer pnpm test            # unit tests
-docker compose exec scripthammer pnpm run storybook   # component library
+docker compose exec geolarp pnpm run dev         # dev server
+docker compose exec geolarp pnpm test            # unit tests
+docker compose exec geolarp pnpm run storybook   # component library
 
 docker compose down && docker compose up --build      # clean restart
 ```
@@ -65,7 +65,7 @@ docker compose run --rm builder pnpm build
 ## Fork it
 
 ```bash
-gh repo fork TortoiseWolfe/ScriptHammer --clone
+gh repo fork TortoiseWolfe/geoLARP --clone
 cd YourProjectName
 ./scripts/rebrand.sh MyProject myusername "My project description" --icon path/to/your-mark.svg
 cp .env.example .env
@@ -77,7 +77,7 @@ repository name automatically.
 
 **It will refuse to run until you decide about the app icons.** A rebrand substitutes strings, and a
 logo is not a string — so if nothing replaces the mark, every browser tab and every home-screen
-install shows ScriptHammer's. That reached two live sites before this was a hard stop (#659, #898),
+install shows geoLARP's. That reached two live sites before this was a hard stop (#659, #898),
 both times past a warning. Pass `--icon` with your own mark (`.svg`, `.png` or `.webp` — a symbol
 rather than a wordmark, since these render at 32px), or `--no-icon` to say out loud that you are
 shipping ours for now.
@@ -94,7 +94,7 @@ shipping ours for now.
 To pull upstream changes later:
 
 ```bash
-git remote add upstream https://github.com/TortoiseWolfe/ScriptHammer.git
+git remote add upstream https://github.com/TortoiseWolfe/geoLARP.git
 git fetch upstream
 git merge upstream/main
 ```
@@ -266,7 +266,7 @@ Fork it, branch, run the tests in Docker, open a pull request.
 
 ```bash
 git checkout -b feature/your-thing
-docker compose exec scripthammer pnpm test
+docker compose exec geolarp pnpm test
 ```
 
 Two checks have to pass before anything merges: `Test (20.x)` and `accessibility`. Nobody has to approve your PR, so ask for a review if the change warrants one rather than waiting for one. The details are in [CONTRIBUTING.md](./CONTRIBUTING.md).
@@ -287,7 +287,7 @@ Progress by area is tracked in [PRP-STATUS.md](./docs/prp-docs/PRP-STATUS.md), a
 <details>
 <summary><b>🧾 Backlog and technical debt (maintainers)</b></summary>
 
-The live list is [docs/TECHNICAL-DEBT.md](./docs/TECHNICAL-DEBT.md), and open work is tracked in [GitHub issues](https://github.com/TortoiseWolfe/ScriptHammer/issues).
+The live list is [docs/TECHNICAL-DEBT.md](./docs/TECHNICAL-DEBT.md), and open work is tracked in [GitHub issues](https://github.com/TortoiseWolfe/geoLARP/issues).
 
 The SPEC-041 through SPEC-064 queue that used to sit in this file has moved to those two places. Most of the E2E stabilisation items in it were finished in 2025-12 and the entries had gone stale where they sat.
 

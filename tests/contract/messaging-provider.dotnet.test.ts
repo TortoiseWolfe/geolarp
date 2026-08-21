@@ -45,10 +45,10 @@ import {
 const DOTNET_API_URL = process.env.DOTNET_API_URL;
 
 const EMAILS = {
-  a: 'dotnet-contract-a@scripthammer.test',
-  b: 'dotnet-contract-b@scripthammer.test',
-  outsider: 'dotnet-contract-outsider@scripthammer.test',
-  pending: 'dotnet-contract-pending@scripthammer.test',
+  a: 'dotnet-contract-a@geolarp.test',
+  b: 'dotnet-contract-b@geolarp.test',
+  outsider: 'dotnet-contract-outsider@geolarp.test',
+  pending: 'dotnet-contract-pending@geolarp.test',
 } as const;
 const PASSWORD = 'DotnetContract123!';
 

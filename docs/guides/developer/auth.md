@@ -1,6 +1,6 @@
 # Authentication Guide
 
-Comprehensive guide to implementing authentication in ScriptHammer using Supabase Auth.
+Comprehensive guide to implementing authentication in geoLARP using Supabase Auth.
 
 ---
 
@@ -24,7 +24,7 @@ Comprehensive guide to implementing authentication in ScriptHammer using Supabas
 
 ### Architecture
 
-ScriptHammer uses Supabase Auth (GoTrue) for authentication. Since the app is a static export, all auth happens client-side with Supabase handling the backend.
+geoLARP uses Supabase Auth (GoTrue) for authentication. Since the app is a static export, all auth happens client-side with Supabase handling the backend.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

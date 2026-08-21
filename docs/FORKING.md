@@ -1,12 +1,12 @@
-# Forking ScriptHammer
+# Forking geoLARP
 
-Complete guide to creating your own project from the ScriptHammer template.
+Complete guide to creating your own project from the geoLARP template.
 
 ## Quick Start (5 Minutes)
 
 ```bash
 # 1. Fork and clone
-gh repo fork TortoiseWolfe/ScriptHammer --clone
+gh repo fork TortoiseWolfe/geoLARP --clone
 cd YourProjectName
 
 # 2. Run the rebrand script. It refuses without an icon decision -- see "Your brand
@@ -40,14 +40,14 @@ The `scripts/rebrand.sh` script automates updating 200+ files:
 
 | Category  | Changes                                                                                                |
 | --------- | ------------------------------------------------------------------------------------------------------ |
-| **Code**  | Replaces "ScriptHammer" with your project name in all TypeScript, JavaScript, JSON, and Markdown files |
-| **Files** | Renames files containing "ScriptHammer" (e.g., `ScriptHammerLogo.tsx` → `MyProjectLogo.tsx`)           |
+| **Code**  | Replaces "geoLARP" with your project name in all TypeScript, JavaScript, JSON, and Markdown files |
+| **Files** | Renames files containing "geoLARP" (e.g., `geoLARPLogo.tsx` → `MyProjectLogo.tsx`)           |
 
 ### Your brand mark is not covered by any of that
 
 A rebrand substitutes strings, and **a logo is not a string**. Nothing in the
 table above looks at an image, so without a mark of your own every browser tab
-and every home-screen install shows ScriptHammer's icon.
+and every home-screen install shows geoLARP's icon.
 
 This is not a hypothetical: it has reached production twice, on two different
 live sites, the second time straight past a warning added to prevent the first.
@@ -66,13 +66,13 @@ variants, `apple-touch-icon`, and `favicon.ico` — from your single mark. Use a
 **symbol rather than a wordmark**: these render down to 32px, where text is
 illegible.
 
-If you take `--no-icon`, the icons stay ScriptHammer's until you run
+If you take `--no-icon`, the icons stay geoLARP's until you run
 `pnpm run generate:icons` with your own mark. `pnpm run check:icons` tells you
 whether the committed set still matches it.
 | **Docker** | Updates service name in `docker-compose.yml` |
 | **Git** | Updates remote origin URL to your repository |
 | **Config** | Updates `package.json` name, description, and repository fields |
-| **Themes** | Renames `scripthammer-dark`/`scripthammer-light` theme blocks to your project name |
+| **Themes** | Renames `geolarp-dark`/`geolarp-light` theme blocks to your project name |
 | **Env** | Updates `COMPOSE_PROJECT_NAME` and example commands in `.env.example` |
 | **CNAME** | Updates `public/CNAME` to your project domain (unless custom domain detected or `--keep-cname`) |
 
@@ -89,7 +89,7 @@ whether the committed set still matches it.
 ./scripts/rebrand.sh MyProject myuser "Description" --icon mark.svg --force
 
 # Keep public/CNAME exactly as it is. NOTE: on a fresh fork that file contains
-# ScriptHammer's own domain, so this is only right if you have already replaced it.
+# geoLARP's own domain, so this is only right if you have already replaced it.
 ./scripts/rebrand.sh MyProject myuser "Description" --icon mark.svg --keep-cname
 
 # Preserve SSH format for git remote (if your origin is SSH)
@@ -122,7 +122,7 @@ Three things worth knowing:
 
 - **It is line-scoped, not file-scoped.** A marker at the top of a file protects
   nothing below it.
-- **The token is deliberately brand-neutral.** `scripthammer:keep` would contain
+- **The token is deliberately brand-neutral.** `geolarp:keep` would contain
   the very string the second replacement pass searches for — a self-referential
   trap.
 - **The attribution link uses this**, which is why `--preserve-attribution` is
@@ -147,7 +147,7 @@ accident.
 
 ## Customizing Your Theme
 
-The rebrand script renames the ScriptHammer theme blocks to your project name but keeps the same colors. To customize:
+The rebrand script renames the geoLARP theme blocks to your project name but keeps the same colors. To customize:
 
 1. Edit `src/app/globals.css` — change the oklch color values in the `@plugin "daisyui/theme"` blocks
 2. Run Storybook to preview: `docker compose exec <project> pnpm run storybook`
@@ -285,9 +285,9 @@ After forking, verify everything works:
 - [ ] `docker compose up` starts without errors
 - [ ] `docker compose exec <project> pnpm test` — all tests pass
 - [ ] `docker compose run --rm builder pnpm run build` — build succeeds
-- [ ] No "ScriptHammer" references in `package.json`
+- [ ] No "geoLARP" references in `package.json`
 - [ ] `git remote -v` shows your repository URL
-- [ ] `.env` has `COMPOSE_PROJECT_NAME=<yourproject>` (not `scripthammer`)
+- [ ] `.env` has `COMPOSE_PROJECT_NAME=<yourproject>` (not `geolarp`)
 - [ ] `.env` is owner-only (`chmod 600 .env`) before it contains credentials
 - [ ] `public/CNAME` contains your domain (or is absent if no custom domain)
 - [ ] `docker compose ps` shows your project name in container names
@@ -331,7 +331,7 @@ The `session-persistence.spec.ts` test previously created users in `beforeEach` 
 ### Build Fails After Rebrand
 
 1. Run `docker compose down && docker compose up --build` to rebuild
-2. Check for any remaining "ScriptHammer" references: `grep -r "ScriptHammer" src/`
+2. Check for any remaining "geoLARP" references: `grep -r "geoLARP" src/`
 3. Ensure all import paths are correct after file renames
 
 ### GitHub Pages Shows 404
@@ -353,20 +353,20 @@ sudo rm -rf node_modules
 docker compose exec <project> rm -rf node_modules
 ```
 
-## Syncing with Upstream (ScriptHammer)
+## Syncing with Upstream (geoLARP)
 
-Keep your fork updated with improvements from ScriptHammer:
+Keep your fork updated with improvements from geoLARP:
 
 ### One-Time Setup
 
 ```bash
-# Add ScriptHammer as upstream remote
-git remote add upstream https://github.com/TortoiseWolfe/ScriptHammer.git
+# Add geoLARP as upstream remote
+git remote add upstream https://github.com/TortoiseWolfe/geoLARP.git
 
 # Verify remotes
 git remote -v
 # origin    https://github.com/YOU/YOUR-PROJECT.git (fetch)
-# upstream  https://github.com/TortoiseWolfe/ScriptHammer.git (fetch)
+# upstream  https://github.com/TortoiseWolfe/geoLARP.git (fetch)
 ```
 
 ### Pulling Updates
@@ -404,11 +404,11 @@ git cherry-pick <commit-hash>
 ### If Merge Conflicts Are Too Complex
 
 Open an issue with the conflicting paths on
-[ScriptHammer Issues](https://github.com/TortoiseWolfe/ScriptHammer/issues). Upstream
+[geoLARP Issues](https://github.com/TortoiseWolfe/geoLARP/issues). Upstream
 changes that conflict badly for one fork usually conflict for others, so they are worth
 reporting rather than working around alone.
 
 ## Getting Help
 
-- **GitHub Issues**: [ScriptHammer Issues](https://github.com/TortoiseWolfe/ScriptHammer/issues)
+- **GitHub Issues**: [geoLARP Issues](https://github.com/TortoiseWolfe/geoLARP/issues)
 - **Documentation**: [CLAUDE.md](../CLAUDE.md) for comprehensive development guide
