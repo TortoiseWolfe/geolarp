@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 /**
  * geoLARP — Coming Soon.
@@ -29,7 +30,9 @@ const SPIN_SECONDS = 28;
 
 export default function ComingSoon() {
   const [email, setEmail] = useState('');
-  const [state, setState] = useState<'idle' | 'sent'>('idle');
+  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>(
+    'idle'
+  );
 
   return (
     <section
@@ -118,6 +121,7 @@ export default function ComingSoon() {
         .gl-btn:hover { background: linear-gradient(#F7E3B4, #D3A840); }
         .gl-btn:active { transform: translateY(1px); box-shadow: inset 0 1px 0 #FFF4D8; }
         .gl-sent { font-family: Spectral, Georgia, serif; font-size: 16px; color: var(--geo-accent); }
+        .gl-error { font-family: Spectral, Georgia, serif; font-size: 15px; color: #d98b6a; flex-basis: 100%; margin-top: 10px; }
 
         /* The rings carry meaning, not decoration, but motion sensitivity wins. */
         @media (prefers-reduced-motion: reduce) {
@@ -450,19 +454,34 @@ export default function ComingSoon() {
 
         {state === 'sent' ? (
           <p className="gl-sent" role="status">
-            Noted — the list is not open yet, so nothing was stored. Check back
-            soon.
+            You&rsquo;re on the list. We&rsquo;ll write once, when the gates
+            open.
           </p>
         ) : (
           <form
             className="gl-form"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              // THERE IS NO BACKEND YET, so nothing is transmitted or stored.
-              // The message shown says exactly that. A form that answers "thank
-              // you, we will write" while discarding the address is worse than
-              // no form: it takes something and promises something, and does
-              // neither. Wire this to a real list before changing the wording.
+              // Normalising here is not cosmetic: email_signups CHECKs that the
+              // stored value equals lower(btrim(email)), so an address typed with
+              // capitals is rejected by the database rather than silently stored
+              // twice in two cases.
+              const address = email.trim().toLowerCase();
+              if (!address) return;
+              setState('sending');
+
+              const { error } = await createClient()
+                .from('email_signups')
+                .insert({ email: address, source: 'coming-soon' });
+
+              // 23505 is the unique violation -- this address is already on the
+              // list. Show the same thing as a first-time signup: telling someone
+              // "you already signed up" confirms list membership to anyone who can
+              // type an address, and is of no use to the person who just typed it.
+              if (error && error.code !== '23505') {
+                setState('error');
+                return;
+              }
               setState('sent');
             }}
           >
@@ -475,9 +494,19 @@ export default function ComingSoon() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <button className="gl-btn" type="submit">
-              Notify me
+            <button
+              className="gl-btn"
+              type="submit"
+              disabled={state === 'sending'}
+            >
+              {state === 'sending' ? 'Sending…' : 'Notify me'}
             </button>
+            {state === 'error' && (
+              <p className="gl-error" role="alert">
+                That didn&rsquo;t save — the list is unreachable right now. Try
+                again in a moment.
+              </p>
+            )}
           </form>
         )}
       </div>

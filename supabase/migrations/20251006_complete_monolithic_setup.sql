@@ -1162,13 +1162,34 @@ GRANT EXECUTE ON FUNCTION public.log_auth_event(TEXT, UUID, JSONB, BOOLEAN, TEXT
 -- initdb. Forward-fill a stub with the canonical implementation; GoTrue's
 -- CREATE OR REPLACE overwrites it at service boot. Ownership must be
 -- supabase_auth_admin or that REPLACE dies on 42501 (must be owner).
-CREATE OR REPLACE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$
-  SELECT coalesce(
-    nullif(current_setting('request.jwt.claim', true), ''),
-    nullif(current_setting('request.jwt.claims', true), '')
-  )::jsonb
-$$;
-ALTER FUNCTION auth.jwt() OWNER TO supabase_auth_admin;
+-- Guarded (#NN): forward-fill ONLY where auth.jwt() is genuinely absent -- i.e.
+-- the local supabase/postgres image before GoTrue's first boot. On Supabase Cloud
+-- the function already exists and is owned by supabase_auth_admin, while `postgres`
+-- holds USAGE but NOT CREATE on schema auth. The previous unconditional
+-- CREATE OR REPLACE therefore aborted this entire migration with
+--   42501: permission denied for schema auth
+-- on any NEWLY created cloud project, which is every fork. Verified on a fresh
+-- project: auth.jwt() present, owner supabase_auth_admin, CREATE on auth = false.
+DO $guard$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'auth' AND p.proname = 'jwt'
+  ) THEN
+    EXECUTE $fn$
+      CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $body$
+        SELECT coalesce(
+          nullif(current_setting('request.jwt.claim', true), ''),
+          nullif(current_setting('request.jwt.claims', true), '')
+        )::jsonb
+      $body$
+    $fn$;
+    EXECUTE 'ALTER FUNCTION auth.jwt() OWNER TO supabase_auth_admin';
+  END IF;
+END
+$guard$;
 
 -- ============================================================================
 -- Admin authorization: SINGLE SOURCE OF TRUTH (#240)
@@ -3549,6 +3570,73 @@ DROP TABLE IF EXISTS public.audit_logs CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
 DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 DROP FUNCTION IF EXISTS public.handle_updated_at() CASCADE;
+
+-- ============================================================================
+-- PART 14: PRE-LAUNCH EMAIL SIGNUPS (geoLARP)
+-- ============================================================================
+--
+-- Backs the Coming Soon form on `/`. Deliberately minimal: an address, where it
+-- came from, and when. No name, no IP, no user agent -- none of it is needed to
+-- send one launch email, and each field would be personal data to justify.
+--
+-- EMAIL IS STORED ALREADY-NORMALISED (lower-cased, trimmed) and a CHECK enforces
+-- it, so a plain UNIQUE constraint is enough. That matters: a functional index on
+-- lower(email) cannot be named by PostgREST's `on_conflict`, which is what lets
+-- the client say "insert, ignore duplicates" in ONE round trip.
+--
+-- DUPLICATES SURFACE AS 409, AND THE CLIENT TREATS THAT AS SUCCESS. The first
+-- version of this tried PostgREST's `resolution=ignore-duplicates` so a repeat
+-- signup would be byte-identical to a first one. It does not work for `anon` and
+-- the failure is not obvious: ON CONFLICT DO NOTHING must READ the conflicting
+-- row, anon has no SELECT policy here by design, so every insert came back
+--   42501: new row violates row-level security policy
+-- even though the INSERT policy is `WITH CHECK (true)`. Measured against the live
+-- REST endpoint -- a plain INSERT returns 201, the same INSERT with that one
+-- Prefer header returns 401.
+--
+-- The residual tradeoff, stated rather than hidden: 201-vs-409 lets someone who
+-- ALREADY KNOWS an address test whether it is on this list. For a pre-launch
+-- mailing list that is worth less than keeping the table free of duplicate rows,
+-- and the alternatives both cost more than the leak -- granting anon SELECT would
+-- expose the whole list, and a SECURITY DEFINER shim would launder a write around
+-- RLS to buy nothing but response symmetry.
+CREATE TABLE IF NOT EXISTS email_signups (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email      TEXT NOT NULL UNIQUE,
+  source     TEXT NOT NULL DEFAULT 'coming-soon',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT email_signups_email_normalised CHECK (email = lower(btrim(email))),
+  CONSTRAINT email_signups_email_shape      CHECK (email ~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'),
+  CONSTRAINT email_signups_email_length     CHECK (char_length(email) BETWEEN 6 AND 254),
+  CONSTRAINT email_signups_source_length    CHECK (char_length(source) <= 64)
+);
+
+ALTER TABLE email_signups ENABLE ROW LEVEL SECURITY;
+
+-- Anonymous visitors may ADD an address and nothing else. There is deliberately
+-- no SELECT/UPDATE/DELETE policy for anon, so the list cannot be read back, and
+-- an address cannot be removed by whoever can add one.
+DROP POLICY IF EXISTS "Anyone can join the launch list" ON email_signups;
+CREATE POLICY "Anyone can join the launch list"
+  ON email_signups FOR INSERT TO anon, authenticated
+  WITH CHECK (true);
+
+-- Only admins read it -- same is_admin() gate every other admin-visible table uses.
+DROP POLICY IF EXISTS "Admin can view the launch list" ON email_signups;
+CREATE POLICY "Admin can view the launch list"
+  ON email_signups FOR SELECT TO authenticated
+  USING (is_admin());
+
+DROP POLICY IF EXISTS "Admin can remove a launch signup" ON email_signups;
+CREATE POLICY "Admin can remove a launch signup"
+  ON email_signups FOR DELETE TO authenticated
+  USING (is_admin());
+
+CREATE INDEX IF NOT EXISTS idx_email_signups_created_at ON email_signups (created_at DESC);
+
+COMMENT ON TABLE email_signups IS
+  'Pre-launch mailing list for the Coming Soon page. anon may INSERT only; is_admin() may read.';
+
 
 -- Commit the transaction - everything succeeded
 COMMIT;
