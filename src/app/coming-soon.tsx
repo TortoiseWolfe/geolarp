@@ -450,15 +450,19 @@ export default function ComingSoon() {
 
         {state === 'sent' ? (
           <p className="gl-sent" role="status">
-            Thank you — we will write when the gates open.
+            Noted — the list is not open yet, so nothing was stored. Check back
+            soon.
           </p>
         ) : (
           <form
             className="gl-form"
             onSubmit={(e) => {
               e.preventDefault();
-              // No backend yet. Rather than silently swallow an address, the
-              // field is honest about what happened until the list is wired up.
+              // THERE IS NO BACKEND YET, so nothing is transmitted or stored.
+              // The message shown says exactly that. A form that answers "thank
+              // you, we will write" while discarding the address is worse than
+              // no form: it takes something and promises something, and does
+              // neither. Wire this to a real list before changing the wording.
               setState('sent');
             }}
           >
