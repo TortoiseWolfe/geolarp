@@ -1,4 +1,3 @@
-import PreLaunchChrome from './pre-launch-chrome';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { PRELOAD_FONTS } from './fonts-preload.generated';
@@ -203,11 +202,9 @@ export default function RootLayout({
               >
                 Skip to main content
               </a>
-              <PreLaunchChrome>
-                <GlobalNav />
-                <CountdownBanner />
-                <SetupBanner />
-              </PreLaunchChrome>
+              <GlobalNav />
+              <CountdownBanner />
+              <SetupBanner />
               <ErrorBoundary level="page">
                 {/* The skip TARGET. tabIndex={-1} so the anchor jump actually
                     moves focus here — without it the browser scrolls and leaves
@@ -222,9 +219,7 @@ export default function RootLayout({
                   {children}
                 </div>
               </ErrorBoundary>
-              <PreLaunchChrome>
-                <Footer />
-              </PreLaunchChrome>
+              <Footer />
               <CookieConsent />
               <ConsentModal />
               <PWAInstall />
