@@ -66,7 +66,11 @@ geoLARP-specific terms that need explanation:
 
 ## Examples from Existing Posts
 
-### Good Example: geolarp-intro.md
+### Good Example
+
+<!-- Illustration only. This previously cited geolarp-intro.md, which was one of the
+     template's own posts inherited by the fork and has since been removed; the
+     acronym-expansion pattern it demonstrated is still the rule. -->
 
 ```markdown
 - **[Tailwind CSS](https://tailwindcss.com/) (Cascading Style Sheets) v4**

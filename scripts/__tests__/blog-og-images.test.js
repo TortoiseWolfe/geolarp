@@ -32,12 +32,12 @@ const BLOG_DIR = path.join(__dirname, '..', '..', 'public', 'blog');
 const PUBLIC_DIR = path.join(__dirname, '..', '..', 'public');
 
 /**
- * `bad-seo-example.md` is a deliberate demonstration of bad SEO — it exists to show
- * what a post looks like with a bloated slug, a weak title and no imagery. Requiring
- * an image would destroy the thing it demonstrates. Exempted by name, with the reason,
- * rather than by loosening the rule for everyone.
+ * Empty on purpose. This held `bad-seo-example.md`, a deliberate bad-SEO demo that was
+ * one of the template's own posts and was removed when the fork stopped republishing
+ * them. The mechanism stays: exempt by name WITH the reason, never by loosening the
+ * rule for everyone — and the test below fails if an exemption outlives its file.
  */
-const INTENTIONALLY_IMAGELESS = new Set(['bad-seo-example.md']);
+const INTENTIONALLY_IMAGELESS = new Set([]);
 
 // CLAUDE.md in public/blog is guidance for authors, not a post.
 const all = fs
@@ -59,9 +59,33 @@ const field = (fm, name) => {
 describe('every blog post ships with images a reader can actually see', () => {
   it('finds posts to check at all', () => {
     // A glob that silently matches nothing would make every assertion below vacuous.
-    assert.ok(
-      posts.length >= 10,
-      `expected the blog to have posts, found ${posts.length}`
+    //
+    // This used to assert `>= 10`. That number was standing in for "the glob still
+    // works", but it is really a claim about how much content the blog has — so it
+    // went stale the moment the corpus was deliberately cut to three, and it would
+    // have been silently meaningless at 300. Cross-check the INDEPENDENT source
+    // instead: the committed index. It cannot pass vacuously (an empty disk and a
+    // non-empty index disagree) and it does not care how many posts exist.
+    const indexed = JSON.parse(
+      fs.readFileSync(
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          'src',
+          'lib',
+          'blog',
+          'blog-data.json'
+        ),
+        'utf8'
+      )
+    ).posts;
+    assert.ok(all.length > 0, `no posts found in ${BLOG_DIR}`);
+    assert.strictEqual(
+      all.length,
+      indexed.length,
+      `public/blog has ${all.length} posts but blog-data.json has ${indexed.length} — ` +
+        'run `pnpm generate:blog`. See blog-index-matches-disk.test.js.'
     );
   });
 

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { readFile } from 'fs/promises';
+import { readFile, readdir } from 'fs/promises';
 import { join } from 'path';
 import { assertValidOAuthClientId } from '../utils/oauth-validity';
 
@@ -87,10 +87,9 @@ test.describe('@smoke production deploy (#288)', () => {
     request,
   }) => {
     // GitHub Pages guarantee: the project github.io URL 301s to the custom domain.
-    const gh = await request.get(
-      'https://tortoisewolfe.github.io/geoLARP/',
-      { maxRedirects: 0 }
-    );
+    const gh = await request.get('https://tortoisewolfe.github.io/geoLARP/', {
+      maxRedirects: 0,
+    });
     expect(
       gh.status(),
       `github.io should redirect, got ${gh.status()}`
@@ -148,16 +147,29 @@ test.describe('@smoke production deploy (#288)', () => {
       (p) => `${origin}/blog/${p.slug}/`
     );
 
-    // Coverage floor. A selector or route change that silently stops matching
-    // must fail loudly rather than pass by measuring nothing (#396). Never
-    // lower this to make a run go green.
-    const FLOOR = 10;
+    // Coverage floor. A route change that silently stops matching must fail loudly
+    // rather than pass by measuring nothing (#396).
+    //
+    // This was a hardcoded `FLOOR = 10`. That number stood in for "the probe still
+    // works", but it is really a claim about how much content the blog has — it went
+    // stale the moment the corpus was deliberately cut to three, and it would have
+    // been silently meaningless at 300. Derive it from the INDEPENDENT source, the
+    // markdown on disk: an empty index cannot equal a non-empty directory, so this
+    // still cannot pass vacuously, and it no longer encodes a content size.
+    // Do not replace this with a constant.
+    const onDisk = (
+      await readdir(join(process.cwd(), 'public', 'blog'))
+    ).filter((f) => f.endsWith('.md') && !/^[A-Z]+\.md$/.test(f));
     console.log(`[canonical] checking ${postUrls.length} blog posts`);
     expect(
+      onDisk.length,
+      'no blog markdown found on disk — this probe stopped looking'
+    ).toBeGreaterThan(0);
+    expect(
       postUrls.length,
-      `only ${postUrls.length} posts found in blog-data.json — below the floor of ${FLOOR}. ` +
-        `Either the data file changed shape or this probe stopped looking. Do not lower the floor.`
-    ).toBeGreaterThanOrEqual(FLOOR);
+      `blog-data.json lists ${postUrls.length} posts but public/blog has ${onDisk.length} ` +
+        `markdown files. Run \`pnpm generate:blog\` and commit the diff.`
+    ).toBe(onDisk.length);
 
     const failures: string[] = [];
 
