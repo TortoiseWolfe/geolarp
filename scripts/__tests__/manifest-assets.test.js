@@ -173,9 +173,16 @@ describe('manifest assets', () => {
   test('the component and public/favicon.svg draw the same mark', () => {
     // Two independent render paths, no shared source. The inline component is
     // what the site shows; public/favicon.svg is what scripts/generate-icons.js
-    // turns into all 19 icons. Nothing made them agree, so inking one and not
-    // the other would ship a different logo in the browser tab than on the page
-    // — the #659 shape, one emitter lying about the brand.
+    // turns into all 19 icons. Nothing makes them agree, so inking one and not
+    // the other ships a different logo in the browser tab than on the page —
+    // the #659 shape, one emitter lying about the brand.
+    //
+    // THIS COMPARES EVERY PATH, not three named elements. The previous version
+    // matched `gear-body`, `#tags` and `#mallet` by name, which tied it to one
+    // specific mark: when the die replaced the gear lockup (#6) the assertion
+    // could no longer find its landmarks and reported "gear path not found"
+    // rather than the drift it exists to catch. Comparing the full set of `d`
+    // values survives any future change of mark.
     const svg = fs.readFileSync(path.join(PUBLIC, 'favicon.svg'), 'utf8');
     const tsx = fs.readFileSync(
       path.join(
@@ -185,49 +192,55 @@ describe('manifest assets', () => {
       'utf8'
     );
 
-    const drift = [];
-    const gearSvg = svg.match(/id="gear-body"[^>]*d="([^"]+)"/)?.[1];
-    const gearTsx = tsx.match(/id=\{id\('gear'\)\}[\s\S]*?d="([^"]+)"/)?.[1];
-    if (!gearSvg || !gearTsx)
-      drift.push('gear path not found in one of the two files');
-    else if (gearSvg !== gearTsx) drift.push('gear path differs');
+    // `(?<![\w-])` so `id="b-pip"` is not mistaken for a `d="..."` attribute.
+    const geometry = (src) =>
+      (src.match(/(?<![\w-])d="([^"]+)"/g) || []).map((m) =>
+        m.slice(3, -1).replace(/\s+/g, ' ').trim()
+      );
 
-    // Composition scales, quoted differently in each file but must resolve equal.
-    for (const [what, re1, re2] of [
-      [
-        'brackets scale',
-        /scale\(\.(\d+)\)[^>]*><use href="#tags"/,
-        /scale\(\.(\d+)\) translate\(-200 -200\)">\s*<use href=\{`#\$\{id\('tags'\)\}`\}/,
-      ],
-      [
-        'mallet scale',
-        /scale\(\.(\d+)\)[^>]*><use href="#mallet"/,
-        /scale\(\.(\d+)\) translate\(-200 -200\)">\s*<use href=\{`#\$\{id\('mallet'\)\}`\}/,
-      ],
-    ]) {
-      const a = svg.match(re1)?.[1];
-      const b = tsx.match(re2)?.[1];
-      if (a !== b) drift.push(`${what}: favicon .${a} vs component .${b}`);
+    const inSvg = geometry(svg);
+    const inTsx = new Set(geometry(tsx));
+    const drift = [];
+
+    assert.ok(
+      inSvg.length >= 8,
+      `only ${inSvg.length} paths found in favicon.svg — the mark cannot have ` +
+        `been parsed, so this comparison would pass vacuously.`
+    );
+
+    for (const d of inSvg) {
+      if (!inTsx.has(d)) {
+        drift.push(
+          `favicon.svg draws a path the component does not: ${d.slice(0, 60)}…`
+        );
+      }
     }
 
     // Both must carry the comic keyline, or one ships uninked.
     const inkSvg = (svg.match(/#2E353B/g) || []).length;
-    const inkTsx = /const INK = '#2E353B'/.test(tsx);
     if (inkSvg < 3)
       drift.push(`favicon.svg has ${inkSvg} ink references, expected >= 3`);
-    if (!inkTsx) drift.push('component has no INK constant');
+    if (!/const INK = '#2E353B'/.test(tsx))
+      drift.push('component has no INK constant');
 
-    // Neither may keep the clear-space halo; the keyline replaced it.
-    if (svg.includes('cut-lockup'))
-      drift.push('favicon.svg still has the cut-lockup halo');
-    if (tsx.includes("id('cut')"))
-      drift.push('component still has the cut-lockup halo');
+    // The retired ScriptHammer lockup must not creep back into either emitter
+    // (#6, #19). Its ring baked "SCRIPTHAMMER.COM" into path data, so a text
+    // search of the rendered page could never have found it.
+    for (const [where, src] of [
+      ['favicon.svg', svg],
+      ['the component', tsx],
+    ]) {
+      for (const ghost of ['gear-body', 'cut-lockup', 'RING_WORDMARK']) {
+        if (src.includes(ghost))
+          drift.push(`${where} still references the retired lockup: ${ghost}`);
+      }
+    }
 
     assert.deepStrictEqual(
       drift,
       [],
-      `The inline component and public/favicon.svg have drifted. Regenerate via ` +
-        `docs/design/brand-marks/tools/rebalance.py and re-derive both:\n  ` +
+      `The inline component and public/favicon.svg have drifted. The component ` +
+        `copies its geometry from favicon.svg verbatim — change one, change both:\n  ` +
         drift.join('\n  ')
     );
   });
