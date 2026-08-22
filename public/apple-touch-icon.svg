@@ -20,7 +20,7 @@
           </g>
           <path d="M200.0,155.3 L234.9,172.1 L243.6,209.9 L219.4,240.3 L180.6,240.3 L156.4,209.9 L165.1,172.1 Z" fill="#F5E7C6" stroke="#2E353B" stroke-width="5" stroke-linejoin="round"></path>
           <path d="M200,114 L267.2,146.4 L283.8,219.1 L237.3,277.5 L162.7,277.5 L116.2,219.1 L132.8,146.4 Z" fill="none" stroke="#2E353B" stroke-width="8" stroke-linejoin="round"></path>
-          <text x="200" y="222" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="900" font-size="62" fill="#2E353B">7</text>
+          <path id="b-pip" fill="#2E353B" d="M184,177 H216 V190 L205,222 H190 L203,190 H184 Z"/>
         </g>
   </svg>
 </svg>
