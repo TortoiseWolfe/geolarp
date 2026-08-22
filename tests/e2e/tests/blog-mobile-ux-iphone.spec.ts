@@ -1,5 +1,6 @@
 import { test, expect, devices } from '@playwright/test';
 import { waitForLoadStateOrGiveUp } from '../utils/settle';
+import { FOOTER_LINKS } from '@/config/footer-links';
 
 /**
  * Mobile UX Tests for Blog Posts - iPhone 12
@@ -33,12 +34,26 @@ test.describe('Blog Post Mobile UX - iPhone 12', () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await page.waitForTimeout(500); // Wait for scroll to complete
 
-    const footer = page.locator('footer');
+    // Scoped to the SITE footer. The twin routes render their own compact strip
+    // and a post may grow an article footer; this test is about the attribution.
+    // `data-site-footer` is the stable hook Footer.tsx exists to provide.
+    const footer = page.locator('footer[data-site-footer]');
     await expect(footer).toBeVisible();
 
-    // Verify footer contains expected text
+    // ASSERT THE SOURCE OF TRUTH, NOT A LITERAL. This used to pin one hardcoded
+    // credit string, which stopped being the attribution at the rebrand -- so it
+    // failed for the right reason while telling you nothing about what the footer
+    // should say. FOOTER_LINKS is what BOTH footers render from, so this cannot
+    // go stale on the next rebrand, and checking names AND hrefs is strictly
+    // stronger than the single substring it replaces: a footer that renamed a
+    // link, dropped one, or repointed one now fails.
     await expect(footer).toContainText('Made by');
-    await expect(footer).toContainText('CRUDgames.com');
+    for (const link of FOOTER_LINKS) {
+      await expect(
+        footer.getByRole('link', { name: link.label }),
+        `the site footer must link "${link.label}" to ${link.href}`
+      ).toHaveAttribute('href', link.href);
+    }
 
     // Take screenshot for visual verification
     await page.screenshot({
