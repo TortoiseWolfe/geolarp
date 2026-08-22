@@ -193,15 +193,32 @@ describe('image cache naming (#438)', () => {
     expect(decl![1]).not.toContain('CACHE_VERSION');
   });
 
-  it('keeps the geolarp- prefix so activate still purges it', () => {
-    // activate's cleanup filters on this prefix. A name without it would leak
+  it('is built from the same prefix activate purges, so cleanup owns it', () => {
+    // activate's cleanup filters on CACHE_PREFIX. A name outside it would leak
     // storage instead of being cleaned up — trading one bug for another.
-    const decl = /const IMAGE_CACHE = '([^']+)';/.exec(SW_SOURCE);
+    //
+    // This used to require a plain literal starting with the brand. That made the
+    // agreement between this name and the purge a matter of two strings someone
+    // kept in sync by hand, and they did fall out of sync: `rebrand.sh` sweeps
+    // `.js` but not `.mjs`, so a fork's worker and its stamp script ended up using
+    // different brands and every deploy leaked caches (#939). Building the name
+    // from CACHE_PREFIX makes the agreement structural instead of clerical, and
+    // means this test no longer has to name a brand — so it holds for the template
+    // and every fork alike.
+    const decl = /const IMAGE_CACHE = ([^;]+);/.exec(SW_SOURCE);
+    expect(decl, 'IMAGE_CACHE declaration not found').not.toBeNull();
     expect(
-      decl,
-      'IMAGE_CACHE is no longer a plain string literal'
-    ).not.toBeNull();
-    expect(decl![1].startsWith('geolarp-')).toBe(true);
+      decl![1],
+      'IMAGE_CACHE must be built from CACHE_PREFIX, which is what activate purges'
+    ).toContain('CACHE_PREFIX');
+
+    // And CACHE_PREFIX must be the BRAND segment only. If it ever carried the
+    // per-build version, #438 returns: the image cache would be renamed every
+    // deploy and activate would discard every cached image.
+    expect(
+      SW_SOURCE,
+      'CACHE_PREFIX must strip the -v<semver> tail, or IMAGE_CACHE changes per build'
+    ).toMatch(/const CACHE_PREFIX = CACHE_VERSION\.replace\(\s*\/-v/);
   });
 
   it('is preserved by the activate cleanup rather than deleted', () => {
