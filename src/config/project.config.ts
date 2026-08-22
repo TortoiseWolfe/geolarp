@@ -14,7 +14,7 @@ const defaultConfig = {
   projectName: 'geoLARP',
   projectOwner: 'TortoiseWolfe',
   projectDescription:
-    'A production Next.js and Supabase platform with auth, payments, encrypted messaging, and an accessible offline-capable PWA',
+    'geo-located live action role playing. Real geography, real play.',
   basePath: '',
 };
 
