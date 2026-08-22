@@ -35,7 +35,7 @@ export default function ComingSoon() {
   );
 
   return (
-    <section
+    <main
       data-theme="geolarp-dark"
       className="gl-root"
       style={
@@ -114,7 +114,7 @@ export default function ComingSoon() {
         .gl-input:focus { border-color: #E3C688; }
         .gl-btn { height: 50px; padding: 0 28px;
           font-family: Cinzel, Georgia, serif; font-weight: 700; font-size: 14px;
-          letter-spacing: 2.5px; text-transform: uppercase; color: #241809;
+          letter-spacing: 2.5px; text-transform: uppercase; color: #0C0805;
           background: linear-gradient(#F0D69A, #C79B36);
           border: 2px solid #7A5C20; border-radius: 3px; cursor: pointer;
           box-shadow: inset 0 1px 0 #FFF4D8, 0 2px 0 #5C4419; }
@@ -510,6 +510,6 @@ export default function ComingSoon() {
           </form>
         )}
       </div>
-    </section>
+    </main>
   );
 }

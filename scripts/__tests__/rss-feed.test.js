@@ -135,7 +135,21 @@ test('RSS and JSON feeds mirror the published site index at its configured origi
       assert.ok(rss.includes(`<link>${url}</link>`));
       assert.ok(rss.includes(`<guid isPermaLink="true">${url}</guid>`));
     }
-    assert.ok(rss.includes('Stripe, PayPal &amp; GDPR'));
+    // XML escaping. This used to assert one hardcoded post title containing an
+    // ampersand ('Stripe, PayPal &amp; GDPR'), which pinned the check to a single
+    // piece of content and broke the moment that post was removed — and would have
+    // gone quietly vacuous if the title had merely been reworded. Assert the
+    // invariant instead: every `&` in the feed must open a character entity, or the
+    // XML is malformed. That covers titles, excerpts and content at once, holds for
+    // any corpus, and cannot go stale.
+    const unescaped = rss.match(
+      /&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g
+    );
+    assert.deepStrictEqual(
+      unescaped,
+      null,
+      `RSS contains ${unescaped?.length} unescaped ampersand(s) — the feed is not valid XML`
+    );
     assert.deepStrictEqual(
       jsonFeed.items.find(
         (item) =>

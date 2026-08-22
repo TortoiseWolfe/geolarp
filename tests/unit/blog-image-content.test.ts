@@ -37,14 +37,21 @@
  * from measurement, not taste — and it is verified to reject the broken file,
  * which is the only thing that makes it a guard rather than decoration.
  *
+ * NOTE (#28): every file named above — overview/sortable/users/audit.png and
+ * bad-seo-example-og.png — belonged to the template's own posts and was removed
+ * when this fork stopped republishing them. The measurements stand as the record
+ * of how MIN_DISTINCT_COLOURS was chosen; the files are simply no longer here to
+ * re-measure. Re-derive the threshold from the current corpus before changing it.
+ *
  * @module tests/unit/blog-image-content.test
  */
 import { describe, it, expect } from 'vitest';
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import sharp from 'sharp';
 
 const ROOT = join(process.cwd(), 'public/blog-images');
+const BLOG_DIR = join(process.cwd(), 'public/blog');
 
 /**
  * Minimum distinct colours for a shipped raster image.
@@ -91,7 +98,33 @@ describe('shipped blog images contain an image (#439)', () => {
   it('finds raster images to check', () => {
     // A sweep that silently measures nothing reads as a pass. #411 is the same
     // shape: a green gate that covered 4 of 43 routes.
-    expect(files.length).toBeGreaterThan(10);
+    //
+    // This asserted `> 10`. That number stood in for "the directory walk still
+    // works", but it is really a claim about how many images the blog ships — so it
+    // broke the moment the corpus shrank, and would have been silently meaningless
+    // if it grew. Derive it from the INDEPENDENT source instead: the rasters the
+    // posts actually reference. An empty walk cannot cover a non-empty reference
+    // set, so this still cannot pass vacuously, and it encodes no content size.
+    const referenced = new Set(
+      readdirSync(BLOG_DIR)
+        .filter((f) => f.endsWith('.md') && !/^[A-Z]+\.md$/.test(f))
+        .flatMap((f) => [
+          ...readFileSync(join(BLOG_DIR, f), 'utf8').matchAll(
+            /\/blog-images\/([^\s)"']+?\.(?:png|jpe?g))/gi
+          ),
+        ])
+        .map((m) => m[1])
+    );
+
+    expect(
+      referenced.size,
+      'no post references a raster image — this probe stopped looking'
+    ).toBeGreaterThan(0);
+    expect(
+      files.length,
+      `posts reference ${referenced.size} raster images but the walk of ` +
+        `public/blog-images found ${files.length}`
+    ).toBeGreaterThanOrEqual(referenced.size);
   });
 
   it.each(files.map((f) => [relative(ROOT, f), f]))(

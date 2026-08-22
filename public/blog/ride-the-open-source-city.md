@@ -74,7 +74,7 @@ Shipping something rough and asking people to break it is itself a best practice
 
 _You press B to ride the bike, and the bike rides off through the sky. Spawned below the city, falling — at a smooth 60 fps, so the frame rate is fine and the spawn is just wrong. This is the reason to play a beta, not the reason to skip it._
 
-So I did the exact thing I am about to ask you to do. I filed it as a bug report: **[issue #651](https://github.com/TortoiseWolfe/geoLARP/issues/651)**. Open it and look at the _shape_ of it, because that shape is the whole ask:
+So I did the exact thing I am about to ask you to do. I filed it as a bug report: **[issue #651](https://github.com/TortoiseWolfe/ScriptHammer/issues/651)**. Open it and look at the _shape_ of it, because that shape is the whole ask:
 
 - **Where** you were — the URL (`/chatt?diorama&walk`).
 - **What you did** — opened it, clicked to look, pressed WASD.
@@ -98,7 +98,7 @@ Fluent versus true is the whole game, and it's the actual skill I want to teach 
 
 - **Slop** says "it works." **Craft** writes a test that fails when it doesn't.
 - **Slop** makes a confident claim. **Craft** checks it against the source and links it.
-- **Slop** hides the rough edge. **Craft** files the bug with steps to reproduce, like [#651](https://github.com/TortoiseWolfe/geoLARP/issues/651).
+- **Slop** hides the rough edge. **Craft** files the bug with steps to reproduce, like [#651](https://github.com/TortoiseWolfe/ScriptHammer/issues/651).
 - **Slop** invents specifics. **Craft** says "I don't know yet," then finds out.
 
 None of that is advanced. It is verifying before you ship, reading the code you paste, and being willing to write "this is broken" in public. A real game engine is a great place to learn it, because the game either runs or it doesn't — the feedback is honest whether you like it or not.
