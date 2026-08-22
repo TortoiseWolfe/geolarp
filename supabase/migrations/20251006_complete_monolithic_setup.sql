@@ -1162,7 +1162,7 @@ GRANT EXECUTE ON FUNCTION public.log_auth_event(TEXT, UUID, JSONB, BOOLEAN, TEXT
 -- initdb. Forward-fill a stub with the canonical implementation; GoTrue's
 -- CREATE OR REPLACE overwrites it at service boot. Ownership must be
 -- supabase_auth_admin or that REPLACE dies on 42501 (must be owner).
--- Guarded (#NN): forward-fill ONLY where auth.jwt() is genuinely absent -- i.e.
+-- Guarded (upstream ScriptHammer #929): forward-fill ONLY where auth.jwt() is genuinely absent -- i.e.
 -- the local supabase/postgres image before GoTrue's first boot. On Supabase Cloud
 -- the function already exists and is owned by supabase_auth_admin, while `postgres`
 -- holds USAGE but NOT CREATE on schema auth. The previous unconditional
