@@ -293,6 +293,23 @@ Phase 2a (toolkit foundation: `@/lib/cod` public API + core gems, wired into the
 (the gauntlet-loop game-demo generator skill) is designed in
 `docs/prp-docs/cod-game-toolkit-prp.md`, not yet built.
 
+## The game itself (enhancements)
+
+| Order | Feature | Name                        | Depends On |
+| ----- | ------- | --------------------------- | ---------- |
+| —     | **052** | Character Model & d7 System | —          |
+
+**052 is a transcription, not a design.** geoLARP's mechanics were published in
+`public/blog/the-world-is-the-board.md` (live, indexed, and therefore binding) before any
+spec existed for them. Feature 052 writes those commitments down where a test can reach
+them — the 1d7 curve, the five attributes on a 1–7 scale, 100-metre cells, hash-seeded
+encounters, and the browser-local character with its export promise.
+
+It invents nothing: gaps the post leaves open are marked ⚠️ UNSPECIFIED rather than
+filled, and the author's four open questions (the fiction, two players in one cell, how
+much walking, whether the seven holds up) are preserved as open. Its §7 records two places
+shipped code already contradicts the published design — see #37 and #39.
+
 ## Related Documents
 
 | Document          | Location                               |
