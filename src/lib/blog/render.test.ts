@@ -1,3 +1,5 @@
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import blogData from './blog-data.json';
@@ -196,7 +198,19 @@ describe('renderBlogMarkdown heading compatibility', () => {
     // reporting green — the vacuous-gate shape this repo keeps paying for (#396,
     // #411). This test cannot be skipped out of existence by a bad import, so it is
     // what makes the sweep's silence audible.
-    expect(corpus.length).toBeGreaterThanOrEqual(10);
+    // This asserted `>= 10`. That number stood in for "the import worked", but it is
+    // really a claim about how much content the blog has — so it went stale the moment
+    // the corpus was deliberately cut to three, and it would have been silently
+    // meaningless at 300. Cross-check the INDEPENDENT source instead: the markdown on
+    // disk. An empty corpus cannot equal a non-empty directory, so this still cannot
+    // pass vacuously, and it no longer encodes a content size.
+    // scripts/__tests__/blog-index-matches-disk.test.js owns this invariant; repeating
+    // it here is deliberate — it is what makes THIS sweep's silence audible.
+    const onDisk = readdirSync(join(process.cwd(), 'public', 'blog')).filter(
+      (f) => f.endsWith('.md') && !/^[A-Z]+\.md$/.test(f)
+    );
+    expect(onDisk.length).toBeGreaterThan(0);
+    expect(corpus.length).toBe(onDisk.length);
     expect(
       corpus.every((post) => post.slug && post.content?.length > 0),
       'every post needs a slug and content for the sweep to mean anything'
