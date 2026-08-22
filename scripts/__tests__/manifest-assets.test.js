@@ -180,7 +180,7 @@ describe('manifest assets', () => {
     const tsx = fs.readFileSync(
       path.join(
         ROOT,
-        'src/components/atomic/SpinningLogo/LayeredgeoLARPLogo.tsx'
+        'src/components/atomic/SpinningLogo/LayeredGeoLARPLogo.tsx'
       ),
       'utf8'
     );
