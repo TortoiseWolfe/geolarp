@@ -1,6 +1,78 @@
 {
   "posts": [
     {
+      "id": "post_2a935541",
+      "slug": "the-world-is-the-board",
+      "title": "The World Is the Board: What geoLARP Actually Is",
+      "content": "\n# 🎲 The World Is the Board: What geoLARP Actually Is\n\nThere has been a domain, a mark, and a coming-soon page for a while now, and no\nexplanation of what any of it is for. So here is the design, plainly, including\nthe parts I have not settled.\n\nThe short version: **geoLARP is geo-located live action role-playing.** The street\noutside is the board. Your phone is the character sheet. You walk somewhere, and\nsomething is there — not because a designer placed it, but because that patch of\nground and today's date hash to it.\n\n## 🎲 Why a seven-sided die\n\nEvery tabletop system picks a die and inherits its personality. geoLARP runs on\n**1d7**, and that is not a gimmick — it changes the feel of play in a way you can\ncalculate.\n\n|                  | d20  | d6    | **d7**    |\n| ---------------- | ---- | ----- | --------- |\n| each face        | 5%   | 16.7% | **14.3%** |\n| average roll     | 10.5 | 3.5   | **4.0**   |\n| critical success | 5%   | —     | **14.3%** |\n\nA natural 20 lands about once every twenty rolls. A **natural 7 lands about once\nevery seven** — nearly three times as often. Criticals stop being a rare\nfireworks moment and become a texture you plan around. The same is true at the\nbottom: a natural 1 complicates things about as often as a 7 saves them, so the\ngame keeps handing you both.\n\nAdvantage is `2d7 keep highest`; disadvantage keeps the lowest. Attributes —\n**Strength, Agility, Intellect, Spirit, Luck** — sit on the same 1–7 scale as the\ndie, so a character sheet reads in the same units as the roll. That symmetry is\nmost of why the system is worth the trouble.\n\nYou may have noticed the site's mark is a seven-sided die. That is not\ndecoration. It is the one design decision everything else is built on, so it may\nas well be the logo.\n\n> A physical d7 is geometrically impractical — you cannot fairly divide a solid\n> into seven equal faces the way you can into six or twenty. The digital-only\n> constraint is not a compromise for a phone game. It is the reason this die can\n> exist at all.\n\n## 🗺️ Encounters made of coordinates\n\nThe world is divided into **100-metre cells**. Each cell's coordinates are hashed\ninto a seed, and that seed generates what is there — a monster, a trader, a cache,\na shrine, a trap. Five kinds, scaled by a challenge rating tuned to the d7 curve.\n\nTwo consequences fall out of that, and they are the whole reason for the design:\n\n**It is the same for everybody.** No server assigns you an encounter. The corner\nof your street holds the same thing for you as for the person who walks past an\nhour later, because it is derived from the place, not handed out. That is what\nmakes it a shared world rather than a private one.\n\n**It works with nothing behind it.** No matchmaking, no world state, no database\nof what is where. Your device can generate the 3×3 grid of cells around you while\ncompletely offline, from map tiles it cached earlier.\n\n## 🔒 The privacy design is the same design\n\nThis is the part I am most pleased with, so I want to be exact about it.\n\nLocation is rounded to **100 metres before anything is done with it** — and that\nrounding is not a privacy feature bolted on afterwards. It is the grid. The\ncoarseness that makes encounters stable is the same coarseness that means the game\nnever knows which building you are in.\n\nSo there is no tracking to switch off, and no location history to leak, because\nnone is collected. Deny the permission entirely and it still plays: it falls back\nto a coarse network location, a zone you pick by hand, or grid movement with no\nGPS at all.\n\n## 🚶 What playing actually looks like\n\nYou generate a character in well under a minute — the target is ten seconds — and\nit lives in your browser's storage. You can export it as a file or a QR code and\ncarry it to another device. Nothing about you goes to a server, which is also why\n**you** are responsible for that export; clearing your browser data clears your\ncharacter, and the game will warn you rather than quietly lose it.\n\nThen you go outside. Quests are built around real distance — walk a quarter mile\nand see what is at the other end. The design target is about half a mile of actual\nwalking in a session. This is a game that only works if you move.\n\n## 🏗️ What exists today, honestly\n\nI would rather undersell this than have you click through to a disappointment.\n\n**Playable now, and worth your time:**\n\n- 🌆 A [3D digital twin of Chattanooga](https://geolarp.com/chatt/) — around eight\n  thousand buildings at real rooftop heights, over the real street grid, from open\n  data, with no server behind it\n- 🚲 [First-person walking and cycling through it](https://geolarp.com/blog/ride-the-open-source-city),\n  on an asset-free procedural engine that ships zero texture or model files\n- 🧱 A bare [test level](https://geolarp.com/game/cod-skeleton) proving the engine\n  is reusable rather than one scene in a trenchcoat\n\n**Designed, specified, not yet a game you can play:** the d7 system, the character\nmodel, the encounter engine, the offline map layer. The specifications are written.\nThe game is not finished. There is no beta build to hand you today, and the signup\nform on the front page is the honest version of that — it takes an address and\ntells you nothing else has happened yet.\n\n## 🙋 The part where you come in\n\nThis is early enough that the interesting version of this game is not the one I\nsketch alone. Some questions I genuinely have not answered:\n\n1. **What is the fiction?** The mechanics are specified; the _world_ is not. Is\n   this fantasy laid over the real street, near-future, folk-horror, something with\n   no combat in it at all? The encounter types — monster, trader, cache, shrine,\n   trap — are placeholders wearing familiar clothes.\n2. **What happens when two players are in the same cell?** Right now the design is\n   single-player-shaped with a shared world. Co-op, competition, or simply\n   knowing someone else has been here — each pulls the design somewhere different.\n3. **How much walking is too much?** Half a mile a session is a guess. It is the\n   difference between a game you play on a commute and one you make a trip for,\n   and I do not know which this should be.\n4. **Does the seven hold up in play?** Criticals landing three times as often as\n   d20 reads well on paper. Whether it feels generous or chaotic is not something\n   arithmetic can tell me.\n\nIf any of that makes you want to argue with me, that is exactly the point. The\n**Notify me** box on the [front page](https://geolarp.com) is where to start —\nit is a real list now, stored properly, and it will be used once, to tell you when\nthere is something to play. If you would rather argue in public than wait, the\n[playable-city brainstorm](https://geolarp.com/blog/playable-city-chattanooga)\nhas its own open questions and the door propped open the same way.\n\nCome help decide what this is while it is still deciding.\n",
+      "excerpt": "geoLARP turns the street outside into a game board and your phone into a character sheet. Here is the design so far, including a seven-sided die and encounters made of coordinates, and the parts still open enough for you to change.",
+      "publishedAt": "2026-08-22T00:00:00.000Z",
+      "updatedAt": "2026-08-22T00:00:00.000Z",
+      "status": "published",
+      "author": {
+        "id": "default",
+        "name": "TortoiseWolfe"
+      },
+      "metadata": {
+        "tags": [
+          "geolarp",
+          "game-design",
+          "d7",
+          "geolocation",
+          "beta"
+        ],
+        "categories": [
+          "ideas"
+        ],
+        "readingTime": 7,
+        "wordCount": 1232,
+        "showToc": true,
+        "showAuthor": true,
+        "showShareButtons": true,
+        "featured": false,
+        "featuredImage": "/blog-images/the-world-is-the-board/featured-og.svg",
+        "featuredImageAlt": "A seven-sided die beside the geoLARP wordmark, over a 100-metre grid"
+      },
+      "seo": {
+        "title": "The World Is the Board: What geoLARP Actually Is",
+        "description": "geoLARP turns the street outside into a game board and your phone into a character sheet. Here is the design so far, including a seven-sided die and encounters made of coordinates, and the parts still open enough for you to change.",
+        "keywords": [
+          "geolarp",
+          "game-design",
+          "d7",
+          "geolocation",
+          "beta"
+        ],
+        "ogTitle": "The World Is the Board: What geoLARP Actually Is",
+        "ogDescription": "Geo-located live action role-playing built on a seven-sided die and a 100-metre grid. The design is real, the game is not finished, and the open questions are still open.",
+        "ogImage": "/blog-images/the-world-is-the-board/featured-og.png",
+        "twitterCard": "summary_large_image"
+      },
+      "frontMatter": {
+        "title": "The World Is the Board: What geoLARP Actually Is",
+        "author": "TortoiseWolfe",
+        "date": "2026-08-22T00:00:00.000Z",
+        "slug": "the-world-is-the-board",
+        "tags": [
+          "geolarp",
+          "game-design",
+          "d7",
+          "geolocation",
+          "beta"
+        ],
+        "categories": [
+          "ideas"
+        ],
+        "excerpt": "geoLARP turns the street outside into a game board and your phone into a character sheet. Here is the design so far, including a seven-sided die and encounters made of coordinates, and the parts still open enough for you to change.",
+        "featuredImage": "/blog-images/the-world-is-the-board/featured-og.svg",
+        "featuredImageAlt": "A seven-sided die beside the geoLARP wordmark, over a 100-metre grid",
+        "ogImage": "/blog-images/the-world-is-the-board/featured-og.png",
+        "ogTitle": "The World Is the Board: What geoLARP Actually Is",
+        "ogDescription": "Geo-located live action role-playing built on a seven-sided die and a 100-metre grid. The design is real, the game is not finished, and the open questions are still open.",
+        "twitterCard": "summary_large_image"
+      }
+    },
+    {
       "id": "post_50de87ab",
       "slug": "ride-the-open-source-city",
       "title": "Why Build One Game When You Can Build All the Games?",
@@ -1057,7 +1129,7 @@
       }
     },
     {
-      "id": "post_b82e08ad",
+      "id": "post_0506b06d",
       "slug": "geolarp-intro",
       "title": "Scripthammer - Opinionated Next.js PWA Template",
       "content": "\n# Scripthammer: Your Production-Ready Next.js Template\n\nScripthammer is an opinionated Next.js template that comes batteries-included with everything you need to build modern web applications. No more setup fatigue - just clone and start building.\n\n## 📦 What's Actually In This Template\n\n![Scripthammer Dashboard](/blog-images/geolarp-intro/dashboard-overview.svg)\n_The Scripthammer dashboard showing the theme switcher and component structure_\n\n### 🔧 Core Technologies\n\n- **[Next.js](https://nextjs.org/) 15.5.2** with App Router and static export support\n- **[React](https://react.dev/) 19.1.0** with [TypeScript](https://www.typescriptlang.org/) strict mode\n- **[Tailwind CSS](https://tailwindcss.com/) (Cascading Style Sheets) v4** with [DaisyUI](https://daisyui.com/) — 32 DaisyUI themes plus 3 house themes, 34 in total\n- **PWA Support** with offline capabilities via [Workbox](https://developer.chrome.com/docs/workbox/)\n- **[Docker](https://www.docker.com/)-First Development** - everything runs in containers\n\n### ✨ Real Features That Work\n\n#### 🎨 35 Theme System\n\nNot just light and dark mode - we ship 35 themes: 32 DaisyUI themes from [DaisyUI](https://daisyui.com/), plus 3 house themes of our own:\n\n- Classic: light, dark, cupcake, bumblebee\n- Modern: synthwave, cyberpunk, valentine, halloween\n- Professional: corporate, business, emerald, forest\n- Experimental: acid, lemonade, coffee, winter\n\nTheme switching is instant and persisted across sessions.\n\n#### ♿ Accessibility Built-In\n\n- Color vision assistance for 8 types of color blindness\n- Font size scaling system\n- Screen reader optimizations\n- Keyboard navigation throughout\n- WCAG (Web Content Accessibility Guidelines) 2.1 AA compliance ready\n\n#### 🧪 Testing That Actually Runs\n\n![Testing Suite Output](/blog-images/geolarp-intro/testing-output.svg)\n_Comprehensive test suite with unit, E2E (End-to-End), and accessibility testing_\n\n```bash\ndocker compose exec geolarp pnpm run test:suite\n```\n\n- [Vitest](https://vitest.dev/) for unit tests (58% coverage)\n- [Playwright](https://playwright.dev/) for E2E (End-to-End) testing (40+ tests)\n- [Pa11y](https://pa11y.org/) for accessibility testing\n- Component structure validation\n- Pre-push hooks with [Husky](https://typicode.github.io/husky/)\n\n#### 📱 True PWA Support\n\n- Service worker with offline mode\n- Background sync for form submissions\n- [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) for local data storage\n- App manifest for installability\n- Push notification ready\n\n## 🐳 Docker Development Environment (MANDATORY)\n\n![Docker Architecture](/blog-images/geolarp-intro/docker-architecture.svg)\n_Docker-first development environment with isolated containers_\n\n**⚠️ CRITICAL**: geoLARP is Docker-only. Local npm/pnpm commands are NOT supported and WILL NOT WORK.\n\nEverything MUST run in [Docker](https://www.docker.com/). No \"works on my machine\" problems:\n\n```bash\n# Start development (REQUIRED - no local alternative)\ndocker compose up\n\n# ALL commands must use docker compose exec:\ndocker compose exec geolarp pnpm run dev\ndocker compose exec geolarp pnpm test\ndocker compose exec geolarp pnpm run generate:component\n\n# ❌ NEVER run locally:\n# pnpm install  # WILL NOT WORK\n# npm run dev   # WILL NOT WORK\n```\n\n## 🔨 Component Generator\n\nStop copying component boilerplate. Use the generator:\n\n```bash\ndocker compose exec geolarp pnpm run generate:component MyComponent atomic\n```\n\nThis creates the required 5-file structure:\n\n- `MyComponent.tsx` - Main component\n- `MyComponent.test.tsx` - Unit tests\n- `MyComponent.stories.tsx` - [Storybook](https://storybook.js.org/) stories\n- `MyComponent.accessibility.test.tsx` - A11y tests\n- `index.tsx` - Barrel export\n\n## ⚙️ Project Configuration\n\nThe project auto-detects most configuration from your Git repository:\n\n```typescript\n// Auto-configured from git remote at build time\nconst projectConfig = {\n  name: 'YourRepoName', // Detected from repository\n  owner: 'YourGitHubUsername',\n  basePath: '/', // Configured for GitHub Pages\n  repository: 'https://github.com/YourUsername/YourRepoName',\n};\n```\n\nMinimal setup required - just create your `.env` file and the rest is detected automatically.\n\n## 🚀 Current Features in Production\n\n### 🔒 Privacy & Consent\n\n- GDPR (General Data Protection Regulation)-compliant cookie consent system\n- Granular privacy controls\n- [Google Analytics](https://analytics.google.com/) integration (with consent)\n\n### 📝 Blog System\n\n- Markdown-based blog with frontmatter\n- SEO (Search Engine Optimization) analysis and scoring\n- Table of contents generation\n- Offline-first with IndexedDB storage\n- Background sync for offline edits\n\n### 🗺️ Maps & Location\n\n- [Leaflet](https://leafletjs.com/) integration for interactive maps\n- Geolocation with privacy consent\n- [OpenStreetMap](https://www.openstreetmap.org/) tiles (no API (Application Programming Interface) key needed)\n\n### 📅 Calendar Integration\n\n- [Calendly](https://calendly.com/) and [Cal.com](https://cal.com/) embedded support\n- Privacy-first with consent modal\n- Event scheduling capabilities\n\n## 📂 File Structure\n\n```\nsrc/\n├── app/                # Next.js app router pages\n├── components/\n│   ├── subatomic/     # Smallest reusable pieces\n│   ├── atomic/        # Basic components\n│   ├── molecular/     # Composite components\n│   └── organisms/     # Full sections\n├── contexts/          # React contexts\n├── services/          # Business logic\n├── lib/              # Core libraries\n├── utils/            # Utility functions\n└── types/            # TypeScript definitions\n```\n\n## 🧪 Testing Commands\n\n```bash\n# Quick validation\ndocker compose exec geolarp pnpm run test:quick\n\n# Full test suite\ndocker compose exec geolarp pnpm run test:suite\n\n# Specific tests\ndocker compose exec geolarp pnpm run type-check\ndocker compose exec geolarp pnpm run lint\ndocker compose exec geolarp pnpm run test:coverage\n```\n\n## 💡 Why Scripthammer?\n\n1. **Quick Setup** - Create `.env`, run `docker compose up`, and you're developing\n2. **Reduced Configuration** - Opinionated choices with auto-detection from git\n3. **Production Features** - Battle-tested components and patterns\n4. **TypeScript First** - Comprehensive typing with strict mode enabled\n5. **Well Tested** - Full test suite with unit, E2E, and accessibility testing\n\n## 🚀 Getting Started (Docker Required)\n\n**⚠️ PREREQUISITE**: Docker and Docker Compose MUST be installed. This project does NOT support local development.\n\n```bash\n# Use the template on GitHub first\n# Then clone YOUR new repository\ngit clone https://github.com/YourUsername/your-new-repo.git\ncd your-new-repo\n\n# Create required .env file (MANDATORY)\ncp .env.example .env\n\n# Start Docker (ONLY way to run this project)\ndocker compose up  # First build takes 5-10 minutes\n\n# Open http://localhost:3000\n```\n\n**Remember**:\n\n- ✅ `docker compose exec geolarp pnpm install` - Correct\n- ❌ `pnpm install` - Will NOT work\n- ❌ `npm install` - Will NOT work\n\n## 🎯 What's Next?\n\nCheck out the [CONSTITUTION.md](https://github.com/TortoiseWolfe/geoLARP/blob/main/.specify/memory/constitution.md) for the project principles and current sprint goals. Read [CLAUDE.md](https://github.com/TortoiseWolfe/geoLARP/blob/main/CLAUDE.md) for AI (Artificial Intelligence) pair programming guidelines and best practices when working with this codebase.\n\nThis is Scripthammer. Stop configuring, start shipping.\n",
@@ -1129,8 +1201,13 @@
       }
     }
   ],
-  "count": 15,
+  "count": 16,
   "tags": [
+    "geolarp",
+    "game-design",
+    "d7",
+    "geolocation",
+    "beta",
     "three-js",
     "game-engine",
     "open-source",
@@ -1150,7 +1227,6 @@
     "chattanooga",
     "digital-twin",
     "civic-tech",
-    "game-design",
     "open-data",
     "deployment",
     "github-pages",
@@ -1195,15 +1271,14 @@
     "auto-config",
     "automation",
     "developer-experience",
-    "geolarp",
     "pwa",
     "docker"
   ],
   "categories": [
+    "ideas",
     "features",
     "engineering",
     "tutorial",
-    "ideas",
     "tutorials",
     "workflow",
     "security",

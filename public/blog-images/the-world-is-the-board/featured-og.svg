@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="geoLARP: the world is the board. A seven-sided die beside the geoLARP wordmark.">
+  <title>geoLARP — the world is the board</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#121A21"/>
+      <stop offset="1" stop-color="#0C1116"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- 100m grid: the encounter lattice, and the privacy mechanism -->
+  <g stroke="#2E353B" stroke-width="1" opacity="0.55">
+    <path d="M0 105H1200M0 210H1200M0 315H1200M0 420H1200M0 525H1200"/>
+    <path d="M105 0V630M210 0V630M315 0V630M420 0V630M525 0V630M630 0V630M735 0V630M840 0V630M945 0V630M1050 0V630M1155 0V630"/>
+  </g>
+
+  <!-- the die, at the mark's own geometry, scaled and moved left -->
+  <g transform="translate(30,120) scale(0.98)">
+    <g transform="translate(6,8)" opacity="0.45">
+      <path d="M200,114 L267.2,146.4 L283.8,219.1 L237.3,277.5 L162.7,277.5 L116.2,219.1 L132.8,146.4 Z" fill="#12181C"/>
+    </g>
+    <g stroke="#2E353B" stroke-width="3.5" stroke-linejoin="round">
+      <path d="M200.0,114.0 L267.2,146.4 L234.9,172.1 L200.0,155.3 Z" fill="#F0DDB4"/>
+      <path d="M267.2,146.4 L283.8,219.1 L243.6,209.9 L234.9,172.1 Z" fill="#E6CB99"/>
+      <path d="M283.8,219.1 L237.3,277.5 L219.4,240.3 L243.6,209.9 Z" fill="#D9BB89"/>
+      <path d="M237.3,277.5 L162.7,277.5 L180.6,240.3 L219.4,240.3 Z" fill="#EFDBB0"/>
+      <path d="M162.7,277.5 L116.2,219.1 L156.4,209.9 L180.6,240.3 Z" fill="#DFC392"/>
+      <path d="M116.2,219.1 L132.8,146.4 L165.1,172.1 L156.4,209.9 Z" fill="#D2B07C"/>
+      <path d="M132.8,146.4 L200.0,114.0 L200.0,155.3 L165.1,172.1 Z" fill="#E9D0A0"/>
+    </g>
+    <path d="M200.0,155.3 L234.9,172.1 L243.6,209.9 L219.4,240.3 L180.6,240.3 L156.4,209.9 L165.1,172.1 Z" fill="#F5E7C6" stroke="#2E353B" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M200,114 L267.2,146.4 L283.8,219.1 L237.3,277.5 L162.7,277.5 L116.2,219.1 L132.8,146.4 Z" fill="none" stroke="#2E353B" stroke-width="8" stroke-linejoin="round"/>
+    <path fill="#2E353B" d="M184,177 H216 V190 L205,222 H190 L203,190 H184 Z"/>
+  </g>
+
+  <g font-family="Georgia, 'Times New Roman', serif">
+    <text x="470" y="268" font-size="92" font-weight="700" fill="#F5E7C6">geoLARP</text>
+    <text x="470" y="336" font-size="40" fill="#C9A96B">the world is the board</text>
+  </g>
+  <g font-family="ui-monospace, 'SF Mono', Menlo, monospace" fill="#8FA0AD" font-size="23">
+    <text x="472" y="404">geo-located live action role-playing</text>
+    <text x="472" y="440">1d7 · five attributes · a 100m grid</text>
+  </g>
+  <rect x="470" y="474" width="196" height="4" fill="#C9A96B"/>
+</svg>
