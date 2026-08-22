@@ -47,7 +47,7 @@ export const Default: Story = {
   args: {
     children: null,
   },
-  render: () => <LayeredGeoLARPLogo pauseOnHover={true} />,
+  render: () => <LayeredGeoLARPLogo />,
 };
 
 // Original simple geoLARP Logo
@@ -64,14 +64,14 @@ export const LayeredgeoLARP: Story = {
   args: {
     children: null,
   },
-  render: () => <LayeredGeoLARPLogo pauseOnHover={true} />,
+  render: () => <LayeredGeoLARPLogo />,
 };
 
 export const LayeredgeoLARPLarge: Story = {
   args: {
     children: null,
   },
-  render: () => <LayeredGeoLARPLogo pauseOnHover={true} />,
+  render: () => <LayeredGeoLARPLogo />,
 };
 
 export const geoLARPLarge: Story = {
@@ -235,23 +235,23 @@ export const ThemeShowcase: Story = {
           geoLARP logo — adapts to current theme via text-primary
         </p>
         <div className="flex items-center gap-8">
-          <LayeredGeoLARPLogo pauseOnHover />
-          <LayeredGeoLARPLogo pauseOnHover />
+          <LayeredGeoLARPLogo />
+          <LayeredGeoLARPLogo />
         </div>
       </div>
       <div className="flex flex-col gap-3">
         <p className="text-base-content text-sm">On surfaces</p>
         <div className="bg-base-100 flex items-center gap-6 rounded-lg p-4">
           <span className="text-base-content text-sm">base-100:</span>
-          <LayeredGeoLARPLogo pauseOnHover />
+          <LayeredGeoLARPLogo />
         </div>
         <div className="bg-base-200 flex items-center gap-6 rounded-lg p-4">
           <span className="text-base-content text-sm">base-200:</span>
-          <LayeredGeoLARPLogo pauseOnHover />
+          <LayeredGeoLARPLogo />
         </div>
         <div className="bg-neutral flex items-center gap-6 rounded-lg p-4">
           <span className="text-neutral-content/80 text-sm">neutral:</span>
-          <LayeredGeoLARPLogo pauseOnHover />
+          <LayeredGeoLARPLogo />
         </div>
       </div>
     </div>

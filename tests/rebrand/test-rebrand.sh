@@ -89,8 +89,8 @@ setup_temp_dir() {
 export const FOOTER_LINKS = [
   { href: 'https://crudgames.com', label: 'CRUDgames.com' },
   {
-    href: 'https://github.com/TortoiseWolfe/ScriptHammer', // rebrand:keep
-    label: 'ScriptHammer', // rebrand:keep
+    href: 'https://github.com/TortoiseWolfe/geoLARP', // rebrand:keep
+    label: 'geoLARP', // rebrand:keep
   },
 ] as const;
 FOOTER

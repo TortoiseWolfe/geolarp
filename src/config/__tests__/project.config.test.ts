@@ -42,7 +42,7 @@ describe('Project Configuration', () => {
       expect(config.projectName).toBe('geoLARP');
       expect(config.projectOwner).toBe('TortoiseWolfe');
       expect(config.projectDescription).toContain(
-        'production Next.js and Supabase platform'
+        'geo-located live action role playing'
       );
       expect(config.basePath).toBe('');
       expect(config.deployUrl).toBe('http://localhost:3000');
@@ -290,7 +290,7 @@ describe('Project Configuration', () => {
       expect(manifest.name).toContain('geoLARP');
       expect(manifest.short_name).toBe('geoLARP');
       expect(manifest.description).toContain(
-        'production Next.js and Supabase platform'
+        'geo-located live action role playing'
       );
       expect(manifest.start_url).toBe('/');
       expect(manifest.display).toBe('standalone');

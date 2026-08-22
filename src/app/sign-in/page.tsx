@@ -94,7 +94,7 @@ export default function SignInPage() {
               }}
             >
               <div className="h-[76%] w-[76%]">
-                <LayeredGeoLARPLogo pauseOnHover />
+                <LayeredGeoLARPLogo />
               </div>
             </div>
             <span className="font-display text-base-content text-lg tracking-[-0.01em]">
