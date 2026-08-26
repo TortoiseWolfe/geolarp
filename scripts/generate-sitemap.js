@@ -34,6 +34,7 @@ const staticPages = [
   '/contact',
   '/docs',
   '/game',
+  '/character',
   '/map',
   '/schedule',
   // Committed digital twins (#232): a /twins/<slug> page exists for every

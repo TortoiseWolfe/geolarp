@@ -340,6 +340,7 @@ export function GlobalNav() {
         { href: '/wireframes', label: 'Wireframes' },
         { href: '/map', label: 'Map' },
         { href: '/game', label: 'Game' },
+        { href: '/character', label: 'Character' },
         { href: '/payment-demo', label: 'Payments' },
         { href: '/schedule', label: 'Schedule' },
       ],
