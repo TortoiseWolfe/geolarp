@@ -41,6 +41,8 @@ The post's wording is "a **natural 7**" (`:46`). It does not say what a natural 
 
 ⚠️ **UNSPECIFIED:** what a roll is made _against_. No target numbers, difficulty ladder, or success/failure bands are published. "Challenge rating" appears once (`:70`) with no definition.
 
+> Still unspecified *by the post*, which is what this marker records. A design decision now fills it — see [`resolution.md`](resolution.md), which converts West End Games' D6 System to d7. That document is a choice; this one remains a transcription.
+
 ## 2. Attributes
 
 Five, named (`:52-53`):
