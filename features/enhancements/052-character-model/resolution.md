@@ -19,19 +19,11 @@ This is that follow-up. Everything here is a **choice**, not a transcription. Wh
 
 Attributes and skills are rated in **dice and pips**, written `3d7+2` — roll three d7, sum them, add two, compare to a difficulty number.
 
-**1D = 4 pips** is the recommendation, but this is a **choice, not a derivation** — see below. `Xd7+4` is not a rating; it becomes `(X+1)d7`.
+**1D = 3 pips**, exactly as in D6. `Xd7+3` is not a rating; it becomes `(X+1)d7`.
 
-> **The pip question, honestly.** A die adds its average; a pip adds exactly 1. So the value a die returns per pip it costs is:
+> **On the pip economy.** A die adds its average, a pip adds exactly 1, so the value a die returns per pip it costs shifts when the die does: D6 sits at 3.5/3 = 1.167, and a d7 at three pips is 4.0/3 = 1.333. Dice get slightly better value relative to pips than in D6, which nudges advancement a little harder toward whole dice.
 >
-> | | value per pip |
-> |---|---|
-> | D6, 3 pips | 3.5 / 3 = **1.167** |
-> | d7 at 3 pips | 4.0 / 3 = **1.333** |
-> | d7 at 4 pips | 4.0 / 4 = **1.000** |
->
-> D6's 1.167 is deliberate: dice are better value than pips, which is what pushes advancement toward whole dice. Neither d7 option reproduces it — **3 pips exaggerates that bias, 4 pips removes it, and they are equidistant from D6 (0.167 either way).** Preserving D6's ratio exactly would need 3.43 pips, which is not a rating anyone can write.
->
-> 4 is recommended because a finer pip makes advancement more granular and the arithmetic stays clean. 3 is equally defensible if you want D6's die-hunger. **Pick one and write it down; do not let the implementation decide.**
+> Keeping 3 is the right call anyway. It is D6's rule, the notation is the notation players already know, and the drift is small enough to be a playtest question rather than a design one. Four pips would flatten the die-over-pip preference that gives D6 advancement its shape — the opposite of preserving the system.
 
 ## 2. Difficulty ladder
 
@@ -70,17 +62,35 @@ This is not borrowed. `spec.md` §1 records both as already published — *"crit
 
 **A critical is the first roll showing 7 — 14.29%, exactly the published figure.** Counting the whole exploding chain would give (1/7)/(1−1/7) = **16.67%** instead. First-roll-only is both the D6-faithful reading (D6 keys the critical on the designated Wild Die, not the pool) and the one that holds `:44` exactly.
 
-## 4. Attributes
+## 4. Attributes and skills
+
+This is D6's model with a seven-sided die. Nothing about it is invented here.
+
+### Attributes
 
 The five published in `spec.md` §2: **Strength, Agility, Intellect, Spirit, Luck.**
 
-**An attribute's value is its dice count.** Agility 4 means roll `4d7`. This is what reconciles the source system with the published commitment: `spec.md` §2 records attributes on a **1–7 scale** (`:53`), and 1–7 dice keeps that scale literal while giving D6 its pool.
+Each is a **dice code with pips**, written `3d7+2` — three dice plus two. `3 pips = 1D`, so `Xd7+3` is not a rating; it becomes `(X+1)d7`. That is D6's notation unchanged.
 
-**The published line this bends.** `:53-55` says the sheet "reads in the same units as the roll." Under a pool the sheet is in dice and the result is a sum, so the identity holds for the *scale* but not for the *total*. This is the one published sentence the conversion costs, and it is the softest of them — `:52`'s `2d7 keep highest` had already moved the crit rate to 26.53% without comment.
+**Allocation: 15D across the five**, no attribute below `2d7` or above `4d7`. Star Wars D6 gives 18D across six attributes with a 2D–4D human range; 15D across five holds the same 3D average and the same range.
 
-⚠️ **UNSPECIFIED:** starting allocation. D6's Star Wars gives 18D across six attributes; 15D across these five lands in the same place, but nothing is published and nothing here decides it.
+### Skills
 
-⚠️ **UNSPECIFIED:** whether skills exist as a separate layer above attributes, as in D6.
+**A skill starts at its governing attribute and rises above it in pips.** If Agility is `3d7+1`, every Agility skill is `3d7+1` until you spend on it; one pip in a skill makes it `3d7+2`.
+
+**Allocation: 7D of skill dice at creation**, no more than `1D` (3 pips) in any single skill, except one chosen focus skill which may take up to `2D` (6 pips). Again, D6's numbers.
+
+Skills are what you usually roll. The attribute is the floor.
+
+### The published line this contradicts
+
+`spec.md` §2 records attributes on a **1–7 scale** (`:53`), and that is simply not this system — D6 attributes are dice codes with pips, spanning `2d7`–`4d7` here, not integers 1 through 7. There is no conversion that makes both true.
+
+**`:53` is wrong and needs amending.** Recording it plainly rather than working around it: an earlier draft of this file invented "attribute value is its dice count, 1–7" to satisfy that sentence, which dropped pips, invented a range with no basis in D6, and left skills unmentioned. The post already owes a correction for `:124`; this rides along with it.
+
+The related clause at `:53-55` — the sheet "reads in the same units as the roll" — survives in a different and better way than the published one: a skill of `3d7+2` *is* the dice you pick up. The sheet is the roll.
+
+⚠️ **UNSPECIFIED:** the skill list itself. D6 defines skills per attribute; geoLARP has published none.
 
 ## 5. Meta-currency
 
@@ -112,7 +122,8 @@ The D6 System is **OGL v1.0** — West End Games released the 51000-series openl
 
 This system is implementable when:
 
-- [ ] `1D = 4 pips` and `Xd7+4 → (X+1)d7` hold in the advancement code
+- [ ] `1D = 3 pips` and `Xd7+3 → (X+1)d7` hold in the advancement code
+- [ ] a skill defaults to its governing attribute and rises above it in pips
 - [ ] 3d7 vs Moderate (13+) measures 44.6% ±1pt over 10,000 simulated rolls
 - [ ] a first-roll 7 occurs at 14.29% ±0.5pt, matching `:44`
 - [ ] a natural 1 complicates at the same rate, matching `:49`
