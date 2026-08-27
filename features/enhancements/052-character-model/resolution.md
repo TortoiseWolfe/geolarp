@@ -120,7 +120,42 @@ Generation trains **6–8** of them rather than spreading pips evenly, for the s
 
 Both port from D6 unchanged.
 
-⚠️ **UNSPECIFIED:** how either is earned.
+**Character Points are earned by beating cells that were worth beating.** Implemented in
+`src/lib/geolarp/reward.ts`:
+
+| band                | pays on a win |
+| ------------------- | ------------- |
+| Very Easy, Easy     | **0**         |
+| Moderate, Difficult | 1             |
+| Very Difficult      | 2             |
+| Heroic              | 3             |
+
+A failure pays nothing. A **complication** pays nothing even on a success, which is what
+finally makes the card's "something goes wrong either way" true rather than decorative. A
+**critical** pays one extra — but only where the base is already nonzero. Ungated, the 35%
+of cells that are trivial would pay 0.14 each from the 1-in-7 wild seven alone, turning a
+third of the map into a slot machine: 0.32 points per encounter ungated against 0.27
+gated, and the entire difference comes from cells not worth walking to.
+
+**Measured at 0.27 points per encounter** over 400k simulated encounters against the real
+band weights (moderate 0.19, difficult 0.06, very-difficult 0.02, heroic ~0, trivial 0).
+An eight-cell session earns about 2.2. **No stake is farming-positive** — 0.55 gross at a
+stake of 2 against 2 spent — so points come from walking and are burned to force a win.
+
+Earning is capped at **5 per UTC day** (`DAILY_EARN_CAP`), matching the starting stake:
+one day of the best possible luck refills what you began with. A normal session never
+approaches it. What it bounds is grid movement, where stepping is free and unbounded —
+without a cap that is an infinite faucet from an armchair.
+
+**Rejected: a daily stipend.** It runs on the same clock as the reseed and in the opposite
+direction — save five days for a Heroic cell and that cell is five days gone — and it makes
+waiting a strategy, against `spec.md:107` ("only works if you move"). The correct half of
+that instinct is that something must be bounded daily, so the day-clock got the cap rather
+than the grant.
+
+⚠️ **UNSPECIFIED:** how **Fate Points** are earned. They stay unspecified because they stay
+unimplemented; inventing a second source would double the unspecified surface rather than
+halve it.
 
 ## 6. Licensing
 
@@ -135,8 +170,20 @@ The D6 System is **OGL v1.0** — West End Games released the 51000-series openl
 ## 7. What this does not decide
 
 - The fiction. `spec.md` §8 question 1 is open, and the five encounter kinds remain "placeholders."
-- Two players in one cell (`spec.md` §8 question 2). Note the roll is the **only** part of the loop that is not shared: encounters are seeded from place and date and are identical for everyone (`:74-77`), so two players in a cell face the same encounter and get different outcomes. Whether resolution should also be seeded from the cell is a real question this file does not answer.
-- Damage, wounds, or any consequence track. D6 has one; nothing is published here.
+- Two players in one cell (`spec.md` §8 question 2). Note the roll is the **only** part of the loop that is not shared: encounters are seeded from place and date and are identical for everyone (`:74-77`), so two players in a cell face the same encounter and get different outcomes. Whether resolution should also be seeded from the cell **is now answered: yes.** A roll is
+  seeded from `` `${encounter.seed}|${character.created}|${skill}|${stake}` ``, so re-rolling
+  at the same stake returns identical faces. It is not blocked — it is pointless, which is
+  stronger than a disabled button at zero storage and zero privacy surface. `character.created`
+  keeps the roll unshared between two players in one cell.
+
+**The stake is in the seed on purpose.** Omit it and a free failure tells you your exact
+deficit, so you buy precisely the dice needed and the sink becomes a vending machine.
+
+- Damage, wounds, or any consequence track. D6 has one; nothing is published here. This
+  stays a knowing non-decision — but the consequence of failure is no longer nothing:
+  **it is a spent cell.** You walked here, the cell's roll is fixed until midnight UTC, and
+  you got nothing from it. The cost of losing is opportunity, and it needs no consequence
+  track and no location history to be real.
 - The export payload. `:100` binds the character to a file **or a QR code**; a `3d7+2`-style rating set is a wider payload than five integers, and QR density is a published commitment.
 
 ## 8. Verification

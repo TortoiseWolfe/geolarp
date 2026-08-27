@@ -4,7 +4,12 @@ import React, { useState } from 'react';
 import CharacterSheet, { skillRowId } from '@/components/game/CharacterSheet';
 import EncounterCard from '@/components/game/EncounterCard';
 import D7Roller from '@/components/game/D7Roller';
+import CellGrid from '@/components/game/CellGrid';
+import { LocationButton } from '@/components/map/LocationButton';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { CELL_METRES } from '@/lib/geolarp/cell';
+import { placeName } from '@/lib/geolarp/place';
+import { getGeolocationErrorMessage } from '@/utils/map-utils';
 import { ratingFor } from '@/lib/geolarp/character';
 import { LocationMode, ZONES, useCharacterPlay } from './useCharacterPlay';
 
@@ -166,20 +171,19 @@ export default function CharacterPlay({
    * the player nothing they were reading. A disclosure whose summary is only
    * its own title makes you open it to find out whether you need to.
    */
-  const whereSummary =
-    play.mode === 'zone'
-      ? (ZONES.find((z) => z.id === play.zoneId)?.name ?? 'A zone')
-      : play.mode === 'grid'
-        ? 'Grid movement'
-        : geo.error
-          ? 'No location — playing without it'
-          : geo.position
-            ? 'Rounded to your cell'
-            : // NOT the body's "Waiting for a location…". A summary that
-              // repeats its own body word for word is the duplication this
-              // pass exists to remove, and it also makes every test matching
-              // that phrase ambiguous between two elements.
-              'Locating…';
+  const whereSummary = play.cell
+    ? // THE PLACE NAME IS THE ANSWER TO THE QUESTION ACTUALLY ASKED.
+      // "Not seeing a mapping compass for where my character is at" is not a
+      // request for coordinates — `-77750:39012` is precise, shareable and
+      // completely unsayable. "Low Gate" is a sentence.
+      placeName(play.cell)
+    : play.mode === 'gps' && geo.error
+      ? 'No location — playing without it'
+      : // NOT the body's "Waiting for a location…". A summary that repeats its
+        // own body word for word is the duplication this pass exists to
+        // remove, and it makes every test matching that phrase ambiguous
+        // between two elements.
+        'Locating…';
 
   return (
     <div className={`flex flex-col gap-6${className ? ` ${className}` : ''}`}>
@@ -258,58 +262,111 @@ export default function CharacterPlay({
                 aria-label="Location status"
               >
                 {geo.error
-                  ? 'No location available — pick a zone or use grid movement instead. The game plays either way.'
+                  ? // The specific cause, from the shared helper, instead of
+                    // one flat string for four different failures — a denied
+                    // permission and a timeout need different things done
+                    // about them. The reassurance stays attached: the game
+                    // plays either way, and that is the part a player needs
+                    // in the same breath as the bad news.
+                    `${getGeolocationErrorMessage(geo.error)} Pick a zone or use grid movement instead. The game plays either way.`
                   : geo.position
                     ? 'Location rounded to a 100-metre cell. The precise fix was discarded.'
                     : 'Waiting for a location…'}
               </p>
             )}
 
-            {play.mode === 'grid' && (
-              <div
-                className="flex flex-col items-start gap-2"
-                role="group"
-                aria-label="Move one cell"
-              >
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-outline min-h-11 min-w-11"
-                    onClick={() => play.step(0, 1)}
-                  >
-                    North
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-outline min-h-11 min-w-11"
-                    onClick={() => play.step(-1, 0)}
-                  >
-                    West
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline min-h-11 min-w-11"
-                    onClick={() => play.step(1, 0)}
-                  >
-                    East
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-outline min-h-11 min-w-11"
-                    onClick={() => play.step(0, -1)}
-                  >
-                    South
-                  </button>
-                </div>
-              </div>
+            {play.mode === 'gps' && (
+              /*
+                EXPLICIT REFRESH RATHER THAN `watch: true`.
+                A watch would be the obvious upgrade and it would expose a live
+                bug first: GPS jitter across a cell boundary flips the cell,
+                and the effect that reacts to a new cell wipes the open roll
+                panel. So the player asks, and the app answers — one fix per
+                press, which is also one prompt per press rather than a stream.
+              */
+              <LocationButton
+                onClick={geo.getCurrentPosition}
+                loading={geo.loading}
+                hasLocation={Boolean(geo.position)}
+                permissionState={geo.permission}
+                variant="secondary"
+                size="sm"
+              />
             )}
+
+            {/*
+              The accuracy figure was captured by `useGeolocation` and never
+              read. Above half a cell the fix cannot say which cell you are in,
+              and saying so is better than quietly showing the wrong one.
+            */}
+            {play.mode === 'gps' &&
+              geo.position &&
+              geo.position.coords.accuracy > CELL_METRES / 2 && (
+                <p className="text-base-content text-sm">
+                  Your location is accurate to about ±
+                  {Math.round(geo.position.coords.accuracy)} m, so this may not
+                  be your cell.
+                </p>
+              )}
           </div>
         </details>
       </section>
+
+      {/*
+        THE GRID LIVES OUTSIDE THE DISCLOSURE, and that is a deliberate
+        exception to the collapse pass. What was cut was PROSE the player had
+        already read; this is the answer to the other half of the same
+        playtest note — "not seeing a mapping compass for where my character is
+        at" — and an answer one tap out of sight is not an answer.
+      */}
+      {play.cell && (
+        <div className="flex flex-col gap-2">
+          <CellGrid
+            centre={play.cell}
+            today={today}
+            onStep={play.mode === 'grid' ? play.step : undefined}
+          />
+
+          {play.offset && (
+            <p
+              className="text-base-content text-sm"
+              role="status"
+              aria-label="Grid position"
+            >
+              {Math.abs(play.offset.east) > 0 &&
+                `${Math.abs(play.offset.east)} m ${
+                  play.offset.east > 0 ? 'east' : 'west'
+                }`}
+              {Math.abs(play.offset.east) > 0 &&
+                Math.abs(play.offset.north) > 0 &&
+                ' and '}
+              {Math.abs(play.offset.north) > 0 &&
+                `${Math.abs(play.offset.north)} m ${
+                  play.offset.north > 0 ? 'north' : 'south'
+                }`}
+              {` of where you started — ${play.offset.metres} m, ${play.offset.bearing}.`}
+            </p>
+          )}
+
+          {play.mode === 'grid' && (
+            <p className="text-base-content text-xs">
+              {/* Said plainly, because the alternative is a player believing
+                  the game thinks they walked somewhere. */}
+              Grid movement walks the map, not you.
+            </p>
+          )}
+
+          {play.offset && (
+            <button
+              type="button"
+              className="btn btn-outline btn-sm min-h-11 self-start"
+              onClick={play.resetToOrigin}
+            >
+              Back to where I started
+            </button>
+          )}
+        </div>
+      )}
 
       {play.encounter && (
         <EncounterCard encounter={play.encounter} cell={play.cell ?? undefined}>

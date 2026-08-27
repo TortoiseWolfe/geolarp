@@ -4,6 +4,7 @@ import React from 'react';
 import { Encounter } from '@/lib/geolarp/encounter';
 import { Cell, cellCentre, cellKey } from '@/lib/geolarp/cell';
 import { bandOf } from '@/lib/geolarp/ladder';
+import { placeName } from '@/lib/geolarp/place';
 
 export interface EncounterCardProps {
   encounter: Encounter;
@@ -95,17 +96,25 @@ export default function EncounterCard({
         <footer className="text-base-content mt-1 text-xs">
           <details className="border-base-300 bg-base-200 [&[open]>summary]:border-base-300 rounded-lg border [&[open]>summary]:border-b">
             <summary className="text-base-content flex min-h-11 cursor-pointer items-center p-4 font-semibold">
-              {cell ? (
-                <>
-                  Cell&nbsp;
-                  <span className="font-mono break-all">{cellKey(cell)}</span>
-                </>
-              ) : (
-                'Where this came from'
-              )}
+              {/*
+                THE NAME IS THE SUMMARY, THE KEY IS THE DETAIL. The key's
+                audit-trail job is real — two players standing together check
+                it — but nobody can say "-77750:39012" out loud, and the line a
+                player reads a hundred times should be one they could repeat.
+                The name is seeded from the cell key alone, so unlike the
+                encounter it does not change at midnight.
+              */}
+              {cell ? placeName(cell) : 'Where this came from'}
             </summary>
             <div className="p-4 pt-3">
               <p>
+                {cell && (
+                  <>
+                    Cell{' '}
+                    <span className="font-mono break-all">{cellKey(cell)}</span>
+                    .{' '}
+                  </>
+                )}
                 {centre && (
                   <>
                     Centred near{' '}
