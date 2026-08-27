@@ -304,6 +304,69 @@ for (const theme of THEMES) {
       );
     });
 
+    test('every sigil ink is legible on the sheet', async ({ page }) => {
+      /*
+        AXE CANNOT SEE THIS ONE. The sigil is a decorative SVG, so
+        `color-contrast` never looks at it — a fill is not text — and a
+        decorative graphic is exempt from 1.4.11 besides. It still has to be
+        VISIBLE, and "it uses theme roles so it must be fine" is an assumption:
+        the theme guarantees `primary-content` on `primary`, and says nothing
+        about `primary` on `base-200`.
+
+        Measured instead. All three inks clear 7:1 on both themes today, and
+        the light theme does it by 0.01 — which is exactly why this is a test
+        and not a note in a commit message.
+
+        Colours are read back through a canvas because `getComputedStyle`
+        returns `oklch()` unchanged, and parsing that as RGB is a documented
+        way to get confident nonsense out of this repo's contrast probes.
+      */
+      const INKS = ['fill-primary', 'fill-secondary', 'fill-accent'];
+      const ratios = await page.evaluate((inks) => {
+        const svg = document.querySelector(
+          'svg[aria-hidden="true"][viewBox="0 0 5 5"]'
+        ) as SVGElement | null;
+        if (!svg) return null;
+        const original = svg.getAttribute('class') ?? '';
+        const px = (v: string) => {
+          const cv = document.createElement('canvas');
+          cv.width = cv.height = 1;
+          const ctx = cv.getContext('2d')!;
+          ctx.fillStyle = v;
+          ctx.fillRect(0, 0, 1, 1);
+          const d = ctx.getImageData(0, 0, 1, 1).data;
+          return [d[0], d[1], d[2]];
+        };
+        const lum = (c: number[]) => {
+          const t = c.map((v) => {
+            const x = v / 255;
+            return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * t[0] + 0.7152 * t[1] + 0.0722 * t[2];
+        };
+        const out: Record<string, number> = {};
+        for (const ink of inks) {
+          svg.setAttribute('class', original.replace(/fill-\w+/, ink));
+          const rect = svg.querySelector('rect');
+          if (!rect) continue;
+          const a = lum(px(getComputedStyle(rect).fill));
+          const b = lum(px(getComputedStyle(svg).backgroundColor));
+          out[ink] = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+        }
+        svg.setAttribute('class', original);
+        return out;
+      }, INKS);
+
+      expect(
+        ratios,
+        'no decorative 5x5 sigil found on the sheet'
+      ).not.toBeNull();
+      expect(Object.keys(ratios!).sort()).toEqual([...INKS].sort());
+      for (const [ink, ratio] of Object.entries(ratios!)) {
+        expect(ratio, `${ink} on the sigil ground`).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+
     test('the collapsed prose is inside the measured set', async ({ page }) => {
       // The named negative control for the tests above: it says WHICH prose is
       // supposed to be reachable, so a disclosure that stops opening fails
