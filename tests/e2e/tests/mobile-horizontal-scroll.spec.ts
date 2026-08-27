@@ -367,7 +367,10 @@ test.describe('Horizontal Scroll Detection', () => {
     // so this loop never entered its body and the test reported zero assertions on
     // every shard. Tables live inside posts, and only since #421 taught the markdown
     // processor to render them (before that they shipped as literal pipe rows).
-    await page.goto(`/blog/${longestPost().slug}/`);
+    // richestPost, not longestPost: this gate needs a post that HAS a table,
+    // and the longest post has none. Naming the wrong one here reproduced the
+    // original failure exactly — 'no <table> found' — for a new reason.
+    await page.goto(`/blog/${richestPost().slug}/`);
     await dismissCookieBanner(page);
     await page.waitForTimeout(800);
 
