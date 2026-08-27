@@ -11,7 +11,14 @@ import {
   toExportJSON,
   earnCharacterPoints,
 } from '@/lib/geolarp/character';
-import { Cell, cellOf, seedOf, utcDay } from '@/lib/geolarp/cell';
+import {
+  Cell,
+  CellOffset,
+  cellOf,
+  offsetMetres,
+  seedOf,
+  utcDay,
+} from '@/lib/geolarp/cell';
 import { Encounter, encounterFor } from '@/lib/geolarp/encounter';
 import { rewardFor } from '@/lib/geolarp/reward';
 import { RollResult } from '@/lib/geolarp/dice';
@@ -49,6 +56,14 @@ export interface UseCharacterPlayReturn {
   /** False until localStorage has been read; nothing renders before that. */
   ready: boolean;
   cell: Cell | null;
+  /**
+   * Where the player's cell was last ANCHORED — by a fix or by a zone, never
+   * by walking the grid. It is what "back to where I started" means, and what
+   * `offset` is measured from.
+   */
+  origin: Cell | null;
+  /** How far the current cell is from `origin`, or null when they match. */
+  offset: CellOffset | null;
   encounter: Encounter | null;
   selectedSkill: SkillName | null;
   result: RollResult | null;
@@ -63,6 +78,8 @@ export interface UseCharacterPlayReturn {
   setZone: (id: string) => void;
   setCellFromFix: (lat: number, lon: number) => void;
   step: (dx: number, dy: number) => void;
+  /** Return to the last anchored cell. A no-op when already there. */
+  resetToOrigin: () => void;
   selectSkill: (skill: SkillName) => void;
   resolve: (result: RollResult, pointsSpent: number) => void;
 }
@@ -82,6 +99,7 @@ export function useCharacterPlay(
   const [cell, setCell] = useState<Cell | null>(null);
   const [mode, setModeState] = useState<LocationMode>('zone');
   const [zoneId, setZoneId] = useState<string>(ZONES[1].id);
+  const [origin, setOrigin] = useState<Cell | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<SkillName | null>(null);
   const [result, setResult] = useState<RollResult | null>(null);
 
@@ -94,13 +112,17 @@ export function useCharacterPlay(
   useEffect(() => {
     if (mode !== 'zone') return;
     const zone = ZONES.find((z) => z.id === zoneId) ?? ZONES[1];
-    setCell(cellOf(zone.lat, zone.lon));
+    const c = cellOf(zone.lat, zone.lon);
+    setCell(c);
+    setOrigin(c);
   }, [mode, zoneId]);
 
   useEffect(() => {
     if (mode !== 'grid' || cell) return;
     // Grid play needs somewhere to start; the first zone will do.
-    setCell(cellOf(ZONES[1].lat, ZONES[1].lon));
+    const c = cellOf(ZONES[1].lat, ZONES[1].lon);
+    setCell(c);
+    setOrigin(c);
   }, [mode, cell]);
 
   // The one clock. Shared with `seedOf` so the world and the ledger cannot
@@ -195,12 +217,35 @@ export function useCharacterPlay(
   }, [character]);
 
   const setCellFromFix = useCallback((lat: number, lon: number) => {
-    setCell(cellOf(lat, lon));
+    const c = cellOf(lat, lon);
+    setCell(c);
+    // An anchor, because a fix is somewhere the player physically is.
+    setOrigin(c);
   }, []);
 
+  /**
+   * `step` MOVES THE CELL AND NEVER THE ORIGIN.
+   *
+   * That asymmetry is the entire point: grid movement is armchair movement,
+   * and the distance from the place you actually anchored is the honest thing
+   * to show. Anchoring on every step would make `offset` permanently zero and
+   * the feedback permanently a lie.
+   */
   const step = useCallback((dx: number, dy: number) => {
     setCell((c) => (c ? { x: c.x + dx, y: c.y + dy } : c));
   }, []);
+
+  const resetToOrigin = useCallback(() => {
+    setCell((c) => (origin ? origin : c));
+  }, [origin]);
+
+  const offset = useMemo(
+    () =>
+      cell && origin && (cell.x !== origin.x || cell.y !== origin.y)
+        ? offsetMetres(origin, cell)
+        : null,
+    [cell, origin]
+  );
 
   const [earned, setEarned] = useState<number | null>(null);
 
@@ -282,6 +327,8 @@ export function useCharacterPlay(
     character,
     ready,
     cell,
+    origin,
+    offset,
     encounter,
     selectedSkill,
     result,
@@ -295,6 +342,7 @@ export function useCharacterPlay(
     setZone: setZoneId,
     setCellFromFix,
     step,
+    resetToOrigin,
     selectSkill,
     resolve,
   };

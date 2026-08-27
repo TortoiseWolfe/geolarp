@@ -95,6 +95,19 @@ export default function EncounterCard({
         <footer className="text-base-content mt-1 text-xs">
           <details className="border-base-300 bg-base-200 [&[open]>summary]:border-base-300 rounded-lg border [&[open]>summary]:border-b">
             <summary className="text-base-content flex min-h-11 cursor-pointer items-center p-4 font-semibold">
+              {/*
+                THE KEY, NOT THE PLACE NAME — and that is a correction made
+                from a screenshot rather than from a test. "Where you are"
+                already promotes the name into its own summary, so putting it
+                here too printed "Cold Rampart" twice on one screen, in two
+                collapsed summaries, immediately after a commit whose whole
+                job was removing duplicated text.
+
+                The name answers "where am I", which is that section's
+                question. This footer's question is "where did this come
+                from", and the key is the answer to it: unsayable, precise,
+                and the thing two players standing together actually check.
+              */}
               {cell ? (
                 <>
                   Cell&nbsp;

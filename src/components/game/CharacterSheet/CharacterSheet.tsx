@@ -9,6 +9,7 @@ import {
   SkillName,
 } from '@/lib/geolarp/character';
 import { formatCode } from '@/lib/geolarp/dice';
+import CharacterSigil from '@/components/game/CharacterSigil';
 
 export interface CharacterSheetProps {
   character: Character;
@@ -82,12 +83,19 @@ export default function CharacterSheet({
     >
       <div className="card-body gap-4 p-4 sm:p-6">
         <header className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2
-            id="character-sheet-name"
-            className="text-base-content text-2xl font-bold"
-          >
-            {character.name}
-          </h2>
+          <div className="flex items-center gap-3">
+            {/*
+              DECORATIVE, because the name it is drawn from is right beside it.
+              Naming it too would make a screen reader say "Ada Wren" twice.
+            */}
+            <CharacterSigil character={character} size={48} decorative />
+            <h2
+              id="character-sheet-name"
+              className="text-base-content text-2xl font-bold"
+            >
+              {character.name}
+            </h2>
+          </div>
           <p className="text-base-content text-sm">
             Character Points:{' '}
             <span className="font-mono font-bold">
@@ -189,6 +197,18 @@ export default function CharacterSheet({
           {character.exportedAt
             ? `Last exported ${new Date(character.exportedAt).toLocaleDateString()}.`
             : 'You have never exported it.'}
+        </p>
+
+        {/*
+          One sentence, because a playtester asked for a "profile picture" and
+          will otherwise think the mark beside their name is broken or missing.
+          It says what the sigil is made of, and it says the two things that
+          make it better than an upload rather than a substitute for one.
+        */}
+        <p className="text-base-content text-sm">
+          Your sigil is drawn from your character&rsquo;s name and the moment it
+          was rolled. It needs no account and no upload, and it will look the
+          same on any device you import this character into.
         </p>
 
         {(onExport || onRegenerate) && (

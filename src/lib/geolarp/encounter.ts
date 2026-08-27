@@ -88,7 +88,10 @@ const PROFILES: Record<EncounterKind, KindProfile> = {
  * Challenge ratings, weighted toward the middle of the ladder.
  *
  * Heroic is deliberately rare — the ladder tops out well above what a starting
- * 3d7+skill can reach, so a Heroic cell is a thing to come back to.
+ * 3d7+skill can reach, so a Heroic cell is a thing to SAVE UP FOR rather than
+ * a thing to come back to. It reseeds at midnight UTC: come back tomorrow and
+ * that cell is something else. What carries over is the Character Points, and
+ * spending five of them is how a starting sheet reaches a Heroic floor at all.
  */
 const DIFFICULTY_WEIGHTS: ReadonlyArray<[Difficulty, number]> = [
   ['very-easy', 10],

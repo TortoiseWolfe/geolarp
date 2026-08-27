@@ -110,3 +110,72 @@ export function seedOf(cell: Cell, date: Date = new Date()): string {
 export function utcDay(date: Date = new Date()): string {
   return date.toISOString().slice(0, 10);
 }
+
+/**
+ * The nine cells around one, north-up and row-major.
+ *
+ * Index 0 is north-west and index 8 is south-east, so a renderer can lay the
+ * array straight into a 3-column grid and get a map-shaped map. Latitude
+ * indices grow northward, which is why the rows count DOWN from `y + 1`: a
+ * naive ascending loop draws the world upside down, and it looks fine until
+ * someone walks north and the highlight moves the wrong way.
+ */
+export function grid3x3(centre: Cell): Cell[] {
+  const out: Cell[] = [];
+  for (let dy = 1; dy >= -1; dy -= 1) {
+    for (let dx = -1; dx <= 1; dx += 1) {
+      out.push({ x: centre.x + dx, y: centre.y + dy });
+    }
+  }
+  return out;
+}
+
+export interface CellOffset {
+  /** Metres east of `from`; negative is west. */
+  east: number;
+  /** Metres north of `from`; negative is south. */
+  north: number;
+  /** Straight-line distance, rounded to the metre. */
+  metres: number;
+  /** A compass word, or null when the two cells are the same. */
+  bearing: string | null;
+}
+
+const BEARINGS = [
+  'east',
+  'north-east',
+  'north',
+  'north-west',
+  'west',
+  'south-west',
+  'south',
+  'south-east',
+] as const;
+
+/**
+ * How far one cell is from another, in metres.
+ *
+ * EXACT INTEGER ARITHMETIC, and deliberately not a Haversine. `lonStepForRow`
+ * already scales the longitude step by the row's cosine, so a cell is
+ * CELL_METRES across in both axes by construction — the distance between cell
+ * indices is therefore a multiple of 100 exactly, and a great-circle formula
+ * would only add floating-point noise to a number the grid already knows.
+ *
+ * It is also the honest unit. This measures grid movement, which is what the
+ * player has actually been doing; a metre figure derived from cell centres
+ * would imply a precision the grid does not carry.
+ */
+export function offsetMetres(from: Cell, to: Cell): CellOffset {
+  const east = (to.x - from.x) * CELL_METRES;
+  const north = (to.y - from.y) * CELL_METRES;
+  if (east === 0 && north === 0) {
+    return { east, north, metres: 0, bearing: null };
+  }
+  const octant = Math.round(Math.atan2(north, east) / (Math.PI / 4));
+  return {
+    east,
+    north,
+    metres: Math.round(Math.hypot(east, north)),
+    bearing: BEARINGS[((octant % 8) + 8) % 8],
+  };
+}

@@ -3,6 +3,9 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CharacterPlay from './CharacterPlay';
 import { STORAGE_KEY, loadCharacter } from '@/lib/geolarp/character';
+import { cellOf } from '@/lib/geolarp/cell';
+import { placeName } from '@/lib/geolarp/place';
+import { ZONES } from './useCharacterPlay';
 
 const today = new Date('2026-08-26T12:00:00Z');
 
@@ -133,6 +136,22 @@ describe('CharacterPlay', () => {
     expect(row).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('names the place you are in exactly ONCE on screen', async () => {
+    // Found in a screenshot, not by a test — which is why there is now a test.
+    // "Where you are" promotes the place name into its summary, and the
+    // encounter footer had been given the same name, so "Cold Rampart" was
+    // printed twice on one phone screen in two collapsed summaries. That
+    // landed one commit after the pass whose entire job was deleting
+    // duplicated text.
+    //
+    // The grid's aria-labels name every cell and are not counted: naming a
+    // control for a screen reader is a different modality from printing the
+    // same two words twice for a sighted reader.
+    await begin();
+    const here = cellOf(ZONES[1].lat, ZONES[1].lon);
+    expect(screen.getAllByText(placeName(here))).toHaveLength(1);
+  });
+
   it('is playable before any location permission is requested', async () => {
     await begin();
     // The default mode is a hand-picked zone, so an encounter is already here.
@@ -159,9 +178,49 @@ describe('CharacterPlay', () => {
     const seedText = () =>
       screen.getByText(/^-?\d+:-?\d+@/).textContent as string;
     const before = seedText();
-    await user.click(screen.getByRole('button', { name: 'North' }));
+    // The North/West/East/South cross is now a 3x3 pad, so the tile names the
+    // place it moves TO rather than just a compass word — the pad adds
+    // diagonals and is narrower at 320px than the cross it replaced.
+    await user.click(screen.getByRole('button', { name: /^Move north to/ }));
     await waitFor(() => expect(seedText()).not.toBe(before));
     expect(mockGeo.getCurrentPosition).not.toHaveBeenCalled();
+  });
+
+  it('says how far grid movement has taken you, and offers the way back', async () => {
+    const user = await begin();
+    await user.click(screen.getByRole('button', { name: 'Grid movement' }));
+    const seedText = () =>
+      screen.getByText(/^-?\d+:-?\d+@/).textContent as string;
+    const home = seedText();
+
+    await user.click(
+      screen.getByRole('button', { name: /^Move north-east to/ })
+    );
+    const moved = await screen.findByRole('status', { name: 'Grid position' });
+    expect(moved).toHaveTextContent(
+      /100 m east and 100 m north of where you started — 141 m, north-east\./
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: 'Back to where I started' })
+    );
+    await waitFor(() => expect(seedText()).toBe(home));
+    expect(
+      screen.queryByRole('status', { name: 'Grid position' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('measures the offset from where you ANCHORED, never from the last step', async () => {
+    // `step` moves the cell and never the origin. Re-anchoring on each step
+    // would make the figure permanently zero and the sentence permanently a
+    // lie — the whole point is that grid movement walks the map, not you.
+    const user = await begin();
+    await user.click(screen.getByRole('button', { name: 'Grid movement' }));
+    await user.click(screen.getByRole('button', { name: /^Move north to/ }));
+    await user.click(screen.getByRole('button', { name: /^Move north to/ }));
+    expect(
+      await screen.findByRole('status', { name: 'Grid position' })
+    ).toHaveTextContent(/200 m north of where you started — 200 m, north\./);
   });
 
   it('asks for a fix only when the player picks GPS, and quantises it', async () => {
@@ -452,8 +511,8 @@ describe('resolving a cell pays, once', () => {
     await waitFor(() => expect(outcome()).toHaveTextContent(/rolled/));
     const before = outcome().textContent;
 
-    await user.click(screen.getByRole('button', { name: 'North' }));
-    await user.click(screen.getByRole('button', { name: 'South' }));
+    await user.click(screen.getByRole('button', { name: /^Move north to/ }));
+    await user.click(screen.getByRole('button', { name: /^Move south to/ }));
 
     await waitFor(() => expect(outcome()).toHaveTextContent(/rolled/));
     expect(outcome().textContent).toBe(before);
