@@ -3,6 +3,9 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CharacterPlay from './CharacterPlay';
 import { STORAGE_KEY, loadCharacter } from '@/lib/geolarp/character';
+import { cellOf } from '@/lib/geolarp/cell';
+import { placeName } from '@/lib/geolarp/place';
+import { ZONES } from './useCharacterPlay';
 
 const today = new Date('2026-08-26T12:00:00Z');
 
@@ -131,6 +134,22 @@ describe('CharacterPlay', () => {
     // player cannot see — which is the defect this button replaced.
     expect(document.activeElement).toBe(row);
     expect(row).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('names the place you are in exactly ONCE on screen', async () => {
+    // Found in a screenshot, not by a test — which is why there is now a test.
+    // "Where you are" promotes the place name into its summary, and the
+    // encounter footer had been given the same name, so "Cold Rampart" was
+    // printed twice on one phone screen in two collapsed summaries. That
+    // landed one commit after the pass whose entire job was deleting
+    // duplicated text.
+    //
+    // The grid's aria-labels name every cell and are not counted: naming a
+    // control for a screen reader is a different modality from printing the
+    // same two words twice for a sighted reader.
+    await begin();
+    const here = cellOf(ZONES[1].lat, ZONES[1].lon);
+    expect(screen.getAllByText(placeName(here))).toHaveLength(1);
   });
 
   it('is playable before any location permission is requested', async () => {

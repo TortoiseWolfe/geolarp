@@ -4,7 +4,6 @@ import React from 'react';
 import { Encounter } from '@/lib/geolarp/encounter';
 import { Cell, cellCentre, cellKey } from '@/lib/geolarp/cell';
 import { bandOf } from '@/lib/geolarp/ladder';
-import { placeName } from '@/lib/geolarp/place';
 
 export interface EncounterCardProps {
   encounter: Encounter;
@@ -97,24 +96,29 @@ export default function EncounterCard({
           <details className="border-base-300 bg-base-200 [&[open]>summary]:border-base-300 rounded-lg border [&[open]>summary]:border-b">
             <summary className="text-base-content flex min-h-11 cursor-pointer items-center p-4 font-semibold">
               {/*
-                THE NAME IS THE SUMMARY, THE KEY IS THE DETAIL. The key's
-                audit-trail job is real — two players standing together check
-                it — but nobody can say "-77750:39012" out loud, and the line a
-                player reads a hundred times should be one they could repeat.
-                The name is seeded from the cell key alone, so unlike the
-                encounter it does not change at midnight.
+                THE KEY, NOT THE PLACE NAME — and that is a correction made
+                from a screenshot rather than from a test. "Where you are"
+                already promotes the name into its own summary, so putting it
+                here too printed "Cold Rampart" twice on one screen, in two
+                collapsed summaries, immediately after a commit whose whole
+                job was removing duplicated text.
+
+                The name answers "where am I", which is that section's
+                question. This footer's question is "where did this come
+                from", and the key is the answer to it: unsayable, precise,
+                and the thing two players standing together actually check.
               */}
-              {cell ? placeName(cell) : 'Where this came from'}
+              {cell ? (
+                <>
+                  Cell&nbsp;
+                  <span className="font-mono break-all">{cellKey(cell)}</span>
+                </>
+              ) : (
+                'Where this came from'
+              )}
             </summary>
             <div className="p-4 pt-3">
               <p>
-                {cell && (
-                  <>
-                    Cell{' '}
-                    <span className="font-mono break-all">{cellKey(cell)}</span>
-                    .{' '}
-                  </>
-                )}
                 {centre && (
                   <>
                     Centred near{' '}
