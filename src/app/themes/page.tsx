@@ -36,6 +36,11 @@ function ContrastBadge({ theme }: { theme: string }) {
 
   // Solid tokens, no opacity: this sits on `base-300`, which is the surface where
   // dimmed text fails AAA (#462), and a badge about contrast must clear its own bar.
+  //
+  // 10px, not 9px, for the same reason. `mobile-typography.spec.ts` sets an
+  // absolute floor of 10px and this badge sat one pixel under it, 35 times per
+  // render of /themes. It went unseen because that test measured only `/`,
+  // where no badge appears; sweeping it across routes is what surfaced this.
   const tone =
     verdict.level === 'AAA'
       ? 'bg-success text-success-content'
@@ -57,7 +62,7 @@ function ContrastBadge({ theme }: { theme: string }) {
     <span
       title={label}
       aria-label={label}
-      className={`${tone} rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-normal`}
+      className={`${tone} rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-normal`}
     >
       {verdict.level === 'fails' ? '!AA' : verdict.level}
     </span>
@@ -146,8 +151,8 @@ export default function ThemesPage() {
               a claim nobody checked. This says what is actually true. */}
           <p className="text-base-content mt-3 max-w-[60ch] leading-relaxed">
             These {CURATED_THEMES.length} are the ones we&rsquo;d hand a client.
-            The two geoLARP themes are gated at WCAG AAA on every push; the
-            rest are DaisyUI stock and still work.
+            The two geoLARP themes are gated at WCAG AAA on every push; the rest
+            are DaisyUI stock and still work.
           </p>
         </header>
 

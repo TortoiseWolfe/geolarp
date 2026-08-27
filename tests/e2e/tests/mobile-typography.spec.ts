@@ -179,53 +179,89 @@ test.describe('Mobile Typography', () => {
   // Raising it is a design decision for the owner, recorded on #861.
   const ABSOLUTE_MIN_FONT_PX = 10;
 
+  /**
+   * SWEPT ACROSS ROUTES, NOT MEASURED ON ONE THIN PAGE (#26).
+   *
+   * The claim is site-wide — no text anywhere renders below the minimum — and
+   * it used to be checked on `/` alone with a coverage floor of 25, calibrated
+   * when `/` WAS the template demo. That demo moved to `/template`, `/` became
+   * the pre-launch Coming Soon page, and the floor started failing at 14
+   * measured elements. The size assertion below it never executed.
+   *
+   * Lowering the floor to fit a 14-element page would have been the forbidden
+   * move (CLAUDE.md: never widen a gate to green a run) AND would have left
+   * the site-wide claim resting on the site's thinnest page. Sweeping instead
+   * makes the floor both larger and honest.
+   *
+   * Route choice is deliberate: `/themes` renders one card per entry in
+   * `THEMES.length`, so its 218 elements are gated by CODE rather than
+   * editorial content; `/template` is fixed template markup. `/blog` is
+   * editorial and could shrink — this repo went from 16 posts to 3 — so the
+   * floor is set low enough to survive losing it entirely.
+   */
   test('No text renders below the absolute minimum size', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
-    await waitForLayoutStability(page);
 
-    // ONE evaluate over every matching element, not a per-element round trip over
-    // the first 50. The sampled version measured 5 of the 133 visible text elements
-    // on this page -- the first 50 nodes in document order are mostly inside <head>
-    // and hidden wrappers -- so it covered about 4% of its own subject while looking
-    // like it covered the page. A gate is only as wide as what it points at (#396).
-    const { measured, tooSmall } = await page.evaluate((floor) => {
-      const nodes = Array.from(
-        document.querySelectorAll('p, span, a, button, li, td, th, label')
-      );
-      const small: string[] = [];
-      let seen = 0;
-      for (const el of nodes) {
-        const cs = window.getComputedStyle(el);
-        const rect = el.getBoundingClientRect();
-        const text = (el.textContent ?? '').trim();
-        if (
-          cs.display === 'none' ||
-          cs.visibility === 'hidden' ||
-          rect.width === 0 ||
-          rect.height === 0 ||
-          !text
-        ) {
-          continue;
-        }
-        seen++;
-        const fontSize = parseFloat(cs.fontSize);
-        if (fontSize < floor) {
-          small.push(`${fontSize.toFixed(1)}px: "${text.substring(0, 30)}"`);
-        }
-      }
-      return { measured: seen, tooSmall: small };
-    }, ABSOLUTE_MIN_FONT_PX);
+    const ROUTES = ['/', '/themes', '/blog', '/template'] as const;
+    const perRoute: Record<string, number> = {};
+    const tooSmall: string[] = [];
+    let measured = 0;
 
-    // Coverage floor, set well above zero. A visibility filter stands between the
-    // selector and every reading, so a page that failed to render would produce an
-    // empty list and a green result (#842). The homepage carries 133 visible text
-    // elements; 25 is a floor that a real regression in rendering would breach long
-    // before this assertion could pass vacuously.
+    for (const route of ROUTES) {
+      await page.goto(route);
+      await waitForLayoutStability(page);
+
+      // ONE evaluate over every matching element, not a per-element round trip
+      // over the first 50. The sampled version measured 5 of the 133 visible
+      // text elements on this page -- the first 50 nodes in document order are
+      // mostly inside <head> and hidden wrappers -- so it covered about 4% of
+      // its own subject while looking like it covered the page. A gate is only
+      // as wide as what it points at (#396).
+      const result = await page.evaluate((floor) => {
+        const nodes = Array.from(
+          document.querySelectorAll('p, span, a, button, li, td, th, label')
+        );
+        const small: string[] = [];
+        let seen = 0;
+        for (const el of nodes) {
+          const cs = window.getComputedStyle(el);
+          const rect = el.getBoundingClientRect();
+          const text = (el.textContent ?? '').trim();
+          if (
+            cs.display === 'none' ||
+            cs.visibility === 'hidden' ||
+            rect.width === 0 ||
+            rect.height === 0 ||
+            !text
+          ) {
+            continue;
+          }
+          seen++;
+          const fontSize = parseFloat(cs.fontSize);
+          if (fontSize < floor) {
+            small.push(`${fontSize.toFixed(1)}px: "${text.substring(0, 30)}"`);
+          }
+        }
+        return { seen, small };
+      }, ABSOLUTE_MIN_FONT_PX);
+
+      perRoute[route] = result.seen;
+      measured += result.seen;
+      tooSmall.push(...result.small.map((s) => `${route} ${s}`));
+    }
+
+    // Coverage floor, set well above zero. A visibility filter stands between
+    // the selector and every reading, so a page that failed to render would
+    // produce an empty list and a green result (#842). Measured at 390px:
+    // / 20, /themes 218, /blog 59, /template 137 — 434 in total. 200 survives
+    // losing /blog and / entirely, and a real rendering regression on the two
+    // structurally-gated routes would breach it long before it could pass
+    // vacuously.
     expect(
       measured,
-      `only ${measured} visible text elements were measured; this test is not seeing the page`
-    ).toBeGreaterThan(25);
+      `only ${measured} visible text elements across ${ROUTES.length} routes ` +
+        `(${JSON.stringify(perRoute)}); this test is not seeing the pages`
+    ).toBeGreaterThan(200);
 
     expect(
       tooSmall,
