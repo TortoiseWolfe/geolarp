@@ -127,15 +127,23 @@ test.describe('Template demo homepage (/template)', () => {
       .first()
       .click();
 
-    // waitForURL, not toHaveURL: the click can land before hydration attaches
-    // the router, and a 5s default is not enough slack for that under load.
+    // waitForURL for the WAITING — the click can land before hydration attaches
+    // the router, and toHaveURL's 5s default is not enough slack under load.
+    // The assertion still has to follow it: `waitForURL` throws on timeout but
+    // records no expectation, so replacing the assert with it left this test
+    // passing having asserted NOTHING, and the #861 gate said so.
     await page.waitForURL(/game/, { timeout: 15000 });
+    await expect(page).toHaveURL(/game/);
   });
 
   test('navigation links in secondary nav work', async ({ page }) => {
     // Test Status link - use href selector to avoid matching hidden hamburger nav items
     const statusLink = page.locator('a[href*="/status"]').first();
     await statusLink.click();
+    // waitForURL absorbs a click that lands before the router is ready; the
+    // assertion still follows it, because waitForURL records no expectation
+    // and a test whose only check is a wait has asserted nothing (#861).
+    await page.waitForURL(/status/, { timeout: 15000 });
     await expect(page).toHaveURL(/.*status/);
     await page.goBack();
     await page.waitForLoadState('networkidle');
@@ -147,6 +155,7 @@ test.describe('Template demo homepage (/template)', () => {
       .first();
     await accessibilityLink.scrollIntoViewIfNeeded();
     await accessibilityLink.click();
+    await page.waitForURL(/accessibility/, { timeout: 15000 });
     await expect(page).toHaveURL(/.*accessibility/);
     await page.goBack();
   });
