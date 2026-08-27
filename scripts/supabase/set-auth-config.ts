@@ -122,6 +122,23 @@ const SECRET_RULES: SecretRule[] = [
       'smtp_user',
       'smtp_admin_email',
       'smtp_sender_name',
+      // NOT AN SMTP FIELD, AND IT HAS TO BE HERE ANYWAY (#9).
+      //
+      // Supabase couples the two: raising the email rate limit is only allowed
+      // on a project with custom SMTP. Withholding the smtp_* fields while
+      // still sending this one gets the WHOLE PATCH rejected —
+      //
+      //   401 Custom SMTP required to configure SMTP_SENDER_NAME or
+      //       RATE_LIMIT_EMAIL_SENT. Missing SMTP_ADMIN_EMAIL, SMTP_HOST,
+      //       SMTP_PORT, SMTP_USER, SMTP_PASS fields.
+      //
+      // and the Management API applies a patch atomically, so nothing lands.
+      // The withhold was therefore not degrading gracefully; it was making
+      // `--apply` impossible for anyone without RESEND_API_KEY, which is how a
+      // live project sat on `site_url: http://localhost:3000` — every auth
+      // email pointing a real user at their own machine — while the drift
+      // check reported it correctly every single day.
+      'rate_limit_email_sent',
     ],
     harm: 'a custom SMTP host with no password sends NOTHING — worse than the built-in fallback mailer',
   },
