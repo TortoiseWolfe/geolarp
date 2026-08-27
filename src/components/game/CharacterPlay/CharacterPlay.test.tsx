@@ -304,3 +304,119 @@ describe('the roll is under the thumb that opened it', () => {
     expect(sheet.contains(roll)).toBe(true);
   });
 });
+
+/**
+ * The loop pays, and it pays once (#42).
+ *
+ * These use DETERMINISTIC DATES, verified against the engine rather than
+ * guessed. The default zone is cell -77750:39012, and:
+ *
+ *   2026-08-26  cache  / Search   / heroic      reward 3, unreachable at 3d7
+ *   2026-08-28  cache  / Scavenge / moderate    reward 1
+ *   2026-09-08  shrine / Persuade / very-easy   reward 0, a win is near-certain
+ *
+ * The first of those is the playtester's actual session: they landed on the
+ * 3%-weight Heroic band on their first visit, spent everything, and lost.
+ */
+describe('resolving a cell pays, once', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    mockGeo.position = null;
+    mockGeo.error = null;
+    window.matchMedia = vi.fn().mockImplementation((q: string) => ({
+      matches: q.includes('prefers-reduced-motion'),
+      media: q,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+  });
+
+  async function beginOn(date: string) {
+    const user = userEvent.setup();
+    render(<CharacterPlay today={new Date(`${date}T12:00:00Z`)} />);
+    await screen.findByRole('button', { name: 'Roll a character' });
+    await user.type(screen.getByLabelText('Name'), 'Ada Wren');
+    await user.click(screen.getByRole('button', { name: 'Roll a character' }));
+    await screen.findByRole('heading', { name: 'Ada Wren', level: 2 });
+    return user;
+  }
+
+  it('pays nothing for a trivial cell, however well you roll', async () => {
+    // 2026-09-08 is Very Easy: success is near-certain and the reward is 0 by
+    // table. So this also proves a win is not automatically an income.
+    const user = await beginOn('2026-09-08');
+    await user.click(screen.getByRole('button', { name: /^Roll / }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('status', { name: 'Roll result' })
+      ).toHaveTextContent(/rolled/)
+    );
+    expect(loadCharacter()?.characterPoints).toBe(5);
+    expect(loadCharacter()?.earnedToday ?? 0).toBe(0);
+  });
+
+  it('does not pay twice for the same cell', async () => {
+    const user = await beginOn('2026-08-28');
+    const roll = screen.getByRole('button', { name: /^Roll / });
+    await user.click(roll);
+    await waitFor(() =>
+      expect(
+        screen.getByRole('status', { name: 'Roll result' })
+      ).toHaveTextContent(/rolled/)
+    );
+    const afterFirst = loadCharacter()?.characterPoints ?? 0;
+
+    // Resolution is fixed for this cell, so rolling again returns the same
+    // faces. It must not pay again for them.
+    await user.click(roll);
+    await waitFor(() =>
+      expect(
+        screen.getByRole('status', { name: 'Roll result' })
+      ).toHaveTextContent(/rolled/)
+    );
+    expect(loadCharacter()?.characterPoints).toBe(afterFirst);
+  });
+
+  it('never earns past the daily cap', async () => {
+    const user = await beginOn('2026-08-28');
+    await user.click(screen.getByRole('button', { name: /^Roll / }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('status', { name: 'Roll result' })
+      ).toHaveTextContent(/rolled/)
+    );
+    const c = loadCharacter();
+    expect(c?.earnedToday ?? 0).toBeLessThanOrEqual(5);
+    expect(c?.characterPoints ?? 0).toBeLessThanOrEqual(10);
+  });
+
+  it('remembers an outcome when you step away and back', async () => {
+    // The old effect blanked `result` on every cell change, so returning to a
+    // cell wiped what happened there — the loop had no memory.
+    // Asserted on the ENCOUNTER outcome, not the roller's. The roller is keyed
+    // by encounter seed, so stepping away remounts it and its internal state is
+    // gone by design — the memory that matters lives in the hook and is what
+    // survives the round trip.
+    const user = await beginOn('2026-08-28');
+    await user.click(screen.getByRole('button', { name: 'Grid movement' }));
+    await user.click(screen.getByRole('button', { name: /^Roll / }));
+    const outcome = () =>
+      screen.getByRole('status', { name: 'Encounter outcome' });
+    await waitFor(() =>
+      expect(outcome()).toHaveTextContent(/(You get past it|It holds)/)
+    );
+    const before = outcome().textContent;
+
+    await user.click(screen.getByRole('button', { name: 'North' }));
+    await user.click(screen.getByRole('button', { name: 'South' }));
+
+    await waitFor(() =>
+      expect(outcome()).toHaveTextContent(/(You get past it|It holds)/)
+    );
+    expect(outcome().textContent).toBe(before);
+  });
+});

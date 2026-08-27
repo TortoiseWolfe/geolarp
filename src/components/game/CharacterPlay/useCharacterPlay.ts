@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Character,
   SkillName,
@@ -9,9 +9,11 @@ import {
   saveCharacter,
   spendCharacterPoints,
   toExportJSON,
+  earnCharacterPoints,
 } from '@/lib/geolarp/character';
-import { Cell, cellOf, seedOf } from '@/lib/geolarp/cell';
+import { Cell, cellOf, seedOf, utcDay } from '@/lib/geolarp/cell';
 import { Encounter, encounterFor } from '@/lib/geolarp/encounter';
+import { rewardFor } from '@/lib/geolarp/reward';
 import { RollResult } from '@/lib/geolarp/dice';
 
 /**
@@ -50,6 +52,8 @@ export interface UseCharacterPlayReturn {
   encounter: Encounter | null;
   selectedSkill: SkillName | null;
   result: RollResult | null;
+  /** Points paid by the most recent resolution, or null. */
+  earned: number | null;
   mode: LocationMode;
   zoneId: string;
   begin: (name: string) => void;
@@ -99,23 +103,46 @@ export function useCharacterPlay(
     setCell(cellOf(ZONES[1].lat, ZONES[1].lon));
   }, [mode, cell]);
 
-  const dayKey = today.toISOString().slice(0, 10);
+  // The one clock. Shared with `seedOf` so the world and the ledger cannot
+  // disagree about when the day turned.
+  const dayKey = utcDay(today);
   const encounter = useMemo(
     () =>
       cell ? encounterFor(seedOf(cell, new Date(`${dayKey}T12:00:00Z`))) : null,
     [cell, dayKey]
   );
 
-  // A new cell is a new encounter, so nothing from the last one may linger.
+  /**
+   * Outcomes resolved since this page loaded, keyed by encounter seed.
+   *
+   * A REF, NOT STORAGE, and that is the privacy design rather than laziness. A
+   * durable map of resolved seeds is a map of cells and dates — a location
+   * history, which `the-world-is-the-board.md:92-93` says is not collected.
+   * The daily earn cap is what makes forgetting this on reload safe: a reload
+   * can re-collect on a cell, bounded to points the player would have earned
+   * by walking anyway.
+   */
+  const resolved = useRef(new Map<string, RollResult>());
+  /** `${seed}|${skill}|${stake}` already charged. Identical dice, one bill. */
+  const charged = useRef(new Set<string>());
+
+  // A new cell is a new encounter — but an outcome already earned on this cell
+  // comes BACK rather than being wiped. Stepping away and returning used to
+  // blank the result, which is what made the loop feel like it had no memory.
   //
   // The selection RESETS TO THE ENCOUNTER'S OWN SUGGESTION rather than to null.
   // The skill is already computed (`encounter.skill`) and already shown as
   // advice; opening it means the common path — roll what the cell asks for —
   // costs no taps at all, while every other row stays one tap away.
   useEffect(() => {
-    setResult(null);
+    setResult(
+      encounter ? (resolved.current.get(encounter.seed) ?? null) : null
+    );
     setSelectedSkill(encounter?.skill ?? null);
-  }, [encounter?.seed, encounter?.skill]);
+    // `encounter` itself, not its fields: it is memoised on [cell, dayKey],
+    // so its identity is already stable and the linter can verify the
+    // dependency instead of being told to trust a hand-picked subset.
+  }, [encounter]);
 
   const begin = useCallback((name: string) => {
     const trimmed = name.trim();
@@ -166,9 +193,30 @@ export function useCharacterPlay(
     setCell((c) => (c ? { x: c.x + dx, y: c.y + dy } : c));
   }, []);
 
-  const resolve = useCallback((r: RollResult, pointsSpent: number) => {
-    setResult(r);
-    if (pointsSpent > 0) {
+  const [earned, setEarned] = useState<number | null>(null);
+
+  const resolve = useCallback(
+    (r: RollResult, pointsSpent: number) => {
+      setResult(r);
+      if (!encounter) return;
+
+      const stakeKey = `${encounter.seed}|${selectedSkill ?? ''}|${pointsSpent}`;
+      // Identical dice must not be billed twice. Resolution is seeded from the
+      // cell, so re-rolling at the same stake returns the same faces — charging
+      // again for numbers the player has already seen would be a toll on
+      // looking.
+      const alreadyCharged = charged.current.has(stakeKey);
+      charged.current.add(stakeKey);
+
+      // One payout per cell per session, whatever the player rolls afterwards.
+      const firstResolution = !resolved.current.has(encounter.seed);
+      resolved.current.set(encounter.seed, r);
+      const reward = firstResolution ? rewardFor(encounter.difficulty, r) : 0;
+      setEarned(reward > 0 ? reward : null);
+
+      const spend = alreadyCharged ? 0 : pointsSpent;
+      if (spend <= 0 && reward <= 0) return;
+
       setCharacter((prev) => {
         if (!prev) return prev;
         /**
@@ -182,17 +230,23 @@ export function useCharacterPlay(
          * a crash on the character sheet is not an acceptable failure mode for
          * an arithmetic slip.
          */
-        const affordable = Math.min(
-          Math.max(0, pointsSpent),
-          prev.characterPoints
-        );
-        if (affordable === 0) return prev;
-        const next = spendCharacterPoints(prev, affordable);
+        const affordable = Math.min(Math.max(0, spend), prev.characterPoints);
+        // Spend BEFORE earning, so the daily cap sees the post-spend balance
+        // and one act of play is one write. Both halves derive from `prev`, so
+        // the updater stays idempotent under StrictMode's double invocation.
+        const afterSpend =
+          affordable > 0 ? spendCharacterPoints(prev, affordable) : prev;
+        const next = earnCharacterPoints(afterSpend, reward, dayKey);
+        if (next === prev) return prev;
         saveCharacter(next);
         return next;
       });
-    }
-  }, []);
+    },
+    // Depending on `encounter` rather than two of its fields: the memo makes
+    // it stable, and a hand-picked subset is exactly how a reward gets paid
+    // against a stale encounter — the one real hazard in this change.
+    [encounter, selectedSkill, dayKey]
+  );
 
   return {
     character,
@@ -201,6 +255,7 @@ export function useCharacterPlay(
     encounter,
     selectedSkill,
     result,
+    earned,
     mode,
     zoneId,
     begin,
