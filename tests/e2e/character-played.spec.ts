@@ -85,6 +85,44 @@ const CHARACTER = {
   created: '2026-08-26T12:00:00.000Z',
 };
 
+/**
+ * FORCE EVERY DISCLOSURE OPEN, AND REPORT HOW MANY ARE NOW OPEN.
+ *
+ * axe walks the rendered accessibility tree, and a closed `<details>` hides
+ * its contents from that tree entirely. So collapsing prose behind a
+ * disclosure — which is most of what the verbosity pass did to this page —
+ * removes that prose from the AAA lane with no failure, no diff, and no
+ * mention anywhere. The check stays green by measuring less of the page.
+ *
+ * Playwright's locators respect the closed state too, which is the other
+ * half: a control that moves inside a disclosure stops being clickable rather
+ * than being reported missing.
+ *
+ * IT COUNTS DISCLOSURES THAT ARE OPEN, NOT ONES THAT EXIST — and that
+ * distinction was found by breaking this helper on purpose rather than by
+ * reading it. Neutered so it opened nothing, a count of `all.length` still
+ * returned 3, the floor below stayed green, and the two contrast tests went on
+ * measuring a collapsed page: the precise failure this guard exists to
+ * prevent, produced by the guard.
+ *
+ * The floor follows `mobile-touch-targets.spec.ts`: never lower it to make a
+ * run pass. If a disclosure legitimately goes away, change the number and say
+ * why in the diff.
+ */
+const DISCLOSURE_FLOOR = 3; // the rules primer, "Where you are", the seed footer
+
+async function openDisclosures(
+  page: import('@playwright/test').Page
+): Promise<number> {
+  return page.evaluate(() => {
+    const all = Array.from(document.querySelectorAll('details'));
+    all.forEach((d) => {
+      d.open = true;
+    });
+    return all.filter((d) => d.open).length;
+  });
+}
+
 /** WCAG AAA: 7:1 normal text, 4.5:1 large text (>=18pt, or >=14pt bold). */
 const AAA_NORMAL = 7;
 const AAA_LARGE = 4.5;
@@ -123,6 +161,10 @@ async function runContrastRule(page: import('@playwright/test').Page) {
 
 /** Everything on this page below the AAA threshold, measured or re-measured. */
 async function contrastFailures(page: import('@playwright/test').Page) {
+  // Again here, not only in beforeEach: a re-render between the two would
+  // re-collapse them, and the measurement would quietly shrink.
+  const opened = await openDisclosures(page);
+  expect(opened).toBeGreaterThanOrEqual(DISCLOSURE_FLOOR);
   const results = await runContrastRule(page);
 
   const allNodes = [...(results.passes ?? []), ...results.violations].flatMap(
@@ -204,6 +246,17 @@ for (const theme of THEMES) {
       await expect(
         page.getByRole('heading', { name: 'Ada Wren', level: 2 })
       ).toBeVisible({ timeout: 15000 });
+
+      // Before any interaction: the mode buttons the grid test clicks now sit
+      // inside "Where you are", and Playwright will not click into a closed
+      // disclosure.
+      const opened = await openDisclosures(page);
+      expect(
+        opened,
+        'fewer open <details> than expected — either a disclosure was removed ' +
+          'or this helper stopped opening them, and every AAA figure below is ' +
+          'then measured over less of the page than it claims'
+      ).toBeGreaterThanOrEqual(DISCLOSURE_FLOOR);
     });
 
     test('the sheet and the encounter card are AAA', async ({ page }) => {
@@ -249,6 +302,24 @@ for (const theme of THEMES) {
       expect(failures, JSON.stringify({ counts, failures }, null, 2)).toEqual(
         []
       );
+    });
+
+    test('the collapsed prose is inside the measured set', async ({ page }) => {
+      // The named negative control for the tests above: it says WHICH prose is
+      // supposed to be reachable, so a disclosure that stops opening fails
+      // here by name instead of quietly shrinking a contrast figure.
+      const inTree = await page.evaluate(() => {
+        const hit = (needle: string) =>
+          Array.from(document.querySelectorAll('details')).some(
+            (d) => d.open && (d.textContent ?? '').includes(needle)
+          );
+        return {
+          primer: hit('There are no turns'),
+          where: hit('The game only ever knows your 100-metre cell'),
+          seed: hit('everyone in this cell today meets the same thing'),
+        };
+      });
+      expect(inTree).toEqual({ primer: true, where: true, seed: true });
     });
 
     test('the grid-movement controls are AAA', async ({ page }) => {
@@ -304,6 +375,12 @@ test.describe('/character played — no horizontal overflow', () => {
       await expect(
         page.getByRole('status', { name: 'Roll result' })
       ).toBeVisible({ timeout: 15000 });
+
+      // Widest case: every disclosure open. The seed string is the one piece
+      // of text here that cannot wrap at a space, and it now lives inside one
+      // — collapsed, it would be measured at zero width and always fit.
+      const opened = await openDisclosures(page);
+      expect(opened).toBeGreaterThanOrEqual(DISCLOSURE_FLOOR);
 
       // MEASURE THIS PAGE'S OWN CONTENT, not the document.
       //

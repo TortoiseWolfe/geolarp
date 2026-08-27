@@ -466,4 +466,30 @@ describe('a cell-seeded roll is fixed until the world reseeds', () => {
     const b = await rollOnce({ seed, rng: new Rng('explicit') });
     expect(a).toBe(b);
   });
+
+  it('says the roll is fixed until midnight ONLY when a cell fixed it', async () => {
+    // "How long does a turn last?" was asked in a playtest. The answer is
+    // that there is no turn — the cell holds until the date rolls over.
+    const user = userEvent.setup();
+    const { unmount } = render(
+      <D7Roller label="Search" rating={rating} seed="cell|char|Search" />
+    );
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    expect(
+      await screen.findByText(/fixed until midnight UTC/)
+    ).toBeInTheDocument();
+    unmount();
+
+    // With no cell behind it the roller seeds from chance, so a re-roll gives
+    // different dice and the sentence would be FALSE. This is the case that
+    // is easiest to leave unchecked, which is why it is the one asserted.
+    render(<D7Roller label="Search" rating={rating} />);
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('status', { name: 'Roll result' })
+      ).toHaveTextContent(/rolled/)
+    );
+    expect(screen.queryByText(/fixed until midnight/)).not.toBeInTheDocument();
+  });
 });

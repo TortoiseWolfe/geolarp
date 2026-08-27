@@ -89,6 +89,50 @@ describe('CharacterPlay', () => {
     );
   });
 
+  it('opens the rules for a new player and shuts them once they have one', async () => {
+    const user = userEvent.setup();
+    render(<CharacterPlay today={today} />);
+
+    const openPrimer = (await screen.findByText('How geoLARP works')).closest(
+      'details'
+    ) as HTMLDetailsElement;
+    expect(openPrimer.open).toBe(true);
+    // The answer to "how long does a turn last?", which is what a first-time
+    // player is actually holding the page open to find out.
+    expect(
+      within(openPrimer).getByText(/There are no turns/)
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Roll a character' }));
+    await screen.findByRole('heading', { name: 'Wanderer', level: 2 });
+
+    // Shut, WITHOUT a second localStorage key: the character record is the
+    // visit memory. `/privacy-controls` preserves exactly one key by name, so
+    // a `geolarp_intro_seen` flag would be wiped there without a word.
+    const shutPrimer = screen
+      .getByText('How geoLARP works')
+      .closest('details') as HTMLDetailsElement;
+    expect(shutPrimer.open).toBe(false);
+    expect(window.localStorage.length).toBe(1);
+  });
+
+  it('jumps to the skill the cell suggests, taking focus with it', async () => {
+    const user = await begin();
+    const jump = screen.getByRole('button', { name: /^Go to / });
+    const suggested = jump.textContent!.replace('Go to ', '').trim();
+
+    await user.click(jump);
+
+    const row = screen.getByRole('button', {
+      name: new RegExp(`^${suggested} `),
+    });
+    // FOCUS, not just selection. The sheet sits two to three phone screens
+    // below the card, so a jump that only changes state moves something the
+    // player cannot see — which is the defect this button replaced.
+    expect(document.activeElement).toBe(row);
+    expect(row).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('is playable before any location permission is requested', async () => {
     await begin();
     // The default mode is a hand-picked zone, so an encounter is already here.

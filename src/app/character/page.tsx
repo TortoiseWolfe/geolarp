@@ -36,14 +36,13 @@ export default function CharacterPage() {
             </Link>
             <span aria-hidden="true"> / character</span>
           </nav>
-          <p className="text-base-content mt-3 max-w-2xl">
-            geoLARP runs on a seven-sided die. Ratings are dice codes with pips
-            — <span className="font-mono">3d7+2</span> — and one die in every
-            pool is wild: on a seven it explodes, on a one something goes wrong
-            anyway. The world is a grid of 100-metre cells, and what is in a
-            cell comes from the place and the date, so everyone standing there
-            today meets the same thing.
-          </p>
+          {/*
+            The rules primer used to stand here unconditionally. It now lives
+            inside `CharacterPlay` as a disclosure that opens for a player with
+            no character and stays shut for one who has read it — which the
+            route cannot decide, because whether a character exists is only
+            known after `localStorage` is read on the client.
+          */}
         </header>
 
         <div className="mx-auto max-w-4xl">

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import CharacterSheet from '@/components/game/CharacterSheet';
+import CharacterSheet, { skillRowId } from '@/components/game/CharacterSheet';
 import EncounterCard from '@/components/game/EncounterCard';
 import D7Roller from '@/components/game/D7Roller';
 import { useGeolocation } from '@/hooks/useGeolocation';
@@ -13,6 +13,20 @@ export interface CharacterPlayProps {
   today?: Date;
   className?: string;
 }
+
+/**
+ * The repo's disclosure look, lifted from the one `BlogContent` renders for
+ * markdown `<details>`: bordered card, `bg-base-200`, bold `p-4` summary, a
+ * rule under the summary once open. Two additions, because a bare `<summary>`
+ * has neither: `min-h-11` for the 44px target and `cursor-pointer`.
+ *
+ * `hover:bg-base-300` is deliberately absent — the AAA sweep cannot reach a
+ * hover state, so a hover colour would ship unverified on both themes.
+ */
+const DISCLOSURE =
+  'border-base-300 bg-base-200 [&[open]>summary]:border-base-300 rounded-lg border [&[open]>summary]:border-b';
+const DISCLOSURE_SUMMARY =
+  'text-base-content flex min-h-11 cursor-pointer flex-wrap items-center gap-x-2 p-4 font-semibold';
 
 const MODES: ReadonlyArray<{ id: LocationMode; label: string }> = [
   { id: 'gps', label: 'Use my location' },
@@ -49,6 +63,41 @@ export default function CharacterPlay({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [play.mode, geo.position]);
 
+  /**
+   * THE RULES PRIMER, AND THE CHARACTER RECORD AS ITS VISIT MEMORY.
+   *
+   * It sat unconditionally on the route as six lines of standing prose that a
+   * returning player had already read. Open for someone with no character,
+   * closed for someone with one — which needs no second `localStorage` key,
+   * and that matters: `/privacy-controls` preserves exactly ONE key by name,
+   * so a `geolarp_intro_seen` flag would be destroyed there without a word.
+   *
+   * It is also the right semantics. Discard your character and you are a new
+   * player again, so the rules re-open by themselves.
+   */
+  const primer = (
+    <details open={!play.character} className={DISCLOSURE}>
+      <summary className={DISCLOSURE_SUMMARY}>How geoLARP works</summary>
+      <div className="text-base-content flex flex-col gap-2 p-4 pt-3 text-sm">
+        <p>
+          geoLARP runs on a seven-sided die. Ratings are dice codes with pips —{' '}
+          <span className="font-mono">3d7+2</span> — and one die in every pool
+          is wild: on a seven it explodes, on a one something goes wrong anyway.
+        </p>
+        <p>
+          The world is a grid of 100-metre cells, and what is in a cell comes
+          from the place and the date, so everyone standing there today meets
+          the same thing.
+        </p>
+        <p>
+          There are no turns. One cell, one encounter, one roll that means
+          something — then walk to the next one.
+        </p>
+        <p>A cell suggests a skill, but anything you can argue for is fair.</p>
+      </div>
+    </details>
+  );
+
   if (!play.ready) {
     return (
       <p className="text-base-content" role="status">
@@ -59,166 +108,236 @@ export default function CharacterPlay({
 
   if (!play.character) {
     return (
-      <section
-        className={`card bg-base-100 border-base-300 mx-auto max-w-md border${className ? ` ${className}` : ''}`}
-        aria-labelledby="begin-heading"
-      >
-        <div className="card-body gap-4">
-          <h2
-            id="begin-heading"
-            className="text-base-content text-xl font-bold"
-          >
-            Make a character
-          </h2>
-          <p className="text-base-content text-sm">
-            Ten seconds. Attributes and skills are rolled for you in dice codes
-            — <span className="font-mono">3d7+2</span> — and the character lives
-            in this browser only.
-          </p>
-          <form
-            className="flex flex-col gap-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              play.begin(name);
-            }}
-          >
-            <label
-              className="text-base-content flex flex-col gap-1 text-sm"
-              htmlFor="character-name"
+      <div className={`flex flex-col gap-6${className ? ` ${className}` : ''}`}>
+        {primer}
+        <section
+          className="card bg-base-100 border-base-300 mx-auto w-full max-w-md border"
+          aria-labelledby="begin-heading"
+        >
+          <div className="card-body gap-4">
+            <h2
+              id="begin-heading"
+              className="text-base-content text-xl font-bold"
             >
-              Name
-              <input
-                id="character-name"
-                name="character-name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Wanderer"
-                className="input input-bordered min-h-11 w-full"
-                autoComplete="off"
-              />
-            </label>
-            <button type="submit" className="btn btn-primary min-h-11">
-              Roll a character
-            </button>
-          </form>
-        </div>
-      </section>
+              Make a character
+            </h2>
+            <p className="text-base-content text-sm">
+              Ten seconds. Attributes and skills are rolled for you in dice
+              codes — <span className="font-mono">3d7+2</span> — and the
+              character lives in this browser only.
+            </p>
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                play.begin(name);
+              }}
+            >
+              <label
+                className="text-base-content flex flex-col gap-1 text-sm"
+                htmlFor="character-name"
+              >
+                Name
+                <input
+                  id="character-name"
+                  name="character-name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Wanderer"
+                  className="input input-bordered min-h-11 w-full"
+                  autoComplete="off"
+                />
+              </label>
+              <button type="submit" className="btn btn-primary min-h-11">
+                Roll a character
+              </button>
+            </form>
+          </div>
+        </section>
+      </div>
     );
   }
 
   const skill = play.selectedSkill;
 
+  /**
+   * The status is PROMOTED INTO THE SUMMARY, so collapsing the section costs
+   * the player nothing they were reading. A disclosure whose summary is only
+   * its own title makes you open it to find out whether you need to.
+   */
+  const whereSummary =
+    play.mode === 'zone'
+      ? (ZONES.find((z) => z.id === play.zoneId)?.name ?? 'A zone')
+      : play.mode === 'grid'
+        ? 'Grid movement'
+        : geo.error
+          ? 'No location — playing without it'
+          : geo.position
+            ? 'Rounded to your cell'
+            : // NOT the body's "Waiting for a location…". A summary that
+              // repeats its own body word for word is the duplication this
+              // pass exists to remove, and it also makes every test matching
+              // that phrase ambiguous between two elements.
+              'Locating…';
+
   return (
     <div className={`flex flex-col gap-6${className ? ` ${className}` : ''}`}>
-      <section aria-labelledby="where-heading" className="flex flex-col gap-3">
-        <h2 id="where-heading" className="text-base-content text-xl font-bold">
-          Where you are
-        </h2>
+      {primer}
 
-        <fieldset className="flex flex-wrap gap-2">
-          <legend className="text-base-content mb-2 text-sm">
-            The game only ever knows your 100-metre cell. Location is optional.
-          </legend>
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className={`btn btn-sm min-h-11 ${
-                play.mode === m.id ? 'btn-primary' : 'btn-outline'
-              }`}
-              aria-pressed={play.mode === m.id}
-              onClick={() => {
-                play.setMode(m.id);
-                if (m.id === 'gps') geo.getCurrentPosition();
-              }}
+      {/*
+        The heading stays INSIDE the summary and the labelled section stays
+        outside it, so the h2 the accessibility test counts is still an h2 and
+        still names this region. `<summary>` takes phrasing content
+        "optionally intermixed with heading content", so this is the shape the
+        spec is written for rather than one it tolerates.
+      */}
+      <section aria-labelledby="where-heading">
+        <details className={DISCLOSURE}>
+          <summary className={DISCLOSURE_SUMMARY}>
+            <h2
+              id="where-heading"
+              className="text-base-content inline text-lg font-bold"
             >
-              {m.label}
-            </button>
-          ))}
-        </fieldset>
+              Where you are
+            </h2>
+            <span className="text-base-content text-sm font-normal">
+              {whereSummary}
+            </span>
+          </summary>
 
-        {play.mode === 'zone' && (
-          <label
-            className="text-base-content flex flex-col gap-1 text-sm"
-            htmlFor="zone-select"
-          >
-            Zone
-            <select
-              id="zone-select"
-              className="select select-bordered min-h-11 w-full max-w-sm"
-              value={play.zoneId}
-              onChange={(e) => play.setZone(e.target.value)}
-            >
-              {ZONES.map((z) => (
-                <option key={z.id} value={z.id}>
-                  {z.name}
-                </option>
+          <div className="flex flex-col gap-3 p-4 pt-3">
+            <fieldset className="flex flex-wrap gap-2">
+              <legend className="text-base-content mb-2 text-sm">
+                The game only ever knows your 100-metre cell. Location is
+                optional.
+              </legend>
+              {MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={`btn btn-sm min-h-11 ${
+                    play.mode === m.id ? 'btn-primary' : 'btn-outline'
+                  }`}
+                  aria-pressed={play.mode === m.id}
+                  onClick={() => {
+                    play.setMode(m.id);
+                    if (m.id === 'gps') geo.getCurrentPosition();
+                  }}
+                >
+                  {m.label}
+                </button>
               ))}
-            </select>
-          </label>
-        )}
+            </fieldset>
 
-        {play.mode === 'gps' && (
-          <p className="text-base-content text-sm" role="status">
-            {geo.error
-              ? 'No location available — pick a zone or use grid movement instead. The game plays either way.'
-              : geo.position
-                ? 'Location rounded to a 100-metre cell. The precise fix was discarded.'
-                : 'Waiting for a location…'}
-          </p>
-        )}
+            {play.mode === 'zone' && (
+              <label
+                className="text-base-content flex flex-col gap-1 text-sm"
+                htmlFor="zone-select"
+              >
+                Zone
+                <select
+                  id="zone-select"
+                  className="select select-bordered min-h-11 w-full max-w-sm"
+                  value={play.zoneId}
+                  onChange={(e) => play.setZone(e.target.value)}
+                >
+                  {ZONES.map((z) => (
+                    <option key={z.id} value={z.id}>
+                      {z.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
 
-        {play.mode === 'grid' && (
-          <div
-            className="flex flex-col items-start gap-2"
-            role="group"
-            aria-label="Move one cell"
-          >
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="btn btn-outline min-h-11 min-w-11"
-                onClick={() => play.step(0, 1)}
+            {play.mode === 'gps' && (
+              <p
+                className="text-base-content text-sm"
+                role="status"
+                aria-label="Location status"
               >
-                North
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="btn btn-outline min-h-11 min-w-11"
-                onClick={() => play.step(-1, 0)}
+                {geo.error
+                  ? 'No location available — pick a zone or use grid movement instead. The game plays either way.'
+                  : geo.position
+                    ? 'Location rounded to a 100-metre cell. The precise fix was discarded.'
+                    : 'Waiting for a location…'}
+              </p>
+            )}
+
+            {play.mode === 'grid' && (
+              <div
+                className="flex flex-col items-start gap-2"
+                role="group"
+                aria-label="Move one cell"
               >
-                West
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline min-h-11 min-w-11"
-                onClick={() => play.step(1, 0)}
-              >
-                East
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="btn btn-outline min-h-11 min-w-11"
-                onClick={() => play.step(0, -1)}
-              >
-                South
-              </button>
-            </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-outline min-h-11 min-w-11"
+                    onClick={() => play.step(0, 1)}
+                  >
+                    North
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-outline min-h-11 min-w-11"
+                    onClick={() => play.step(-1, 0)}
+                  >
+                    West
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline min-h-11 min-w-11"
+                    onClick={() => play.step(1, 0)}
+                  >
+                    East
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-outline min-h-11 min-w-11"
+                    onClick={() => play.step(0, -1)}
+                  >
+                    South
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </details>
       </section>
 
       {play.encounter && (
         <EncounterCard encounter={play.encounter} cell={play.cell ?? undefined}>
-          <p className="text-base-content text-sm">
-            It suggests <strong>{play.encounter.skill}</strong>, opened on your
-            sheet below — but anything you can argue for is fair.
-          </p>
+          {/*
+            A CONTROL, NOT A SENTENCE POINTING AT ONE.
+
+            This slot used to read "It suggests Search, opened on your sheet
+            below" — which named the skill the card already implied and then
+            asked the player to go find it, two or three phone screens down.
+            The button does the going.
+          */}
+          <button
+            type="button"
+            className="btn btn-outline min-h-11 self-start"
+            onClick={() => {
+              const suggested = play.encounter!.skill;
+              play.selectSkill(suggested);
+              /*
+                Focus moves with the selection, or the tap changes something
+                the player cannot see — the same defect the note below the
+                sheet describes. The row button exists whether or not it is
+                expanded, so this needs no frame delay.
+              */
+              document.getElementById(skillRowId(suggested))?.focus();
+            }}
+          >
+            Go to {play.encounter.skill}
+          </button>
         </EncounterCard>
       )}
 

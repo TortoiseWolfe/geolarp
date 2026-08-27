@@ -293,6 +293,23 @@ export default function D7Roller({
         >
           {result && !rolling ? describe(result, label, difficulty) : ''}
         </p>
+
+        {/*
+          "HOW LONG DOES A TURN LAST?" — asked in a playtest, and the honest
+          answer is that there is no turn. The unit of play is the cell, and it
+          holds until the date rolls over.
+
+          Gated on `seed`, not on `result` alone: without a cell behind it the
+          roller seeds from chance and a re-roll gives different dice, so the
+          sentence would be false in exactly the case it is easiest to leave
+          unchecked.
+        */}
+        {seed && result && !rolling && (
+          <p className="text-base-content text-xs">
+            This cell&rsquo;s roll is fixed until midnight UTC. Spending
+            Character Points changes the pool, and so changes the roll.
+          </p>
+        )}
       </div>
     </section>
   );

@@ -37,6 +37,17 @@ export interface CharacterSheetProps {
 }
 
 /**
+ * The DOM id of a skill's row button.
+ *
+ * Exported because the encounter card's "Go to {skill}" button moves focus
+ * here, and a jump target two files spell independently is a jump that breaks
+ * silently the first time either side is renamed.
+ */
+export function skillRowId(skill: SkillName): string {
+  return `skill-${skill.toLowerCase()}`;
+}
+
+/**
  * A character sheet in D6 units.
  *
  * Every rating reads as a dice code with pips, because that is what it is —
@@ -123,6 +134,7 @@ export default function CharacterSheet({
                       {onRoll ? (
                         <button
                           type="button"
+                          id={skillRowId(skill)}
                           onClick={() => onRoll(skill)}
                           aria-expanded={open}
                           aria-controls={open ? panelId : undefined}

@@ -19,23 +19,25 @@ describe('EncounterCard', () => {
     expect(screen.getByText(encounter.description)).toBeInTheDocument();
   });
 
-  it('names the skill and states the target as a floor', () => {
+  it('rates the cell without restating what the roller says', () => {
     render(<EncounterCard encounter={encounter} />);
-    expect(screen.getByText(encounter.skill)).toBeInTheDocument();
 
     // The band NAMES the cell — a rating, and honest.
     expect(
       screen.getByText(bandOf(encounter.difficulty).label)
     ).toBeInTheDocument();
 
-    // But the range must not appear where it reads as the number to beat.
+    // The card used to add "Roll Search. Needs 13 or more." beneath it, which
+    // the roller already says next to the button that acts on it. Two copies
+    // of an instruction are not twice as clear; they are one more thing to
+    // read before the description, which is the only text here the player has
+    // not already seen.
+    expect(screen.queryByText(/Needs \d+ or more/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Roll /)).not.toBeInTheDocument();
+
+    // And the range must never appear where it reads as the number to beat.
     // `roll()` succeeds on `total >= floor`, so a printed "(13-17)" told the
     // player 18 overshoots. It does not.
-    expect(
-      screen.getByText(
-        new RegExp(`Needs ${bandOf(encounter.difficulty).floor} or more`)
-      )
-    ).toBeInTheDocument();
     expect(screen.queryByText(/\(\d+-\d+\)/)).not.toBeInTheDocument();
   });
 
