@@ -219,28 +219,35 @@ export default function CharacterPlay({
           cell={play.cell ?? undefined}
           result={play.result}
         >
-          {skill ? (
-            <D7Roller
-              key={`${play.encounter.seed}-${skill}`}
-              label={skill}
-              rating={ratingFor(play.character, skill)}
-              difficulty={play.encounter.difficulty}
-              availablePoints={play.character.characterPoints}
-              onResult={play.resolve}
-            />
-          ) : (
-            <p className="text-base-content text-sm">
-              Pick a skill on your sheet to try it. The encounter suggests{' '}
-              <strong>{play.encounter.skill}</strong>, but anything you can
-              argue for is fair.
-            </p>
-          )}
+          <p className="text-base-content text-sm">
+            It suggests <strong>{play.encounter.skill}</strong>, opened on your
+            sheet below — but anything you can argue for is fair.
+          </p>
         </EncounterCard>
       )}
 
+      {/*
+        THE ROLLER LIVES IN THE ROW, NOT ABOVE THE SHEET.
+        It used to mount inside EncounterCard, which sits two to three phone
+        screens above the skill you tapped: the tap changed something the player
+        could not see and nothing moved focus there. Now the row you touch opens
+        under your thumb, and the encounter's own suggestion is open on arrival,
+        so the common case costs zero taps.
+      */}
       <CharacterSheet
         character={play.character}
         onRoll={play.selectSkill}
+        expandedSkill={skill}
+        renderExpanded={(s) => (
+          <D7Roller
+            key={`${play.encounter?.seed ?? 'no-cell'}-${s}`}
+            label={s}
+            rating={ratingFor(play.character!, s)}
+            difficulty={play.encounter?.difficulty}
+            availablePoints={play.character!.characterPoints}
+            onResult={play.resolve}
+          />
+        )}
         onExport={play.exportCharacter}
         onRegenerate={play.regenerate}
       />

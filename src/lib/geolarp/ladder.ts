@@ -47,6 +47,20 @@ export function rangeOf(id: Difficulty): { lo: number; hi: number | null } {
   return { lo: LADDER[i].floor, hi: next ? next.floor - 1 : null };
 }
 
+/**
+ * What a roll must reach, as a floor.
+ *
+ * THE BAND RANGE IS NOT A SUCCESS WINDOW, and printing it as one was a real
+ * defect. `roll()` resolves `success: total >= difficulty`, and every caller
+ * passes `bandOf(id).floor` — so a Moderate check succeeds at 13 AND at 30.
+ * The UI printed "Target: Moderate (13-17)", which states a window the rules do
+ * not have and implies 18 overshoots. Use this wherever a player is being told
+ * what to beat; `formatBand` is for rating the CELL, not the roll.
+ */
+export function formatTarget(id: Difficulty): string {
+  return `${bandOf(id).floor} or more`;
+}
+
 export function formatBand(id: Difficulty): string {
   const { lo, hi } = rangeOf(id);
   return `${bandOf(id).label} (${hi === null ? `${lo}+` : `${lo}-${hi}`})`;

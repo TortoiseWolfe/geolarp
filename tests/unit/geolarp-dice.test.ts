@@ -13,7 +13,13 @@ import {
   toPips,
 } from '@/lib/geolarp/dice';
 import { Rng } from '@/lib/geolarp/rng';
-import { LADDER, rangeOf, formatBand } from '@/lib/geolarp/ladder';
+import {
+  LADDER,
+  bandOf,
+  formatBand,
+  formatTarget,
+  rangeOf,
+} from '@/lib/geolarp/ladder';
 
 const d = (dice: number, pips = 0): DiceCode => ({ dice, pips });
 
@@ -175,6 +181,26 @@ describe('the difficulty ladder', () => {
       const { hi } = rangeOf(LADDER[i].id);
       expect(hi).toBe(LADDER[i + 1].floor - 1);
     }
+  });
+
+  it('states a target as a floor, because that is what success compares to', () => {
+    // `roll()` resolves `success: total >= difficulty` and every caller passes
+    // `bandOf(id).floor`. So a band is a RATING of the cell, not a window the
+    // roll must land inside. The UI printed "Moderate (13-17)" as the target,
+    // which implied 18 overshoots; it does not.
+    expect(formatTarget('moderate')).toBe('13 or more');
+    expect(formatTarget('heroic')).toBe('35 or more');
+
+    const rng = new Rng('above-the-band');
+    let sawAboveBand = false;
+    for (let i = 0; i < 200 && !sawAboveBand; i += 1) {
+      const r = roll({ dice: 6, pips: 0 }, rng, bandOf('moderate').floor);
+      if (r.total > rangeOf('moderate').hi!) {
+        sawAboveBand = true;
+        expect(r.success).toBe(true);
+      }
+    }
+    expect(sawAboveBand).toBe(true);
   });
 
   it('leaves Heroic open-ended', () => {

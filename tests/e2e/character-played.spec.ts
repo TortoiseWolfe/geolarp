@@ -214,7 +214,10 @@ for (const theme of THEMES) {
     });
 
     test('the roller and its dice are AAA', async ({ page }) => {
-      await page.getByRole('button', { name: /^Search/ }).first().click();
+      await page
+        .getByRole('button', { name: /^Search/ })
+        .first()
+        .click();
       const roll = page.getByRole('button', { name: 'Roll Search' });
       await expect(roll).toBeVisible();
       await roll.click();
@@ -224,6 +227,22 @@ for (const theme of THEMES) {
       ).toBeVisible({ timeout: 15000 });
       await expect(
         page.getByRole('list', { name: 'Dice faces, wild die first' })
+      ).toBeVisible();
+
+      const { failures, counts } = await contrastFailures(page);
+      expect(failures, JSON.stringify({ counts, failures }, null, 2)).toEqual(
+        []
+      );
+    });
+
+    test('the discard confirmation is AAA', async ({ page }) => {
+      // A new surface with a colour role nothing else on this page uses:
+      // btn-error. It only exists once "New character" is pressed, so the
+      // route sweep can never reach it and neither could the tests above.
+      await page.getByRole('button', { name: 'New character' }).click();
+      await expect(page.getByRole('alertdialog')).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: /Discard and roll a new one/ })
       ).toBeVisible();
 
       const { failures, counts } = await contrastFailures(page);
@@ -275,7 +294,10 @@ test.describe('/character played — no horizontal overflow', () => {
       ).toBeVisible({ timeout: 15000 });
 
       // Open the roller too — the dice row is the widest thing on the page.
-      await page.getByRole('button', { name: /^Search/ }).first().click();
+      await page
+        .getByRole('button', { name: /^Search/ })
+        .first()
+        .click();
       const roll = page.getByRole('button', { name: 'Roll Search' });
       await expect(roll).toBeVisible();
       await roll.click();
@@ -316,13 +338,14 @@ test.describe('/character played — no horizontal overflow', () => {
             );
           }
         });
-        return { limit: Math.round(limit), worst: Math.round(worst), offenders: offenders.slice(0, 8) };
+        return {
+          limit: Math.round(limit),
+          worst: Math.round(worst),
+          offenders: offenders.slice(0, 8),
+        };
       });
 
-      expect(
-        overflow.offenders,
-        JSON.stringify(overflow, null, 2)
-      ).toEqual([]);
+      expect(overflow.offenders, JSON.stringify(overflow, null, 2)).toEqual([]);
     });
   }
 });

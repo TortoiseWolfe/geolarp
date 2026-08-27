@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import EncounterCard from './EncounterCard';
 import { encounterFor } from '@/lib/geolarp/encounter';
+import { bandOf } from '@/lib/geolarp/ladder';
 import { cellOf, seedOf } from '@/lib/geolarp/cell';
 import { roll } from '@/lib/geolarp/dice';
 import { Rng } from '@/lib/geolarp/rng';
@@ -19,11 +20,24 @@ describe('EncounterCard', () => {
     expect(screen.getByText(encounter.description)).toBeInTheDocument();
   });
 
-  it('names the skill to roll and the band to beat', () => {
+  it('names the skill and states the target as a floor', () => {
     render(<EncounterCard encounter={encounter} />);
     expect(screen.getByText(encounter.skill)).toBeInTheDocument();
-    // The band appears as a badge and in the instruction.
-    expect(screen.getAllByText(/\(\d+(-\d+|\+)\)/).length).toBeGreaterThan(0);
+
+    // The band NAMES the cell — a rating, and honest.
+    expect(
+      screen.getByText(bandOf(encounter.difficulty).label)
+    ).toBeInTheDocument();
+
+    // But the range must not appear where it reads as the number to beat.
+    // `roll()` succeeds on `total >= floor`, so a printed "(13-17)" told the
+    // player 18 overshoots. It does not.
+    expect(
+      screen.getByText(
+        new RegExp(`Needs ${bandOf(encounter.difficulty).floor} or more`)
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/\(\d+-\d+\)/)).not.toBeInTheDocument();
   });
 
   it('shows the seed, so two players can check they agree', () => {

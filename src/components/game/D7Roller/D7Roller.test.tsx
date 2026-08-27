@@ -3,6 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import D7Roller from './D7Roller';
 import { Rng } from '@/lib/geolarp/rng';
+import { roll } from '@/lib/geolarp/dice';
+import { bandOf } from '@/lib/geolarp/ladder';
 
 /**
  * Every test injects a seeded RNG, so an assertion is about the component
@@ -33,9 +35,27 @@ describe('D7Roller', () => {
     expect(screen.getByRole('heading', { name: 'Search' })).toBeInTheDocument();
   });
 
-  it('names the target band when one is given', () => {
+  it('states the target as a FLOOR, never as a range', () => {
     render(<D7Roller label="Search" rating={rating} difficulty="moderate" />);
-    expect(screen.getByText('Target: Moderate (13-17)')).toBeInTheDocument();
+    // The band range is not a success window. `roll()` resolves
+    // `total >= floor`, so 18 beats Moderate just as 13 does; printing
+    // "Moderate (13-17)" said otherwise and was a real defect.
+    expect(screen.getByText(/Needs 13 or more/)).toBeInTheDocument();
+    expect(screen.queryByText(/13-17/)).not.toBeInTheDocument();
+    // The band still names the cell.
+    expect(screen.getByText(/Moderate/)).toBeInTheDocument();
+  });
+
+  it('counts a roll above the band as a success', () => {
+    // The regression this copy invited: a total of 18 against Moderate is a
+    // success, and any UI that implies a ceiling is lying about the rules.
+    const r = roll(
+      { dice: 6, pips: 0 },
+      new Rng('high'),
+      bandOf('moderate').floor
+    );
+    expect(r.total).toBeGreaterThan(17);
+    expect(r.success).toBe(true);
   });
 
   it('reports a total and an outcome after a roll', async () => {
@@ -53,7 +73,7 @@ describe('D7Roller', () => {
       expect(
         screen.getByRole('status', { name: 'Roll result' })
       ).toHaveTextContent(
-        /Search: rolled \d+ against Moderate \(13-17\) — (success|failure)/
+        /Search: rolled \d+ against Moderate, needing 13 or more — (success|failure)/
       );
     });
   });
