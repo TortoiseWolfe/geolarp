@@ -116,8 +116,53 @@ jobs:
     name: Cloud-quota budget
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      configured: ${{ steps.creds.outputs.configured }}
     steps:
       - uses: actions/checkout@v5
+
+      # ============================================
+      # A LANE THAT CANNOT RUN MUST SKIP, NOT FAIL (#48)
+      # ============================================
+      #
+      # This lane needs three credentials the repo has never had. Without them
+      # `tests/e2e/global-setup.ts` throws "E2E prerequisites not met: 3 missing
+      # environment variables" — before a single test runs — and `Smoke Tests`
+      # and `basePath Project-Site Smoke` go red on every push and every PR.
+      #
+      # They are not required checks, so nothing was ever blocked. What they did
+      # instead is quietly worse: two permanently-red checks that mean nothing
+      # teach everyone to read red as normal, on a repo whose own CLAUDE.md is
+      # largely a list of times a green check was believed and shouldn't have
+      # been. The same disease as #57, from the opposite direction.
+      #
+      # So the lane now reports SKIPPED when it is unconfigured, which is the
+      # truth: it did not run, and it did not fail. Add the three credentials and
+      # it starts working with no further edit — deliberately NOT turning the
+      # lane on here, because that points 24 jobs at the shared production
+      # Supabase project, which is a decision with a cost (#85, #575) and an
+      # owner, and it is not this file's to make.
+      - name: Are this lane's credentials configured?
+        id: creds
+        env:
+          SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TEST_EMAIL: ${{ vars.TEST_USER_PRIMARY_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.TEST_USER_PRIMARY_PASSWORD }}
+        run: |
+          missing=()
+          [ -n "$SERVICE_ROLE" ]  || missing+=("SUPABASE_SERVICE_ROLE_KEY (secret)")
+          [ -n "$TEST_EMAIL" ]    || missing+=("TEST_USER_PRIMARY_EMAIL (variable)")
+          [ -n "$TEST_PASSWORD" ] || missing+=("TEST_USER_PRIMARY_PASSWORD (secret)")
+          if [ ${#missing[@]} -eq 0 ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "All three credentials present; the hosted lane will run."
+            exit 0
+          fi
+          echo "configured=false" >> "$GITHUB_OUTPUT"
+          printf '::notice::Hosted E2E lane SKIPPED — %s of 3 credentials missing: %s. This is #48, not a test failure. PRs get their E2E coverage from e2e-local.yml, which needs no secrets.\n' \
+            "${#missing[@]}" "$(IFS=', '; echo "${missing[*]}")"
+          exit 0
+
       - name: Check recent E2E run rate against the quota budget
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -152,6 +197,9 @@ jobs:
   build:
     name: Build
     needs: budget
+    # Everything downstream chains from this job, so gating it here skips the
+    # whole lane in one place rather than repeating the condition nine times.
+    if: needs.budget.outputs.configured == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

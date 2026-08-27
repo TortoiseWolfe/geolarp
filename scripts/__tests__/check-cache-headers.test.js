@@ -231,3 +231,60 @@ test('checks EVERY configured path, not just the first', async () => {
     server.close();
   }
 });
+
+/**
+ * #57: Cloudflare answers GitHub Actions runner IPs with 403, and this check
+ * reported that as three cache-contract failures under the banner "production
+ * has served unstyled pages eight times from exactly this". The contract was
+ * intact the whole time.
+ *
+ * This is the only check that can see the #635 cure, because the Cloudflare
+ * rules live in a dashboard rather than in this repo. A guard that cries the
+ * loudest possible wolf for six days over something else is the guard nobody
+ * reads on the day it is finally right.
+ */
+test('a refused probe reports as UNASSESSABLE, not as a broken contract', async () => {
+  const server = createServer((req, res) => {
+    res.writeHead(403, { 'Content-Type': 'text/html' });
+    res.end('<html><body>Sorry, you have been blocked</body></html>');
+  });
+  const port = await listen(server);
+  try {
+    const { code, stderr } = await runProbe(`http://127.0.0.1:${port}`);
+
+    // Still non-zero: a check that could not measure must never report green.
+    assert.equal(code, 1);
+    assert.match(stderr, /UNASSESSABLE/);
+    assert.match(stderr, /#57/);
+
+    // And it must NOT accuse the cache contract, which is the whole defect.
+    assert.doesNotMatch(stderr, /cache-contract failure/);
+    assert.doesNotMatch(stderr, /served unstyled pages eight times/);
+
+    // One cause reports as one problem. The missing-assets error is downstream
+    // of the block — the body was a block page — and reporting it separately
+    // turned one cause into three errors and buried the one that mattered.
+    const errors = stderr.match(/::error::/g) ?? [];
+    assert.ok(
+      errors.length <= 2,
+      `expected the block to report once per probed URL, got ${errors.length}:\n${stderr}`
+    );
+    assert.doesNotMatch(stderr, /::error::no \/_next\/static\//);
+  } finally {
+    server.close();
+  }
+});
+
+test('a genuinely broken contract still fails loudly, block handling notwithstanding', async () => {
+  // The negative control. If the #57 handling ever swallowed a real failure,
+  // the guard would be worse than before rather than better.
+  await withFixture(
+    { docCacheControl: 'max-age=600', assetCacheControl: 'max-age=31536000' },
+    async (base) => {
+      const { code, stderr } = await runProbe(base);
+      assert.equal(code, 1);
+      assert.match(stderr, /cache-contract failure/);
+      assert.doesNotMatch(stderr, /UNASSESSABLE/);
+    }
+  );
+});

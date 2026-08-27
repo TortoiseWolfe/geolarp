@@ -98,6 +98,38 @@ async function head(url) {
   };
 }
 
+/**
+ * "THE EDGE REFUSED ME" IS NOT "THE CACHE CONTRACT BROKE".
+ *
+ * Cloudflare answers GitHub Actions runner IPs with 403 (#57). This check then
+ * reported three cache-contract failures — two 403s and, downstream of them, a
+ * missing-assets error — under the banner "production has served unstyled
+ * pages eight times from exactly this". Every word of that was wrong: the
+ * contract was intact the whole time, and verifiable from any unblocked
+ * network in one curl.
+ *
+ * That matters more here than almost anywhere, because this is the ONLY check
+ * that can see the #635 cure — the Cloudflare rules live in a dashboard rather
+ * than in this repo. A guard that cries the loudest possible wolf for six days
+ * over something else is the guard nobody reads on the day it is right.
+ *
+ * So a refusal is tracked separately and named for what it is. It still exits
+ * non-zero, because a check that could not measure must never report green —
+ * the same distinction `set-auth-config.ts --check` draws between drift that
+ * is actionable and drift that is merely unassessable.
+ */
+const BLOCKED_STATUSES = new Set([401, 403, 407, 429, 451]);
+const blocked = [];
+
+function noteBlocked(url, status) {
+  blocked.push(
+    `${url} returned ${status}: the edge refused this prober, so the cache ` +
+      `contract could not be read. This is NOT evidence the contract broke. ` +
+      `See #57 — Cloudflare 403s GitHub Actions runner IPs, while the same URL ` +
+      `answers 200 with the right headers from an ordinary network.`
+  );
+}
+
 // ── documents must revalidate ────────────────────────────────────────────────
 let html = '';
 for (const path of DOC_PATHS) {
@@ -107,6 +139,11 @@ for (const path of DOC_PATHS) {
     res = await head(url);
   } catch (err) {
     failures.push(`${url} could not be fetched: ${err.message}`);
+    continue;
+  }
+
+  if (BLOCKED_STATUSES.has(res.status)) {
+    noteBlocked(url, res.status);
     continue;
   }
 
@@ -145,7 +182,9 @@ for (const path of DOC_PATHS) {
 const assets = [
   ...new Set(
     Array.from(
-      html.matchAll(/["'(]([^"'()\s]*\/_next\/static\/[^"'()\s]+?\.(?:js|css))/g),
+      html.matchAll(
+        /["'(]([^"'()\s]*\/_next\/static\/[^"'()\s]+?\.(?:js|css))/g
+      ),
       (m) => m[1]
     )
   ),
@@ -153,7 +192,15 @@ const assets = [
 
 // A page that yielded no assets makes every assertion below vacuous — the shape
 // this repo keeps getting bitten by (#396). Say so instead of passing silently.
-if (assets.length === 0) {
+if (assets.length === 0 && blocked.length > 0) {
+  // A CONSEQUENCE, NOT A SECOND FINDING. There are no asset URLs because the
+  // body was a block page rather than the site. Reporting it separately turned
+  // one cause into three errors and buried the one that mattered.
+  blocked.push(
+    `the asset half of this check did not run: ${BASE}${DOC_PATHS[0]} could ` +
+      `not be read, so there was no HTML to find /_next/static/ URLs in.`
+  );
+} else if (assets.length === 0) {
   failures.push(
     `no /_next/static/ asset URLs were found in ${BASE}${DOC_PATHS[0]}, so the ` +
       `asset half of this check could not run. Either the page failed to render ` +
@@ -166,7 +213,9 @@ if (assets.length === 0) {
     : `${BASE}/${rel.replace(/^\/+/, '')}`;
   try {
     const res = await head(url);
-    if (res.status !== 200) {
+    if (BLOCKED_STATUSES.has(res.status)) {
+      noteBlocked(url, res.status);
+    } else if (res.status !== 200) {
       failures.push(`${url} returned ${res.status}, expected 200`);
     } else {
       const age = maxAgeOf(res.cacheControl);
@@ -181,7 +230,9 @@ if (assets.length === 0) {
         notes.push(`${rel} → ${res.cacheControl}`);
       }
       if (REQUIRE_EDGE && !res.cfRay) {
-        failures.push(`${url} carries no \`cf-ray\`; Cloudflare did not serve it.`);
+        failures.push(
+          `${url} carries no \`cf-ray\`; Cloudflare did not serve it.`
+        );
       }
     }
   } catch (err) {
@@ -197,6 +248,23 @@ if (failures.length > 0) {
   console.error(
     `\n${failures.length} cache-contract failure(s) against ${BASE}. ` +
       `See #635 — production has served unstyled pages eight times from exactly this.`
+  );
+  if (blocked.length > 0) {
+    for (const b of blocked) console.error(`::warning::${b}`);
+  }
+  process.exit(1);
+}
+
+if (blocked.length > 0) {
+  for (const b of blocked) console.error(`::error::${b}`);
+  console.error(
+    `\nUNASSESSABLE: ${blocked.length} probe(s) were refused by the edge, so the ` +
+      `cache contract at ${BASE} was NOT verified. This is not a failure of the ` +
+      `contract and is not evidence of #635 — it is a failure to measure, which ` +
+      `is tracked as #57. Confirm by hand from an unblocked network:\n` +
+      `  curl -sSI ${BASE}/ | grep -iE 'cache-control|cf-ray'\n` +
+      `Exiting non-zero deliberately: a check that could not measure must never ` +
+      `report green.`
   );
   process.exit(1);
 }
