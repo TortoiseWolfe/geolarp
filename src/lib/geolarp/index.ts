@@ -10,3 +10,4 @@ export * from './ladder';
 export * from './cell';
 export * from './character';
 export * from './encounter';
+export * from './reward';

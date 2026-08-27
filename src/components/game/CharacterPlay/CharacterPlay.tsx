@@ -241,6 +241,16 @@ export default function CharacterPlay({
         renderExpanded={(s) => (
           <D7Roller
             key={`${play.encounter?.seed ?? 'no-cell'}-${s}`}
+            /*
+              The cell, the character and the skill. `created` is what keeps the
+              roll unshared: two players standing in one cell meet the same
+              encounter — that is published — and still roll their own dice.
+            */
+            seed={
+              play.encounter
+                ? `${play.encounter.seed}|${play.character!.created}|${s}`
+                : undefined
+            }
             label={s}
             rating={ratingFor(play.character!, s)}
             difficulty={play.encounter?.difficulty}

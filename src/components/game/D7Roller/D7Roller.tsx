@@ -23,6 +23,23 @@ export interface D7RollerProps {
   onResult?: (result: RollResult, pointsSpent: number) => void;
   /** Inject a seeded RNG to make a roll reproducible (tests, shared seeds). */
   rng?: Rng;
+  /**
+   * Seeds the dice, so this cell's roll is fixed until the world reseeds.
+   *
+   * RE-ROLLING IS NOT BLOCKED; IT IS POINTLESS. The Roll button had no
+   * once-per-encounter guard, so a player could sit in one cell and press it
+   * until the dice came up — free, unbounded, and the obvious thing to do.
+   * A disabled button would have said "you may not"; identical faces say
+   * "there is nothing here for you", which needs no enforcement and no stored
+   * record of what you have already tried.
+   *
+   * The caller composes the cell, the character and the skill into this. The
+   * STAKE is added here, deliberately: without it a free failure would tell
+   * you your exact deficit, so you would buy precisely the dice needed and
+   * never waste a point — the sink would be a vending machine. With it, each
+   * stake is an independent roll and raising one is a bet.
+   */
+  seed?: string;
   className?: string;
 }
 
@@ -46,6 +63,7 @@ export default function D7Roller({
   availablePoints = 0,
   onResult,
   rng,
+  seed,
   className = '',
 }: D7RollerProps) {
   const [result, setResult] = useState<RollResult | null>(null);
@@ -83,7 +101,11 @@ export default function D7Roller({
 
   const handleRoll = useCallback(() => {
     const stake = staked;
-    const outcome = rollDice(rating, rng ?? new Rng(makeSeed()), target, stake);
+    // The injected rng keeps precedence so tests stay deterministic; then the
+    // cell seed; then chance, for a roller with no cell behind it.
+    const source =
+      rng ?? (seed ? new Rng(`${seed}|${stake}`) : new Rng(makeSeed()));
+    const outcome = rollDice(rating, source, target, stake);
 
     /**
      * A STAKE IS PER ROLL, AND COMMITTING IT IS ONE ACT.
@@ -126,7 +148,7 @@ export default function D7Roller({
         commit();
       }, ROLL_MS)
     );
-  }, [rating, rng, target, staked, onResult]);
+  }, [rating, rng, seed, target, staked, onResult]);
 
   const faces = rolling ? tumble : (result?.faces ?? []);
 

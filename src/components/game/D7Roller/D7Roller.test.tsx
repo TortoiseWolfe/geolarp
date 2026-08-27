@@ -204,6 +204,21 @@ describe('D7Roller', () => {
   });
 
   it('is reproducible for a given seed', async () => {
+    // Reduced motion: this asserts the DICE are reproducible, and the 600ms
+    // animation is decoration over a result computed up front. Rolling twice
+    // through it put the test within a second of the 5s timeout, which is a
+    // flake waiting for a slow runner rather than a property worth testing
+    // here — the animated path has its own test above.
+    window.matchMedia = vi.fn().mockImplementation((q: string) => ({
+      matches: q.includes('prefers-reduced-motion'),
+      media: q,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
     const user = userEvent.setup();
     const totals: number[] = [];
     for (const _ of [0, 1]) {
@@ -334,5 +349,108 @@ describe('the stake is per roll, and never exceeds the balance', () => {
     // The control returns to 0 of 3, not 1 of 3 — the player is not silently
     // holding a stake they did not re-choose.
     expect(screen.getByText('0 / 3')).toBeInTheDocument();
+  });
+});
+
+/**
+ * Cell-seeded resolution (#42).
+ *
+ * WHAT EACH TEST ACTUALLY PROVES, because they are not equivalent. Only "gives
+ * the same faces for the same cell" fails when the feature is removed —
+ * verified by stubbing the seed out, which produced '2,3,4' against '2,1,3'.
+ * The three "different faces" tests pass with or without it, because random
+ * rolls also differ; they are guards against the opposite mistake, a seed too
+ * coarse to distinguish one cell from its neighbour or today from tomorrow.
+ */
+describe('a cell-seeded roll is fixed until the world reseeds', () => {
+  beforeEach(() => {
+    window.matchMedia = vi.fn().mockImplementation((q: string) => ({
+      matches: q.includes('prefers-reduced-motion'),
+      media: q,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+  });
+
+  async function rollOnce(
+    props: Partial<React.ComponentProps<typeof D7Roller>>
+  ) {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
+    const view = render(
+      <D7Roller label="Search" rating={rating} onResult={onResult} {...props} />
+    );
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    await waitFor(() => expect(onResult).toHaveBeenCalled());
+    // The FACES, not the total. A total is a small integer and two unrelated
+    // seeds collide on one often — an assertion on it would pass or fail on
+    // luck rather than on whether the seed is doing anything.
+    const faces = (onResult.mock.calls[0][0].faces as number[]).join(',');
+    view.unmount();
+    return faces;
+  }
+
+  it('gives the same faces for the same cell, so re-rolling is pointless', async () => {
+    const seed = '-77750:39012@2026-08-28|2026-08-27T00:00:00.000Z|Scavenge';
+    const a = await rollOnce({ seed });
+    const b = await rollOnce({ seed });
+    expect(a).toBe(b);
+  });
+
+  it('gives different faces in a different cell', async () => {
+    const base = '|2026-08-27T00:00:00.000Z|Scavenge';
+    const a = await rollOnce({ seed: `-77750:39012@2026-08-28${base}` });
+    const b = await rollOnce({ seed: `-77751:39012@2026-08-28${base}` });
+    expect(a).not.toBe(b);
+  });
+
+  it('gives different faces tomorrow, because the world reseeds', async () => {
+    const base = '-77750:39012@';
+    const tail = '|2026-08-27T00:00:00.000Z|Scavenge';
+    const a = await rollOnce({ seed: `${base}2026-08-28${tail}` });
+    const b = await rollOnce({ seed: `${base}2026-08-29${tail}` });
+    expect(a).not.toBe(b);
+  });
+
+  it('makes each stake an independent bet, not a deficit calculator', async () => {
+    // With the stake outside the seed, a free failure would tell the player
+    // exactly how many dice to buy. Raising a stake has to be a gamble.
+    const seed = '-77750:39012@2026-08-28|2026-08-27T00:00:00.000Z|Scavenge';
+    const totals = new Set<number>();
+    for (const availablePoints of [0, 1, 2]) {
+      const user = userEvent.setup();
+      const onResult = vi.fn();
+      const view = render(
+        <D7Roller
+          label="Search"
+          rating={rating}
+          seed={seed}
+          availablePoints={availablePoints}
+          onResult={onResult}
+        />
+      );
+      for (let i = 0; i < availablePoints; i += 1) {
+        await user.click(
+          screen.getByRole('button', { name: 'Spend one more Character Point' })
+        );
+      }
+      await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+      await waitFor(() => expect(onResult).toHaveBeenCalled());
+      totals.add(onResult.mock.calls[0][0].faces.slice(0, 3).join(','));
+      view.unmount();
+    }
+    // Three different stakes, three genuinely different rolls.
+    expect(totals.size).toBe(3);
+  });
+
+  it('still takes an injected rng first, so tests stay deterministic', async () => {
+    const seed = 'ignored-because-rng-wins';
+    const a = await rollOnce({ seed, rng: new Rng('explicit') });
+    const b = await rollOnce({ seed, rng: new Rng('explicit') });
+    expect(a).toBe(b);
   });
 });

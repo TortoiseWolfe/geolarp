@@ -94,6 +94,19 @@ export function cellKey(cell: Cell): string {
  * true across a timezone edge.
  */
 export function seedOf(cell: Cell, date: Date = new Date()): string {
-  const day = date.toISOString().slice(0, 10); // YYYY-MM-DD, UTC
-  return `${cellKey(cell)}@${day}`;
+  return `${cellKey(cell)}@${utcDay(date)}`;
+}
+
+/**
+ * The UTC day, `YYYY-MM-DD`. The game's only clock.
+ *
+ * Extracted so the world and the player cannot disagree about when the day
+ * turned. `seedOf` uses it to decide what is in a cell; the Character Point
+ * ledger uses it to decide when the daily cap resets. Two inlined
+ * `toISOString().slice(0, 10)` calls would be identical until someone
+ * "helpfully" made one of them local time, and then a player near midnight
+ * would earn against a day the world had not reached.
+ */
+export function utcDay(date: Date = new Date()): string {
+  return date.toISOString().slice(0, 10);
 }

@@ -13,6 +13,7 @@
  */
 import { DiceCode, formatCode, fromPips, normalise, toPips } from './dice';
 import { Rng } from './rng';
+import { DAILY_EARN_CAP } from './reward';
 
 /** The five published attributes, in the blog's order (`:52-53`). */
 export const ATTRIBUTES = [
@@ -85,6 +86,18 @@ export const SKILL_MAX_OVER_ATTRIBUTE = 1;
 /** ...except one focus, which may go to 2D. */
 export const SKILL_FOCUS_MAX_OVER_ATTRIBUTE = 2;
 
+/**
+ * The stake a character begins with.
+ *
+ * Named because the bare `5` appeared in NO specification document — not in
+ * `spec.md`, not in `resolution.md`. It was an implementation invention filling
+ * `resolution.md:123`'s UNSPECIFIED, and an unexplained number is one nobody
+ * can justify changing later. It is also the daily cap, which is the whole
+ * rule in one sentence: one day of the best possible luck refills what you
+ * began with, and no more.
+ */
+export const STARTING_CHARACTER_POINTS = 5;
+
 export interface Character {
   /** Schema version, so an exported file can be migrated rather than rejected. */
   version: 1;
@@ -94,6 +107,22 @@ export interface Character {
   skills: Partial<Record<SkillName, DiceCode>>;
   /** Spendable for a reroll; D6's Character Points. */
   characterPoints: number;
+  /**
+   * The UTC day of the most recent earning, `YYYY-MM-DD`.
+   *
+   * A DATE, NOT A PLACE, and that distinction is the whole design. Capping by
+   * day is what lets the "already paid for this cell" record live in memory
+   * for the session — because a DURABLE record of which cells paid is a record
+   * of where you have been, and `the-world-is-the-board.md:92-93` says no
+   * location history is collected. The cap is what makes forgetting safe.
+   */
+  earnedOn?: string;
+  /**
+   * Points earned on `earnedOn`. Optional alongside it so `version` stays 1
+   * and every character already in a browser keeps loading — `loadCharacter`
+   * returning null drops the player into the name gate and destroys the sheet.
+   */
+  earnedToday?: number;
   /**
    * When this character was last exported FROM THIS BROWSER, ISO 8601.
    *
@@ -185,7 +214,7 @@ export function generateCharacter(
     name,
     attributes,
     skills,
-    characterPoints: 5,
+    characterPoints: STARTING_CHARACTER_POINTS,
     created: new Date().toISOString(),
   };
 }
@@ -209,6 +238,56 @@ export function spendCharacterPoints(char: Character, n: number): Character {
     throw new Error(`only ${char.characterPoints} Character Points remain`);
   }
   return { ...char, characterPoints: char.characterPoints - n };
+}
+
+/**
+ * Pay a character for beating a cell, bounded by the daily cap.
+ *
+ * WHY THE DAY CAPS RATHER THAN GRANTS. The obvious design — N points refresh
+ * at midnight — was rejected, and the reason is worth keeping. It runs on the
+ * same clock as `seedOf`, in the opposite direction: the reseed DESTROYS the
+ * world at UTC midnight while a stipend CREATES currency there, so saving five
+ * days for the Heroic cell you found means arriving with five points at a cell
+ * that has been gone for five days. It also makes waiting a strategy, in a
+ * game whose published thesis is that it "only works if you move".
+ *
+ * So the day-clock gets the cap and play gets the grant. What the cap actually
+ * bounds is grid mode: `step()` moves a player for free and forever from an
+ * armchair, so an uncapped source would be an infinite faucet. A real walking
+ * session earns two or three and never touches it.
+ *
+ * Writes nothing when the grant is zero, so a failed roll never touches
+ * storage.
+ */
+export function earnCharacterPoints(
+  char: Character,
+  n: number,
+  day: string
+): Character {
+  if (n <= 0) return char;
+
+  const earnedToday = char.earnedOn === day ? (char.earnedToday ?? 0) : 0;
+  const granted = Math.min(Math.max(0, n), DAILY_EARN_CAP - earnedToday);
+  if (granted <= 0) {
+    // Still record the day, or a character that hit the cap and then earned
+    // nothing would look like it had never earned at all.
+    return char.earnedOn === day
+      ? char
+      : { ...char, earnedOn: day, earnedToday: 0 };
+  }
+
+  return {
+    ...char,
+    characterPoints: char.characterPoints + granted,
+    earnedOn: day,
+    earnedToday: earnedToday + granted,
+  };
+}
+
+/** How many points this character may still earn today. */
+export function remainingEarnToday(char: Character, day: string): number {
+  const earned = char.earnedOn === day ? (char.earnedToday ?? 0) : 0;
+  return Math.max(0, DAILY_EARN_CAP - earned);
 }
 
 export const STORAGE_KEY = 'geolarp_character';
@@ -235,6 +314,10 @@ export function toExportJSON(char: Character): string {
   // `exportedAt` describes THIS browser's relationship to the character, not
   // the character. Carrying it into the file would tell a new device it had
   // already been backed up there.
+  //
+  // `earnedOn`/`earnedToday` go the OTHER way and are deliberately kept: the
+  // cap belongs to the character, so export-then-import must not be a one-click
+  // way to refill it.
   const { exportedAt: _exportedAt, ...portable } = char;
   return JSON.stringify(portable, null, 2);
 }
