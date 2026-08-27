@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { richestPost } from '../utils/blog-corpus';
 
 interface BrokenLink {
   sourceUrl: string;
@@ -349,7 +350,7 @@ test.describe('Broken Links Detection', () => {
     // OG image is already live in production. A page merging in the same PR that adds
     // its OG image will 404 here during CI (image isn't deployed yet) and fail this test
     // on otherwise-correct code. Add new pages only after their image has shipped to prod.
-    const pagesToCheck = ['/', '/blog', '/blog/geolarp-intro'];
+    const pagesToCheck = ['/', '/blog', `/blog/${richestPost().slug}`];
     const brokenResources: BrokenLink[] = [];
 
     for (const pagePath of pagesToCheck) {

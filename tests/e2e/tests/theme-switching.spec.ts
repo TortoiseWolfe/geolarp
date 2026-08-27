@@ -1,6 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
 import { dismissCookieBanner } from '../utils/test-user-factory';
-import { THEME_COUNT } from '@/config/themes';
 
 /**
  * Wait for theme to be applied and saved to localStorage.
@@ -77,9 +76,13 @@ test.describe('Theme Switching', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await dismissCookieBanner(page);
 
-    // Navigate to themes page via the themes stats link
+    // Via the NAV, not the template demo's stat tile (#26). `/` is the
+    // pre-launch Coming Soon page, so that tile is not there — and it renders
+    // as "35Themes · 10 curated" where it does exist, so the name never
+    // matched. `data-global-nav` is GlobalNav's documented E2E handle.
     await page
-      .getByRole('link', { name: `${THEME_COUNT} Themes` })
+      .locator('header[data-global-nav]')
+      .getByRole('link', { name: 'Themes', exact: true })
       .first()
       .click();
     await expect(page).toHaveURL(/.*themes/);

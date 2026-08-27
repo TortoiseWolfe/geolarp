@@ -1,6 +1,27 @@
 import { test, expect } from '@playwright/test';
 import { dismissCookieBanner } from '../utils/test-user-factory';
-import { THEMES, THEME_COUNT } from '@/config/themes';
+import { THEMES } from '@/config/themes';
+
+/**
+ * NAV-SCOPED HANDLES, NOT A STAT TILE (#26).
+ *
+ * Every navigation in this file used to hop through
+ * `getByRole('link', { name: `${THEME_COUNT} Themes` })` — a stat card on the
+ * TEMPLATE demo homepage. `/` is the pre-launch Coming Soon page now, so that
+ * card is not there and all four tests failed on every browser. The tile also
+ * renders as "35Themes · 10 curated", with no space, so the name never matched
+ * even where it existed.
+ *
+ * `GlobalNav.tsx` documents `data-global-nav` as exactly this: the stable E2E
+ * selector a label rename cannot break. Every other hop in this file already
+ * resolves against the nav.
+ *
+ * ONE CONSEQUENCE, RECORDED RATHER THAN DISCOVERED LATER: the desktop rail is
+ * `hidden lg:flex`, so a header-scoped locator is desktop-only. CI is fine —
+ * `e2e-local.yml` runs the `*-gen` projects at 1280x720 — but a local
+ * `playwright test` across the mobile projects would need the hamburger opened
+ * first.
+ */
 import { waitForLoadStateOrGiveUp } from '../utils/settle';
 
 test.describe('Cross-Page Navigation', () => {
@@ -12,7 +33,8 @@ test.describe('Cross-Page Navigation', () => {
 
     // Navigate to Themes
     await page
-      .getByRole('link', { name: `${THEME_COUNT} Themes` })
+      .locator('header[data-global-nav]')
+      .getByRole('link', { name: 'Themes', exact: true })
       .first()
       .click();
     await dismissCookieBanner(page);
@@ -47,7 +69,8 @@ test.describe('Cross-Page Navigation', () => {
 
     // Navigate to themes and wait for URL
     await page
-      .getByRole('link', { name: `${THEME_COUNT} Themes` })
+      .locator('header[data-global-nav]')
+      .getByRole('link', { name: 'Themes', exact: true })
       .first()
       .click();
     await expect(page).toHaveURL(/\/themes/);
@@ -307,7 +330,8 @@ test.describe('Cross-Page Navigation', () => {
 
     // Navigate and observe smooth transition
     await page
-      .getByRole('link', { name: `${THEME_COUNT} Themes` })
+      .locator('header[data-global-nav]')
+      .getByRole('link', { name: 'Themes', exact: true })
       .first()
       .click();
 
@@ -370,15 +394,35 @@ test.describe('Cross-Page Navigation', () => {
   });
 
   test('scroll position resets on navigation', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    // SOURCE IS /themes, NOT / (#26).
+    //
+    // The behaviour under test is App Router scroll reset, which is site-wide,
+    // but the source page has to be tall enough that a FAILURE to reset would
+    // be visible. `/` gives a 365px scroll range against this test's own
+    // `<= 200` assertion — under two viewports of margin, and it is editorial
+    // content that drifts. `/themes` renders one card per entry in
+    // `THEMES.length`, so its height is gated by code: measured 1952px against
+    // a 720px viewport, a 1232px range.
+    //
+    // /blog was considered and rejected in #26 for the same reason / is weak:
+    // post count is editorial, and this repo went from 16 posts to 3.
+    await page.goto('/themes', { waitUntil: 'domcontentloaded' });
     await dismissCookieBanner(page);
 
-    // Scroll down
-    await page.evaluate(() => window.scrollTo(0, 500));
+    await page.evaluate(() => window.scrollTo(0, 700));
 
-    // Navigate to another page
+    // PRECONDITION, NOT DECORATION. Without it a source page that failed to
+    // render tall enough would scroll nowhere, the destination would trivially
+    // be at the top, and this test would pass having detected nothing.
+    const before = await page.evaluate(() => window.scrollY);
+    expect(
+      before,
+      'source page did not scroll; this test cannot detect a reset'
+    ).toBeGreaterThan(400);
+
     await page
-      .getByRole('link', { name: `${THEME_COUNT} Themes` })
+      .locator('header[data-global-nav]')
+      .getByRole('link', { name: 'Blog', exact: true })
       .first()
       .click();
 
@@ -386,12 +430,9 @@ test.describe('Cross-Page Navigation', () => {
     // Next.js App Router's scroll restoration to complete. Measuring at
     // `domcontentloaded` is too early on WebKit — the document has parsed
     // but the framework hasn't yet run its onRouteChangeComplete scroll
-    // reset, so window.scrollY is still the pre-navigation value (500).
-    // Wait for a destination-page-specific element, then for network idle
-    // so the scroll restoration has settled.
+    // reset, so window.scrollY is still the pre-navigation value.
     await page.waitForURL(
-      (url) =>
-        url.pathname.endsWith('/themes/') || url.pathname.endsWith('/themes'),
+      (url) => url.pathname.replace(/\/$/, '').endsWith('/blog'),
       { timeout: 10000 }
     );
     await page

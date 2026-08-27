@@ -1,6 +1,7 @@
 import { test, expect, devices } from '@playwright/test';
 import { waitForLoadStateOrGiveUp } from '../utils/settle';
 import { FOOTER_LINKS } from '@/config/footer-links';
+import { longestPost, postsWithCode, shortestPost } from '../utils/blog-corpus';
 
 /**
  * Mobile UX Tests for Blog Posts - iPhone 12
@@ -24,7 +25,7 @@ test.use(iPhone12Config);
 test.describe('Blog Post Mobile UX - iPhone 12', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to a blog post
-    await page.goto('/blog/countdown-timer-tutorial');
+    await page.goto(`/blog/${longestPost().slug}`);
     // Wait for content to load
     await page.waitForLoadState('networkidle');
   });
@@ -65,10 +66,11 @@ test.describe('Blog Post Mobile UX - iPhone 12', () => {
   test('should keep controls clear of long and short blog titles', async ({
     page,
   }) => {
-    const posts = [
-      '/blog/countdown-timer-tutorial',
-      '/blog/authentication-supabase-oauth',
-    ];
+    // The long-title/short-title pair, derived rather than named. The two
+    // ScriptHammer slugs that used to be here did not survive the rebrand, so
+    // every navigation landed on the error page and this test failed on every
+    // browser for four days (#45).
+    const posts = [longestPost(), shortestPost()].map((p) => `/blog/${p.slug}`);
 
     for (const width of [390, 500]) {
       await page.setViewportSize({ width, height: 900 });
@@ -176,59 +178,76 @@ test.describe('Blog Post Mobile UX - iPhone 12', () => {
       .catch(() => {});
   });
 
-  test('should allow code blocks to scroll internally', async ({ page }) => {
-    const codeBlocks = page.locator('.mockup-code');
-    const count = await codeBlocks.count();
+  /**
+   * GENERATED ONLY WHEN A POST HAS CODE (#45).
+   *
+   * This used to be an unconditional test whose every assertion sat inside
+   * `if (count > 0)`. No geoLARP post contains a fenced code block, so the
+   * condition was never true and the test passed having measured nothing —
+   * one of the three the #861 zero-assertion gate names. Generating it from
+   * the corpus means it simply does not exist today, and appears by itself the
+   * day a post gains a code block. `BlogContent.test.tsx` covers the
+   * renderer with a fixture in the meantime.
+   */
+  for (const _post of postsWithCode().slice(0, 1)) {
+    test('should allow code blocks to scroll internally', async ({ page }) => {
+      const codeBlocks = page.locator('.mockup-code');
+      const count = await codeBlocks.count();
+      expect(
+        count,
+        'this post is listed as having code blocks'
+      ).toBeGreaterThan(0);
 
-    if (count > 0) {
-      const firstCodeBlock = codeBlocks.first();
-      await expect(firstCodeBlock).toBeVisible();
+      {
+        const firstCodeBlock = codeBlocks.first();
+        await expect(firstCodeBlock).toBeVisible();
 
-      // Scroll to code block
-      await firstCodeBlock.scrollIntoViewIfNeeded();
+        // Scroll to code block
+        await firstCodeBlock.scrollIntoViewIfNeeded();
 
-      // Wait for layout to stabilize before reading computed style. Without
-      // this, getComputedStyle(el).overflowX occasionally returns "" (e.g.
-      // mid-transition) and the array.toContain check fails with the odd
-      // diff "Expected value: ''" vs "Received array: ['auto', 'scroll']".
-      await waitForLoadStateOrGiveUp(page, 'networkidle');
+        // Wait for layout to stabilize before reading computed style. Without
+        // this, getComputedStyle(el).overflowX occasionally returns "" (e.g.
+        // mid-transition) and the array.toContain check fails with the odd
+        // diff "Expected value: ''" vs "Received array: ['auto', 'scroll']".
+        await waitForLoadStateOrGiveUp(page, 'networkidle');
 
-      // Check that code block has internal scrolling. Poll the computed
-      // style a few times in case the initial read returns the empty
-      // string due to the element being mid-composite.
-      let overflowX = '';
-      for (let attempt = 0; attempt < 10; attempt++) {
-        overflowX = await firstCodeBlock.evaluate(
-          (el) => window.getComputedStyle(el).overflowX
+        // Check that code block has internal scrolling. Poll the computed
+        // style a few times in case the initial read returns the empty
+        // string due to the element being mid-composite.
+        let overflowX = '';
+        for (let attempt = 0; attempt < 10; attempt++) {
+          overflowX = await firstCodeBlock.evaluate(
+            (el) => window.getComputedStyle(el).overflowX
+          );
+          if (overflowX === 'auto' || overflowX === 'scroll') break;
+          await page.waitForTimeout(200);
+        }
+
+        // Should allow horizontal scroll within the element
+        expect(['auto', 'scroll']).toContain(overflowX);
+
+        // Verify code block doesn't force page-wide scroll
+        const codeBlockWidth = await firstCodeBlock.evaluate(
+          (el) => el.scrollWidth
         );
-        if (overflowX === 'auto' || overflowX === 'scroll') break;
-        await page.waitForTimeout(200);
+        const viewportWidth = page.viewportSize()?.width || 0;
+
+        // Code block content can be wider than viewport (that's ok, it scrolls internally)
+        // But the element itself should be constrained.
+        // boundingBox() can return null in WebKit when the element has zero
+        // dimensions or is in a compositing layer — skip width check if so.
+        const boundingBox = await firstCodeBlock.boundingBox();
+        if (boundingBox) {
+          expect(boundingBox.width).toBeLessThanOrEqual(viewportWidth);
+        }
+
+        await page.screenshot({
+          path: 'test-results/mobile-code-scroll.png',
+          fullPage: false,
+        });
       }
-
-      // Should allow horizontal scroll within the element
-      expect(['auto', 'scroll']).toContain(overflowX);
-
-      // Verify code block doesn't force page-wide scroll
-      const codeBlockWidth = await firstCodeBlock.evaluate(
-        (el) => el.scrollWidth
-      );
-      const viewportWidth = page.viewportSize()?.width || 0;
-
-      // Code block content can be wider than viewport (that's ok, it scrolls internally)
-      // But the element itself should be constrained.
-      // boundingBox() can return null in WebKit when the element has zero
-      // dimensions or is in a compositing layer — skip width check if so.
-      const boundingBox = await firstCodeBlock.boundingBox();
-      if (boundingBox) {
-        expect(boundingBox.width).toBeLessThanOrEqual(viewportWidth);
-      }
-
-      await page.screenshot({
-        path: 'test-results/mobile-code-scroll.png',
-        fullPage: false,
-      });
-    }
-  });
+    });
+  }
 
   test('should have readable text without zooming', async ({ page }) => {
     // Check heading sizes
