@@ -7,7 +7,7 @@ import {
   RollResult,
   roll as rollDice,
 } from '@/lib/geolarp/dice';
-import { Difficulty, bandOf, formatBand } from '@/lib/geolarp/ladder';
+import { Difficulty, bandOf, formatTarget } from '@/lib/geolarp/ladder';
 import { Rng } from '@/lib/geolarp/rng';
 
 export interface D7RollerProps {
@@ -123,7 +123,10 @@ export default function D7Roller({
 
         {difficulty && (
           <p className="text-base-content text-sm">
-            Target: {formatBand(difficulty)}
+            {/* A FLOOR, not a range. `roll()` succeeds on `total >= floor`, so
+                "Moderate (13-17)" stated a window the rules do not have and
+                implied 18 overshoots. The band still NAMES the cell below. */}
+            Needs {formatTarget(difficulty)} · {bandOf(difficulty).label}
           </p>
         )}
 
@@ -216,7 +219,7 @@ function describe(
   const parts = [`${label}: rolled ${r.total}`];
   if (difficulty) {
     parts.push(
-      `against ${formatBand(difficulty)} — ${r.success ? 'success' : 'failure'}`
+      `against ${bandOf(difficulty).label}, needing ${formatTarget(difficulty)} — ${r.success ? 'success' : 'failure'}`
     );
   }
   if (r.outcome === 'critical') {

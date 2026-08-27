@@ -3,7 +3,7 @@
 import React from 'react';
 import { Encounter } from '@/lib/geolarp/encounter';
 import { Cell, cellCentre, cellKey } from '@/lib/geolarp/cell';
-import { formatBand } from '@/lib/geolarp/ladder';
+import { bandOf, formatTarget } from '@/lib/geolarp/ladder';
 import { RollResult } from '@/lib/geolarp/dice';
 
 export interface EncounterCardProps {
@@ -55,8 +55,11 @@ export default function EncounterCard({
           <span className="badge badge-primary">
             {KIND_LABEL[encounter.kind]}
           </span>
+          {/* The band NAMES the cell — that is a rating and it is honest.
+              What it must not do is print its range where a player reads it as
+              the number to beat; see formatTarget. */}
           <span className="badge badge-outline">
-            {formatBand(encounter.difficulty)}
+            {bandOf(encounter.difficulty).label}
           </span>
         </div>
 
@@ -70,8 +73,8 @@ export default function EncounterCard({
         <p className="text-base-content">{encounter.description}</p>
 
         <p className="text-base-content text-sm">
-          Roll <strong>{encounter.skill}</strong> against{' '}
-          {formatBand(encounter.difficulty)}.
+          Roll <strong>{encounter.skill}</strong>. Needs{' '}
+          {formatTarget(encounter.difficulty)}.
         </p>
 
         {children}
