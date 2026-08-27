@@ -171,7 +171,23 @@ export function useCharacterPlay(
     if (pointsSpent > 0) {
       setCharacter((prev) => {
         if (!prev) return prev;
-        const next = spendCharacterPoints(prev, pointsSpent);
+        /**
+         * THE SECOND WALL.
+         *
+         * `spendCharacterPoints` throws on an over-spend and should — a library
+         * that silently absorbs a bad argument is worse. But here that throw
+         * runs inside a setState updater, where React surfaces it during commit
+         * and the player gets a blank screen on the one route that holds their
+         * character. The component clamps its stake; this clamps again, because
+         * a crash on the character sheet is not an acceptable failure mode for
+         * an arithmetic slip.
+         */
+        const affordable = Math.min(
+          Math.max(0, pointsSpent),
+          prev.characterPoints
+        );
+        if (affordable === 0) return prev;
+        const next = spendCharacterPoints(prev, affordable);
         saveCharacter(next);
         return next;
       });

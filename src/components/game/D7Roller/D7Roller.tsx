@@ -66,8 +66,38 @@ export default function D7Roller({
 
   const target = difficulty ? bandOf(difficulty).floor : undefined;
 
+  /**
+   * THE STAKE CAN NEVER EXCEED THE BALANCE, not even for one render.
+   *
+   * `spend` is component state and `availablePoints` is a prop, and nothing
+   * reconciled them. A roll that emptied the purse left a stale stake behind:
+   * the fieldset below unmounts at zero, the Roll button stays enabled, and the
+   * next press asked the model to spend points that were already gone —
+   * `spendCharacterPoints` throws, from inside a setState updater, which is a
+   * white screen on the route that holds the player's character.
+   *
+   * Derived on read rather than corrected in an effect: an effect would have an
+   * ordering hazard against the prop change, and this has none.
+   */
+  const staked = Math.min(spend, availablePoints);
+
   const handleRoll = useCallback(() => {
-    const outcome = rollDice(rating, rng ?? new Rng(makeSeed()), target, spend);
+    const stake = staked;
+    const outcome = rollDice(rating, rng ?? new Rng(makeSeed()), target, stake);
+
+    /**
+     * A STAKE IS PER ROLL, AND COMMITTING IT IS ONE ACT.
+     *
+     * Nothing reset `spend` after a roll, so pressing Roll a second time
+     * charged again for the same encounter — one roll, two payments. Both the
+     * reduced-motion path and the animated path commit through this single
+     * closure so they cannot drift apart.
+     */
+    const commit = () => {
+      setResult(outcome);
+      setSpend(0);
+      onResult?.(outcome, stake);
+    };
 
     const reduced =
       typeof window !== 'undefined' &&
@@ -75,8 +105,7 @@ export default function D7Roller({
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (reduced) {
-      setResult(outcome);
-      onResult?.(outcome, spend);
+      commit();
       return;
     }
 
@@ -94,11 +123,10 @@ export default function D7Roller({
       setTimeout(() => {
         setRolling(false);
         setTumble([]);
-        setResult(outcome);
-        onResult?.(outcome, spend);
+        commit();
       }, ROLL_MS)
     );
-  }, [rating, rng, target, spend, onResult]);
+  }, [rating, rng, target, staked, onResult]);
 
   const faces = rolling ? tumble : (result?.faces ?? []);
 
@@ -117,7 +145,7 @@ export default function D7Roller({
           </h3>
           <p className="text-base-content font-mono text-sm">
             {formatCode(rating)}
-            {spend > 0 ? ` + ${spend}d7` : ''}
+            {staked > 0 ? ` + ${staked}d7` : ''}
           </p>
         </div>
 
@@ -139,22 +167,22 @@ export default function D7Roller({
               type="button"
               className="btn btn-sm min-h-11 min-w-11"
               onClick={() => setSpend((n) => Math.max(0, n - 1))}
-              disabled={spend === 0 || rolling}
+              disabled={staked === 0 || rolling}
               aria-label="Spend one fewer Character Point"
             >
               −
             </button>
             <output
               className="text-base-content min-w-11 text-center font-mono"
-              aria-label={`${spend} of ${availablePoints} Character Points`}
+              aria-label={`${staked} of ${availablePoints} Character Points`}
             >
-              {spend} / {availablePoints}
+              {staked} / {availablePoints}
             </output>
             <button
               type="button"
               className="btn btn-sm min-h-11 min-w-11"
               onClick={() => setSpend((n) => Math.min(availablePoints, n + 1))}
-              disabled={spend >= availablePoints || rolling}
+              disabled={staked >= availablePoints || rolling}
               aria-label="Spend one more Character Point"
             >
               +

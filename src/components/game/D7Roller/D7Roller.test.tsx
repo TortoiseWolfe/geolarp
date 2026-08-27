@@ -224,3 +224,115 @@ describe('D7Roller', () => {
     expect(totals[0]).toBe(totals[1]);
   });
 });
+
+/**
+ * The two spend bugs (#42), and why the original tests missed them.
+ *
+ * The shipped suite covered "stake some points, roll once". It never covered
+ * rolling TWICE, and never covered rolling after the balance reached zero —
+ * which is exactly where both defects lived. A playtester found them in the
+ * first session.
+ */
+describe('the stake is per roll, and never exceeds the balance', () => {
+  beforeEach(() => {
+    window.matchMedia = vi.fn().mockImplementation((q: string) => ({
+      matches: q.includes('prefers-reduced-motion'),
+      media: q,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+  });
+
+  it('does not charge twice for one encounter', async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
+    render(
+      <D7Roller
+        label="Search"
+        rating={rating}
+        availablePoints={5}
+        onResult={onResult}
+        rng={new Rng('twice')}
+      />
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: 'Spend one more Character Point' })
+    );
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    await waitFor(() => expect(onResult).toHaveBeenCalledTimes(1));
+    expect(onResult.mock.calls[0][1]).toBe(1);
+
+    // The bug: `spend` survived the roll, so a second press paid again for the
+    // same encounter.
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    await waitFor(() => expect(onResult).toHaveBeenCalledTimes(2));
+    expect(onResult.mock.calls[1][1]).toBe(0);
+  });
+
+  it('never stakes more than the balance, and does not throw at zero', async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
+    const { rerender } = render(
+      <D7Roller
+        label="Search"
+        rating={rating}
+        availablePoints={5}
+        onResult={onResult}
+        rng={new Rng('drain')}
+      />
+    );
+
+    const more = screen.getByRole('button', {
+      name: 'Spend one more Character Point',
+    });
+    for (let i = 0; i < 5; i += 1) await user.click(more);
+    expect(screen.getByText('3d7+1 + 5d7')).toBeInTheDocument();
+
+    // The purse empties while the component stays mounted — exactly what
+    // happens after a real roll spends the last point.
+    rerender(
+      <D7Roller
+        label="Search"
+        rating={rating}
+        availablePoints={0}
+        onResult={onResult}
+        rng={new Rng('drain')}
+      />
+    );
+
+    // The stale stake must not survive the balance dropping.
+    expect(screen.queryByText(/\+ 5d7/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    await waitFor(() => expect(onResult).toHaveBeenCalled());
+    expect(onResult.mock.calls[0][1]).toBe(0);
+  });
+
+  it('clears the stake between two different encounters', async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
+    render(
+      <D7Roller
+        label="Search"
+        rating={rating}
+        availablePoints={3}
+        onResult={onResult}
+        rng={new Rng('between')}
+      />
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Spend one more Character Point' })
+    );
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    await waitFor(() => expect(onResult).toHaveBeenCalled());
+
+    // The control returns to 0 of 3, not 1 of 3 — the player is not silently
+    // holding a stake they did not re-choose.
+    expect(screen.getByText('0 / 3')).toBeInTheDocument();
+  });
+});
