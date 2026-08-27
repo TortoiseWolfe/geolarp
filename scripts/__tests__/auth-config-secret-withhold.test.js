@@ -86,3 +86,71 @@ test('the fields a secretless apply CAN land are not withheld by any rule', () =
     );
   }
 });
+
+/**
+ * `--check` must distinguish drift it can fix from drift it cannot assess (#9).
+ *
+ * `auth-config-drift.yml` passes only SUPABASE_ACCESS_TOKEN and the public
+ * `vars.AUTH_*` — never RESEND_API_KEY, TURNSTILE_SECRET or the OAuth secrets.
+ * So CI can never apply those fields, and a check that fails on ANY drift was
+ * unsatisfiable there by construction. A permanently red required check is not
+ * protection; it is how this one turned into background noise while `site_url`
+ * pointed at localhost.
+ *
+ * The rule it must keep: "could not assess" is reported as loudly as a failure
+ * and never reads as a pass. Same principle as the #459 contrast fallback.
+ *
+ * Verified behaviourally against the live project when written, in both
+ * directions — 12 unassessable fields alone exited 0 and printed every one; a
+ * deliberate `jwt_exp` 7200→3600 exited 1 and named it. These assertions guard
+ * the shape so that stays true.
+ */
+test('--check separates unassessable fields from actionable drift', () => {
+  const src = fs.readFileSync(SRC, 'utf8');
+  const at = src.indexOf('if (args.check)');
+  assert.ok(at > 0, 'check branch not found');
+  const branch = src.slice(at, at + 2600);
+
+  assert.ok(
+    /unassessable/.test(branch),
+    'check must compute which fields it cannot assess'
+  );
+  assert.ok(
+    /const actionable = diff\.filter/.test(branch),
+    'check must exit on ACTIONABLE drift, not on every difference'
+  );
+  assert.ok(
+    /actionable\.length > 0[\s\S]{0,400}process\.exit\(1\)/.test(branch),
+    'actionable drift must still fail the gate'
+  );
+});
+
+test('--check never silently passes an unassessable field', () => {
+  const src = fs.readFileSync(SRC, 'utf8');
+  const at = src.indexOf('if (args.check)');
+  const branch = src.slice(at, at + 2600);
+
+  // The failure mode this guards: filtering the fields out and saying nothing,
+  // which is indistinguishable from a clean project.
+  assert.ok(
+    /NOT ASSESSED/.test(branch),
+    'unassessable fields must be announced, not filtered away in silence'
+  );
+  assert.ok(
+    /for \(const d of blocked\)/.test(branch),
+    'each unassessable field must be named individually, not just counted'
+  );
+});
+
+test('the secret lookup drives BOTH withholding and assessability', () => {
+  // One source of truth. If apply and check ever disagreed about whether a
+  // secret is present, the gate would demand what apply refuses to do — which
+  // is the bug this whole file exists for.
+  const src = fs.readFileSync(SRC, 'utf8');
+  const at = src.indexOf('if (args.check)');
+  const branch = src.slice(at, at + 2600);
+  assert.ok(
+    /envOrDotenv\(rule\.envNames\)/.test(branch),
+    'check must use the same envOrDotenv(rule.envNames) lookup as apply'
+  );
+});
