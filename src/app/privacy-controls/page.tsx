@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { PrivacyControls } from '@/components/privacy/PrivacyControls';
+import { STORAGE_KEY as CHARACTER_KEY } from '@/lib/geolarp/character';
 import Link from 'next/link';
 
 export default function PrivacyControlsPage() {
@@ -20,7 +21,26 @@ export default function PrivacyControlsPage() {
       </header>
 
       <section>
-        <PrivacyControls />
+        {/*
+          TWO FORK-SPECIFIC PROPS, both closing #37.
+
+          `preserveLocalStorageKeys` — the delete removes every localStorage key
+          not on an allowlist, and a geoLARP character lives in one. It is the
+          player's own creation, not tracking data, and the published promise is
+          that the game "will warn you rather than quietly lose it"
+          (the-world-is-the-board.md:101-103). A privacy control silently
+          destroying it is the opposite of that. Deleting a character is what
+          "New character" on /character is for.
+
+          `showConfirmation` — the component defaults it to FALSE, so the
+          confirmation step it implements is dead code and the first click
+          deletes. That default is a template defect filed upstream as
+          TortoiseWolfe/ScriptHammer#955; passing it here does not wait for it.
+        */}
+        <PrivacyControls
+          showConfirmation
+          preserveLocalStorageKeys={[CHARACTER_KEY]}
+        />
       </section>
 
       <nav

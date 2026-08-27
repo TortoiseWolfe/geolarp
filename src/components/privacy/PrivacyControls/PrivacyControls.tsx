@@ -17,6 +17,16 @@ export interface PrivacyControlsProps {
   expanded?: boolean;
   expandable?: boolean;
   showConfirmation?: boolean;
+  /**
+   * localStorage keys the delete MUST NOT touch, on top of the consent key.
+   *
+   * `clearUserData` removes every key not on its allowlist, so anything an
+   * app stores locally that is the USER'S OWN content rather than tracking
+   * data is destroyed by a control labelled as a privacy action. This
+   * component cannot know what those keys are — only the app can name them
+   * (#37 / TortoiseWolfe/ScriptHammer#955).
+   */
+  preserveLocalStorageKeys?: string[];
   theme?: 'light' | 'dark';
   onManage?: () => void;
   onRevoke?: () => void;
@@ -34,6 +44,7 @@ export function PrivacyControls({
   expanded: initialExpanded = false,
   expandable = false,
   showConfirmation = false,
+  preserveLocalStorageKeys = [],
   theme,
   onManage,
   onRevoke,
@@ -96,7 +107,7 @@ export function PrivacyControls({
 
     try {
       const result = await clearUserData({
-        keepLocalStorage: ['cookieConsent'],
+        keepLocalStorage: ['cookieConsent', ...preserveLocalStorageKeys],
         keepCookies: ['necessary'],
       });
 

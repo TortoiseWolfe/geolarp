@@ -281,3 +281,6 @@ zero-assertions.json
 docs/talks/*.pdf
 .msg.tmp
 .git-commit-msg.tmp
+
+# Docker Compose local override (machine-specific; see #22 for the worktree case).
+docker-compose.override.yml
