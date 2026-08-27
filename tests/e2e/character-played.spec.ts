@@ -223,7 +223,7 @@ for (const theme of THEMES) {
       await roll.click();
       // The outcome line and the dice chips only exist after a roll.
       await expect(
-        page.getByRole('status', { name: 'Encounter outcome' })
+        page.getByRole('status', { name: 'Roll result' })
       ).toBeVisible({ timeout: 15000 });
       await expect(
         page.getByRole('list', { name: 'Dice faces, wild die first' })
@@ -302,7 +302,7 @@ test.describe('/character played — no horizontal overflow', () => {
       await expect(roll).toBeVisible();
       await roll.click();
       await expect(
-        page.getByRole('status', { name: 'Encounter outcome' })
+        page.getByRole('status', { name: 'Roll result' })
       ).toBeVisible({ timeout: 15000 });
 
       // MEASURE THIS PAGE'S OWN CONTENT, not the document.

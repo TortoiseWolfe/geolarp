@@ -214,11 +214,7 @@ export default function CharacterPlay({
       </section>
 
       {play.encounter && (
-        <EncounterCard
-          encounter={play.encounter}
-          cell={play.cell ?? undefined}
-          result={play.result}
-        >
+        <EncounterCard encounter={play.encounter} cell={play.cell ?? undefined}>
           <p className="text-base-content text-sm">
             It suggests <strong>{play.encounter.skill}</strong>, opened on your
             sheet below — but anything you can argue for is fair.
@@ -251,6 +247,7 @@ export default function CharacterPlay({
                 ? `${play.encounter.seed}|${play.character!.created}|${s}`
                 : undefined
             }
+            restoredResult={play.result}
             label={s}
             rating={ratingFor(play.character!, s)}
             difficulty={play.encounter?.difficulty}

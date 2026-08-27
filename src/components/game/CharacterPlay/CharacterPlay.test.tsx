@@ -166,8 +166,8 @@ describe('CharacterPlay', () => {
     );
     await waitFor(() =>
       expect(
-        screen.getByRole('status', { name: 'Encounter outcome' })
-      ).toHaveTextContent(/(You get past it|It holds)/)
+        screen.getByRole('status', { name: 'Roll result' })
+      ).toHaveTextContent(/rolled/)
     );
   });
 
@@ -404,19 +404,14 @@ describe('resolving a cell pays, once', () => {
     const user = await beginOn('2026-08-28');
     await user.click(screen.getByRole('button', { name: 'Grid movement' }));
     await user.click(screen.getByRole('button', { name: /^Roll / }));
-    const outcome = () =>
-      screen.getByRole('status', { name: 'Encounter outcome' });
-    await waitFor(() =>
-      expect(outcome()).toHaveTextContent(/(You get past it|It holds)/)
-    );
+    const outcome = () => screen.getByRole('status', { name: 'Roll result' });
+    await waitFor(() => expect(outcome()).toHaveTextContent(/rolled/));
     const before = outcome().textContent;
 
     await user.click(screen.getByRole('button', { name: 'North' }));
     await user.click(screen.getByRole('button', { name: 'South' }));
 
-    await waitFor(() =>
-      expect(outcome()).toHaveTextContent(/(You get past it|It holds)/)
-    );
+    await waitFor(() => expect(outcome()).toHaveTextContent(/rolled/));
     expect(outcome().textContent).toBe(before);
   });
 });

@@ -40,10 +40,13 @@ describe('D7Roller', () => {
     // The band range is not a success window. `roll()` resolves
     // `total >= floor`, so 18 beats Moderate just as 13 does; printing
     // "Moderate (13-17)" said otherwise and was a real defect.
-    expect(screen.getByText(/Needs 13 or more/)).toBeInTheDocument();
+    // Scoped to the target line. A bare /Moderate/ matched the spend legend
+    // too once it started naming the band you must beat to earn a point —
+    // accessible names are an API in both directions, and so is body copy.
+    const target = screen.getByText(/Needs 13 or more/);
+    expect(target).toBeInTheDocument();
+    expect(target.textContent).toContain('Moderate');
     expect(screen.queryByText(/13-17/)).not.toBeInTheDocument();
-    // The band still names the cell.
-    expect(screen.getByText(/Moderate/)).toBeInTheDocument();
   });
 
   it('counts a roll above the band as a success', () => {
@@ -112,11 +115,21 @@ describe('D7Roller', () => {
     expect(list.querySelectorAll('li')[0]).toHaveTextContent(/Wild die:/);
   });
 
-  it('hides the Character Point control when there are none to spend', () => {
+  it('explains why the control is empty rather than removing it', () => {
+    // It used to unmount at zero, which is what a playtester hit: five points
+    // spent against a Heroic cell, then the control simply vanished with
+    // nothing saying the points were gone or could come back.
     render(<D7Roller label="Search" rating={rating} availablePoints={0} />);
     expect(
-      screen.queryByRole('button', { name: /one more Character Point/ })
-    ).not.toBeInTheDocument();
+      screen.getByText(/No Character Points\. Beat a Moderate cell or harder/)
+    ).toBeInTheDocument();
+    // Present, and inert.
+    expect(
+      screen.getByRole('button', { name: 'Spend one more Character Point' })
+    ).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Spend one fewer Character Point' })
+    ).toBeDisabled();
   });
 
   it('spends Character Points as extra dice, and stops at the limit', async () => {

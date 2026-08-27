@@ -21,6 +21,16 @@ export interface D7RollerProps {
   availablePoints?: number;
   /** Called with the result and the points actually spent. */
   onResult?: (result: RollResult, pointsSpent: number) => void;
+  /**
+   * An outcome already rolled for this cell and skill, restored on mount.
+   *
+   * THIS COMPONENT IS KEYED BY ENCOUNTER AND SKILL, so stepping to another cell
+   * and back remounts it and its own state is gone by design. The memory that
+   * survives lives in the hook. Without this prop the surviving live region
+   * would show nothing after a round trip, and "a cell remembers what happened
+   * there" would be true of the model and invisible in the product.
+   */
+  restoredResult?: RollResult | null;
   /** Inject a seeded RNG to make a roll reproducible (tests, shared seeds). */
   rng?: Rng;
   /**
@@ -62,11 +72,12 @@ export default function D7Roller({
   difficulty,
   availablePoints = 0,
   onResult,
+  restoredResult = null,
   rng,
   seed,
   className = '',
 }: D7RollerProps) {
-  const [result, setResult] = useState<RollResult | null>(null);
+  const [result, setResult] = useState<RollResult | null>(restoredResult);
   const [rolling, setRolling] = useState(false);
   const [tumble, setTumble] = useState<number[]>([]);
   const [spend, setSpend] = useState(0);
@@ -81,6 +92,21 @@ export default function D7Roller({
   useEffect(() => {
     setResult(null);
   }, [rating.dice, rating.pips, difficulty]);
+
+  /**
+   * Adopt a restored outcome when it arrives, not only at mount.
+   *
+   * Initial state is not enough: stepping to another cell and back remounts
+   * this component, and on the render where the key returns, the hook's effect
+   * has not run yet — so the restored value is still the away-cell's null. It
+   * lands one render later, and a `useState` initialiser never sees it.
+   *
+   * Safe against clobbering a fresh roll: after rolling, the hook stores that
+   * same result and hands it straight back, so this sets what is already set.
+   */
+  useEffect(() => {
+    if (restoredResult) setResult(restoredResult);
+  }, [restoredResult]);
 
   const target = difficulty ? bandOf(difficulty).floor : undefined;
 
@@ -180,37 +206,48 @@ export default function D7Roller({
           </p>
         )}
 
-        {availablePoints > 0 && (
-          <fieldset className="flex flex-wrap items-center gap-2">
-            <legend className="text-base-content mb-1 text-sm">
-              Spend Character Points — each buys one die
-            </legend>
-            <button
-              type="button"
-              className="btn btn-sm min-h-11 min-w-11"
-              onClick={() => setSpend((n) => Math.max(0, n - 1))}
-              disabled={staked === 0 || rolling}
-              aria-label="Spend one fewer Character Point"
-            >
-              −
-            </button>
-            <output
-              className="text-base-content min-w-11 text-center font-mono"
-              aria-label={`${staked} of ${availablePoints} Character Points`}
-            >
-              {staked} / {availablePoints}
-            </output>
-            <button
-              type="button"
-              className="btn btn-sm min-h-11 min-w-11"
-              onClick={() => setSpend((n) => Math.min(availablePoints, n + 1))}
-              disabled={staked >= availablePoints || rolling}
-              aria-label="Spend one more Character Point"
-            >
-              +
-            </button>
-          </fieldset>
-        )}
+        {/*
+          RENDERED AT ZERO, DISABLED, WITH A REASON.
+
+          This whole fieldset used to unmount when the balance hit zero, which
+          is precisely what a playtester hit: they spent five points against a
+          Heroic cell, lost, and the control simply vanished. Nothing said the
+          points were gone, nothing said they could come back, and the obvious
+          reading — "the game is broken" — was the reasonable one.
+
+          A missing control cannot answer a question. A disabled one can.
+        */}
+        <fieldset className="flex flex-wrap items-center gap-2">
+          <legend className="text-base-content mb-1 text-sm">
+            {availablePoints > 0
+              ? 'Spend Character Points — each buys one die'
+              : 'No Character Points. Beat a Moderate cell or harder to earn one.'}
+          </legend>
+          <button
+            type="button"
+            className="btn btn-sm min-h-11 min-w-11"
+            onClick={() => setSpend((n) => Math.max(0, n - 1))}
+            disabled={staked === 0 || rolling}
+            aria-label="Spend one fewer Character Point"
+          >
+            −
+          </button>
+          <output
+            className="text-base-content min-w-11 text-center font-mono"
+            aria-label={`${staked} of ${availablePoints} Character Points`}
+          >
+            {staked} / {availablePoints}
+          </output>
+          <button
+            type="button"
+            className="btn btn-sm min-h-11 min-w-11"
+            onClick={() => setSpend((n) => Math.min(availablePoints, n + 1))}
+            disabled={staked >= availablePoints || rolling}
+            aria-label="Spend one more Character Point"
+          >
+            +
+          </button>
+        </fieldset>
 
         <button
           type="button"

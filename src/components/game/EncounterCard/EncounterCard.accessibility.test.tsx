@@ -4,8 +4,6 @@ import { axe, toHaveNoViolations } from 'jest-axe';
 import EncounterCard from './EncounterCard';
 import { encounterFor } from '@/lib/geolarp/encounter';
 import { cellOf, seedOf } from '@/lib/geolarp/cell';
-import { roll } from '@/lib/geolarp/dice';
-import { Rng } from '@/lib/geolarp/rng';
 
 expect.extend(toHaveNoViolations);
 
@@ -20,21 +18,11 @@ describe('EncounterCard Accessibility', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('has no violations with an outcome shown', async () => {
-    const result = roll({ dice: 4, pips: 0 }, new Rng('a11y'), 13);
-    const { container } = render(
-      <EncounterCard encounter={encounter} cell={cell} result={result} />
-    );
-    expect(await axe(container)).toHaveNoViolations();
-  });
-
-  it('announces the outcome in a named live region', () => {
-    const result = roll({ dice: 4, pips: 0 }, new Rng('a11y'), 13);
-    render(<EncounterCard encounter={encounter} result={result} />);
-    const status = screen.getByRole('status', { name: 'Encounter outcome' });
-    expect(status).toHaveAttribute('aria-live', 'polite');
-  });
-
+  /*
+    The outcome cases are gone with the region: the card no longer renders a
+    live region at all, and `D7Roller`'s accessibility suite covers the one
+    that survives. See the note in EncounterCard.tsx.
+  */
   it('labels the card by its title', () => {
     const { container } = render(<EncounterCard encounter={encounter} />);
     const article = container.querySelector('article');

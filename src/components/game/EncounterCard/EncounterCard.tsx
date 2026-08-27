@@ -4,14 +4,11 @@ import React from 'react';
 import { Encounter } from '@/lib/geolarp/encounter';
 import { Cell, cellCentre, cellKey } from '@/lib/geolarp/cell';
 import { bandOf, formatTarget } from '@/lib/geolarp/ladder';
-import { RollResult } from '@/lib/geolarp/dice';
 
 export interface EncounterCardProps {
   encounter: Encounter;
   /** The cell it belongs to, shown so a player can see the grid is real. */
   cell?: Cell;
-  /** The result of resolving it, once the player has rolled. */
-  result?: RollResult | null;
   /** Slot for the roller. */
   children?: React.ReactNode;
   className?: string;
@@ -39,7 +36,6 @@ const KIND_LABEL: Record<Encounter['kind'], string> = {
 export default function EncounterCard({
   encounter,
   cell,
-  result,
   children,
   className = '',
 }: EncounterCardProps) {
@@ -79,23 +75,19 @@ export default function EncounterCard({
 
         {children}
 
-        {result && (
-          <p
-            role="status"
-            aria-live="polite"
-            aria-label="Encounter outcome"
-            className="text-base-content border-base-300 border-t pt-3"
-          >
-            {result.success
-              ? `You get past it — ${encounter.skill} ${result.total}.`
-              : `It holds — ${encounter.skill} ${result.total}, not enough.`}
-            {result.outcome === 'critical' &&
-              ' The wild die exploded; take the better of what follows.'}
-            {result.outcome === 'complication' &&
-              ' The wild die came up one; something goes wrong either way.'}
-          </p>
-        )}
+        {/*
+          THE OUTCOME IS NARRATED ONCE, IN THE ROW YOU TOUCHED.
 
+          This card used to render its own `role="status" aria-live="polite"`
+          region for the same roll the roller already announced — so a screen
+          reader heard the result twice, and the two sentences did not even
+          agree: this one labelled the outcome with `encounter.skill`, the
+          SUGGESTED skill, so rolling anything else reported the wrong name.
+
+          `D7Roller` keeps the surviving region. It is more informative, it
+          labels the roll with the skill that actually produced it, and it sits
+          under the thumb that pressed Roll.
+        */}
         <footer className="text-base-content border-base-300 mt-1 border-t pt-2 text-xs">
           <p>
             {centre && (

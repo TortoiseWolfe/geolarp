@@ -123,6 +123,9 @@ export function useCharacterPlay(
    * by walking anyway.
    */
   const resolved = useRef(new Map<string, RollResult>());
+  /** `${seed}|${skill}` — an outcome belongs to the skill that produced it. */
+  const keyFor = (seed: string, skill: SkillName | null) =>
+    `${seed}|${skill ?? ''}`;
   /** `${seed}|${skill}|${stake}` already charged. Identical dice, one bill. */
   const charged = useRef(new Set<string>());
 
@@ -135,10 +138,16 @@ export function useCharacterPlay(
   // advice; opening it means the common path — roll what the cell asks for —
   // costs no taps at all, while every other row stays one tap away.
   useEffect(() => {
+    const skill = encounter?.skill ?? null;
+    // Keyed by cell AND skill: an outcome belongs to the skill that produced
+    // it, so returning to a cell must not show one skill's dice under another
+    // skill's name.
     setResult(
-      encounter ? (resolved.current.get(encounter.seed) ?? null) : null
+      encounter
+        ? (resolved.current.get(keyFor(encounter.seed, skill)) ?? null)
+        : null
     );
-    setSelectedSkill(encounter?.skill ?? null);
+    setSelectedSkill(skill);
     // `encounter` itself, not its fields: it is memoised on [cell, dayKey],
     // so its identity is already stable and the linter can verify the
     // dependency instead of being told to trust a hand-picked subset.
@@ -195,6 +204,23 @@ export function useCharacterPlay(
 
   const [earned, setEarned] = useState<number | null>(null);
 
+  /**
+   * Opening a row shows what THAT skill already did here, if anything.
+   * Without this, switching rows would show the previous skill's dice under a
+   * different name.
+   */
+  const selectSkill = useCallback(
+    (skill: SkillName) => {
+      setSelectedSkill(skill);
+      setResult(
+        encounter
+          ? (resolved.current.get(keyFor(encounter.seed, skill)) ?? null)
+          : null
+      );
+    },
+    [encounter]
+  );
+
   const resolve = useCallback(
     (r: RollResult, pointsSpent: number) => {
       setResult(r);
@@ -209,8 +235,12 @@ export function useCharacterPlay(
       charged.current.add(stakeKey);
 
       // One payout per cell per session, whatever the player rolls afterwards.
-      const firstResolution = !resolved.current.has(encounter.seed);
-      resolved.current.set(encounter.seed, r);
+      // Payment is per CELL; memory is per cell AND skill, because an outcome
+      // labelled with the wrong skill is worse than no memory at all.
+      const firstResolution = ![...resolved.current.keys()].some((k) =>
+        k.startsWith(`${encounter.seed}|`)
+      );
+      resolved.current.set(keyFor(encounter.seed, selectedSkill), r);
       const reward = firstResolution ? rewardFor(encounter.difficulty, r) : 0;
       setEarned(reward > 0 ? reward : null);
 
@@ -265,7 +295,7 @@ export function useCharacterPlay(
     setZone: setZoneId,
     setCellFromFix,
     step,
-    selectSkill: setSelectedSkill,
+    selectSkill,
     resolve,
   };
 }
