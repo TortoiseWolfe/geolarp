@@ -148,8 +148,31 @@ test.describe('/twins/[slug]?diorama — the R3F exhibit (opt-in since #292)', (
     // no params) now lands on the atlas, the default since #292 — so assert
     // atlas chrome, not the diorama dock.
     await page.goto('/');
-    await page
-      .getByRole('link', { name: /Digital Twin/i })
+    // REACHABILITY IS THE CLAIM, AND IT STILL HOLDS — via the nav rather than a
+    // homepage card (#26). `/` is the pre-launch Coming Soon page and carries
+    // no "Digital Twin" card, which is why this failed on every browser. The
+    // question #26 asks is whether the twin became unreachable, i.e. a product
+    // bug: it did not. GlobalNav has Atlas -> /chatt, so a visitor can still
+    // find it without knowing the URL, which is what this test exists to prove.
+    const nav = page.locator('header[data-global-nav]');
+    // Atlas lives inside the Demos group, so the link is in the DOM but not
+    // clickable until the menu is opened — which is exactly the journey a
+    // visitor makes. Addressed by aria-label rather than text: #378 records a
+    // nav trigger shadowing the mobile hamburger through an `[aria-label*=
+    // "menu" i]` substring match, so an exact label is the safe handle.
+    await nav.locator('button[aria-label="Demos"]').first().click();
+    // `visible=true` because the nav renders BOTH a desktop rail and a mobile
+    // menu; `.first()` alone takes document order and lands on the hidden copy,
+    // which never becomes clickable.
+    // Addressed by href, not by role+name. The dropdown is a DaisyUI `menu`,
+    // whose items did not resolve to `getByRole('link', { name: 'Atlas' })`
+    // once opened. `/chatt/` is Atlas's own href — the nav's other twin entry,
+    // Play, is `/chatt?diorama&walk` — so this cannot pick the wrong one.
+    // `visible=true` because the nav renders both a desktop rail and a mobile
+    // menu, and document order lands on the hidden copy.
+    await nav
+      .locator('a[href="/chatt/"]')
+      .locator('visible=true')
       .first()
       .click();
     await expect(page.getByText('Atlas —').first()).toBeVisible({

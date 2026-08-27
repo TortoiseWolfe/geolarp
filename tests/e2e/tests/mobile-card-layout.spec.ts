@@ -74,19 +74,29 @@ test.describe('Mobile Card Layout', () => {
 
   test('Cards use grid layout on tablet (768px+)', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    // /blog, NOT / (#26). This asked `/` for a `[class*="grid"]` container and
+    // wrapped its only assertion in `if (await container.isVisible())`. `/` is
+    // the pre-launch Coming Soon page and has ZERO grid containers, so the
+    // condition was never true and the test passed having measured nothing —
+    // named by the #861 zero-assertion gate. The cards this test is about are
+    // the blog post cards, which is where the sibling test below already looks.
+    await page.goto('/blog/', { waitUntil: 'domcontentloaded' });
     await dismissCookieBanner(page);
     await waitForLayoutStability(page);
 
-    const container = page.locator('[class*="grid"]').first();
+    const containers = page.locator('[class*="grid"]');
+    // Coverage floor rather than an `if`: a page that rendered no card grid at
+    // all is the failure this test exists to catch, not a reason to skip it.
+    await expect(
+      containers.first(),
+      'no grid container on /blog — this test cannot see its subject'
+    ).toBeVisible();
 
-    if (await container.isVisible()) {
-      const display = await container.evaluate(
-        (el) => window.getComputedStyle(el).display
-      );
+    const display = await containers
+      .first()
+      .evaluate((el) => window.getComputedStyle(el).display);
 
-      expect(display, 'Should use grid layout on tablet').toBe('grid');
-    }
+    expect(display, 'Should use grid layout on tablet').toBe('grid');
   });
 
   test('Cards fit within viewport at all mobile widths', async ({ page }) => {

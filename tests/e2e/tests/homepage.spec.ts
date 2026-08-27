@@ -1,8 +1,22 @@
 import { test, expect } from '@playwright/test';
 import { dismissCookieBanner } from '../utils/test-user-factory';
-import { THEME_COUNT } from '@/config/themes';
 
-test.describe('Homepage Navigation', () => {
+/**
+ * TWO DESCRIBES, TWO PAGES (#26).
+ *
+ * This file used to point all nine tests at `/` through one `beforeEach`. Six
+ * of them assert the TEMPLATE DEMO homepage — an install terminal, a
+ * "What's in the box" module grid, a themes stat tile — and `src/app/page.tsx`
+ * says in its own comment that geolarp.com is pre-launch, so `/` is the Coming
+ * Soon page and "the template's own demo homepage still exists, moved to
+ * `/template`". Those six had been failing on every browser since the move.
+ *
+ * WHY NOT RETARGET THE FILE. #26 is explicit: `homepage loads with correct
+ * title` and `skip to main content link works` pass on `/` today and are this
+ * file's only coverage of the site's most-visited route. Moving the whole file
+ * would have turned CI green by deleting that coverage.
+ */
+test.describe('Homepage (/) — the pre-launch landing page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await dismissCookieBanner(page);
@@ -17,12 +31,37 @@ test.describe('Homepage Navigation', () => {
     await expect(heading).toBeVisible();
   });
 
+  test('skip to main content link works', async ({ page }) => {
+    // The skip link uses sr-only class and is only visible on focus
+    const skipLink = page.getByRole('link', { name: /skip to main content/i });
+
+    // Focus the skip link using Tab
+    await page.keyboard.press('Tab');
+
+    // Wait a moment for focus styles to apply
+    await page.waitForTimeout(100);
+
+    // Click with force since it's a sr-only element (visible on focus but Playwright may not detect it)
+    await skipLink.click({ force: true });
+
+    // Verify we scrolled to the main content section
+    const mainContent = page.locator('#main-content');
+    await expect(mainContent).toBeInViewport();
+  });
+});
+
+test.describe('Template demo homepage (/template)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/template');
+    await dismissCookieBanner(page);
+  });
+
   test('navigate to themes page', async ({ page }) => {
-    // Click the themes stats link (stats card)
-    await page
-      .getByRole('link', { name: `${THEME_COUNT} Themes` })
-      .first()
-      .click();
+    // The stat tile renders as "35Themes · 10 curated" — no space between the
+    // count and the word — so a `${THEME_COUNT} Themes` accessible name never
+    // matched it. Scoped to <main> because GlobalNav carries its own Themes
+    // link, and addressed by href so a copy change cannot break it.
+    await page.locator('main').locator('a[href*="/themes"]').first().click();
 
     // Verify navigation to themes page
     await expect(page).toHaveURL(/.*themes/);
@@ -78,17 +117,33 @@ test.describe('Homepage Navigation', () => {
   });
 
   test('navigate to game page', async ({ page }) => {
-    // Click the Game link in demos section
-    await page.getByRole('link', { name: 'Game' }).first().click();
+    // Scoped to <main>: `.first()` follows DOCUMENT order and GlobalNav's own
+    // Game link comes first, inside a dropdown that may be collapsed — so the
+    // click landed on something that did not navigate. Same trap as the themes
+    // tile above.
+    await page
+      .locator('main')
+      .getByRole('link', { name: 'Game' })
+      .first()
+      .click();
 
-    // Verify navigation to game page
-    await expect(page).toHaveURL(/.*game/);
+    // waitForURL for the WAITING — the click can land before hydration attaches
+    // the router, and toHaveURL's 5s default is not enough slack under load.
+    // The assertion still has to follow it: `waitForURL` throws on timeout but
+    // records no expectation, so replacing the assert with it left this test
+    // passing having asserted NOTHING, and the #861 gate said so.
+    await page.waitForURL(/game/, { timeout: 15000 });
+    await expect(page).toHaveURL(/game/);
   });
 
   test('navigation links in secondary nav work', async ({ page }) => {
     // Test Status link - use href selector to avoid matching hidden hamburger nav items
     const statusLink = page.locator('a[href*="/status"]').first();
     await statusLink.click();
+    // waitForURL absorbs a click that lands before the router is ready; the
+    // assertion still follows it, because waitForURL records no expectation
+    // and a test whose only check is a wait has asserted nothing (#861).
+    await page.waitForURL(/status/, { timeout: 15000 });
     await expect(page).toHaveURL(/.*status/);
     await page.goBack();
     await page.waitForLoadState('networkidle');
@@ -100,6 +155,7 @@ test.describe('Homepage Navigation', () => {
       .first();
     await accessibilityLink.scrollIntoViewIfNeeded();
     await accessibilityLink.click();
+    await page.waitForURL(/accessibility/, { timeout: 15000 });
     await expect(page).toHaveURL(/.*accessibility/);
     await page.goBack();
   });
@@ -117,23 +173,5 @@ test.describe('Homepage Navigation', () => {
     await newPage.waitForLoadState();
     expect(newPage.url()).toContain('github.com');
     await newPage.close();
-  });
-
-  test('skip to main content link works', async ({ page }) => {
-    // The skip link uses sr-only class and is only visible on focus
-    const skipLink = page.getByRole('link', { name: /skip to main content/i });
-
-    // Focus the skip link using Tab
-    await page.keyboard.press('Tab');
-
-    // Wait a moment for focus styles to apply
-    await page.waitForTimeout(100);
-
-    // Click with force since it's a sr-only element (visible on focus but Playwright may not detect it)
-    await skipLink.click({ force: true });
-
-    // Verify we scrolled to the main content section
-    const mainContent = page.locator('#main-content');
-    await expect(mainContent).toBeInViewport();
   });
 });
