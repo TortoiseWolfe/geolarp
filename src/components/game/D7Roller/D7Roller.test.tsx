@@ -40,10 +40,13 @@ describe('D7Roller', () => {
     // The band range is not a success window. `roll()` resolves
     // `total >= floor`, so 18 beats Moderate just as 13 does; printing
     // "Moderate (13-17)" said otherwise and was a real defect.
-    expect(screen.getByText(/Needs 13 or more/)).toBeInTheDocument();
+    // Scoped to the target line. A bare /Moderate/ matched the spend legend
+    // too once it started naming the band you must beat to earn a point —
+    // accessible names are an API in both directions, and so is body copy.
+    const target = screen.getByText(/Needs 13 or more/);
+    expect(target).toBeInTheDocument();
+    expect(target.textContent).toContain('Moderate');
     expect(screen.queryByText(/13-17/)).not.toBeInTheDocument();
-    // The band still names the cell.
-    expect(screen.getByText(/Moderate/)).toBeInTheDocument();
   });
 
   it('counts a roll above the band as a success', () => {
@@ -112,11 +115,21 @@ describe('D7Roller', () => {
     expect(list.querySelectorAll('li')[0]).toHaveTextContent(/Wild die:/);
   });
 
-  it('hides the Character Point control when there are none to spend', () => {
+  it('explains why the control is empty rather than removing it', () => {
+    // It used to unmount at zero, which is what a playtester hit: five points
+    // spent against a Heroic cell, then the control simply vanished with
+    // nothing saying the points were gone or could come back.
     render(<D7Roller label="Search" rating={rating} availablePoints={0} />);
     expect(
-      screen.queryByRole('button', { name: /one more Character Point/ })
-    ).not.toBeInTheDocument();
+      screen.getByText(/No Character Points\. Beat a Moderate cell or harder/)
+    ).toBeInTheDocument();
+    // Present, and inert.
+    expect(
+      screen.getByRole('button', { name: 'Spend one more Character Point' })
+    ).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Spend one fewer Character Point' })
+    ).toBeDisabled();
   });
 
   it('spends Character Points as extra dice, and stops at the limit', async () => {
@@ -452,5 +465,31 @@ describe('a cell-seeded roll is fixed until the world reseeds', () => {
     const a = await rollOnce({ seed, rng: new Rng('explicit') });
     const b = await rollOnce({ seed, rng: new Rng('explicit') });
     expect(a).toBe(b);
+  });
+
+  it('says the roll is fixed until midnight ONLY when a cell fixed it', async () => {
+    // "How long does a turn last?" was asked in a playtest. The answer is
+    // that there is no turn — the cell holds until the date rolls over.
+    const user = userEvent.setup();
+    const { unmount } = render(
+      <D7Roller label="Search" rating={rating} seed="cell|char|Search" />
+    );
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    expect(
+      await screen.findByText(/fixed until midnight UTC/)
+    ).toBeInTheDocument();
+    unmount();
+
+    // With no cell behind it the roller seeds from chance, so a re-roll gives
+    // different dice and the sentence would be FALSE. This is the case that
+    // is easiest to leave unchecked, which is why it is the one asserted.
+    render(<D7Roller label="Search" rating={rating} />);
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('status', { name: 'Roll result' })
+      ).toHaveTextContent(/rolled/)
+    );
+    expect(screen.queryByText(/fixed until midnight/)).not.toBeInTheDocument();
   });
 });

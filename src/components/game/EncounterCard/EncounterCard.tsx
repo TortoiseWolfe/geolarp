@@ -3,15 +3,12 @@
 import React from 'react';
 import { Encounter } from '@/lib/geolarp/encounter';
 import { Cell, cellCentre, cellKey } from '@/lib/geolarp/cell';
-import { bandOf, formatTarget } from '@/lib/geolarp/ladder';
-import { RollResult } from '@/lib/geolarp/dice';
+import { bandOf } from '@/lib/geolarp/ladder';
 
 export interface EncounterCardProps {
   encounter: Encounter;
   /** The cell it belongs to, shown so a player can see the grid is real. */
   cell?: Cell;
-  /** The result of resolving it, once the player has rolled. */
-  result?: RollResult | null;
   /** Slot for the roller. */
   children?: React.ReactNode;
   className?: string;
@@ -39,7 +36,6 @@ const KIND_LABEL: Record<Encounter['kind'], string> = {
 export default function EncounterCard({
   encounter,
   cell,
-  result,
   children,
   className = '',
 }: EncounterCardProps) {
@@ -72,45 +68,60 @@ export default function EncounterCard({
 
         <p className="text-base-content">{encounter.description}</p>
 
-        <p className="text-base-content text-sm">
-          Roll <strong>{encounter.skill}</strong>. Needs{' '}
-          {formatTarget(encounter.difficulty)}.
-        </p>
-
         {children}
 
-        {result && (
-          <p
-            role="status"
-            aria-live="polite"
-            aria-label="Encounter outcome"
-            className="text-base-content border-base-300 border-t pt-3"
-          >
-            {result.success
-              ? `You get past it — ${encounter.skill} ${result.total}.`
-              : `It holds — ${encounter.skill} ${result.total}, not enough.`}
-            {result.outcome === 'critical' &&
-              ' The wild die exploded; take the better of what follows.'}
-            {result.outcome === 'complication' &&
-              ' The wild die came up one; something goes wrong either way.'}
-          </p>
-        )}
+        {/*
+          THE OUTCOME IS NARRATED ONCE, IN THE ROW YOU TOUCHED.
 
-        <footer className="text-base-content border-base-300 mt-1 border-t pt-2 text-xs">
-          <p>
-            {centre && (
-              <>
-                Cell <span className="font-mono">{cellKey(cell!)}</span>,
-                centred near{' '}
-                <span className="font-mono">
-                  {centre.lat.toFixed(4)}, {centre.lon.toFixed(4)}
-                </span>
-                .{' '}
-              </>
-            )}
-            Seeded from <span className="font-mono">{encounter.seed}</span> —
-            everyone in this cell today meets the same thing.
-          </p>
+          This card used to render its own `role="status" aria-live="polite"`
+          region for the same roll the roller already announced — so a screen
+          reader heard the result twice, and the two sentences did not even
+          agree: this one labelled the outcome with `encounter.skill`, the
+          SUGGESTED skill, so rolling anything else reported the wrong name.
+
+          `D7Roller` keeps the surviving region. It is more informative, it
+          labels the roll with the skill that actually produced it, and it sits
+          under the thumb that pressed Roll.
+        */}
+        {/*
+          THE AUDIT TRAIL IS ONE TAP AWAY, NOT GONE.
+
+          The seed is what lets two players standing together check they are
+          looking at the same thing, so it cannot be deleted — but it is also
+          the least-read text on the card, and it was costing a third of the
+          card's height on a phone. Collapsed, with the cell key promoted into
+          the summary so the check is still possible without opening anything.
+        */}
+        <footer className="text-base-content mt-1 text-xs">
+          <details className="border-base-300 bg-base-200 [&[open]>summary]:border-base-300 rounded-lg border [&[open]>summary]:border-b">
+            <summary className="text-base-content flex min-h-11 cursor-pointer items-center p-4 font-semibold">
+              {cell ? (
+                <>
+                  Cell&nbsp;
+                  <span className="font-mono break-all">{cellKey(cell)}</span>
+                </>
+              ) : (
+                'Where this came from'
+              )}
+            </summary>
+            <div className="p-4 pt-3">
+              <p>
+                {centre && (
+                  <>
+                    Centred near{' '}
+                    <span className="font-mono">
+                      {centre.lat.toFixed(4)}, {centre.lon.toFixed(4)}
+                    </span>
+                    .{' '}
+                  </>
+                )}
+                Seeded from{' '}
+                <span className="font-mono break-all">{encounter.seed}</span> —
+                everyone in this cell today meets the same thing. It resets at
+                midnight UTC.
+              </p>
+            </div>
+          </details>
         </footer>
       </div>
     </article>

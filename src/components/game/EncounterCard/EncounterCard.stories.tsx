@@ -2,8 +2,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import EncounterCard from './EncounterCard';
 import { encounterFor, ENCOUNTER_KINDS } from '@/lib/geolarp/encounter';
 import { cellOf, seedOf } from '@/lib/geolarp/cell';
-import { roll } from '@/lib/geolarp/dice';
-import { Rng } from '@/lib/geolarp/rng';
 
 const meta: Meta<typeof EncounterCard> = {
   title: 'Features/Game/EncounterCard',
@@ -48,24 +46,6 @@ export const Trader: Story = { args: { encounter: ofKind('trader'), cell } };
 export const Cache: Story = { args: { encounter: ofKind('cache'), cell } };
 export const Shrine: Story = { args: { encounter: ofKind('shrine'), cell } };
 export const Trap: Story = { args: { encounter: ofKind('trap'), cell } };
-
-export const Resolved: Story = {
-  name: 'Resolved — success',
-  args: {
-    encounter,
-    cell,
-    result: roll({ dice: 8, pips: 0 }, new Rng('win'), 2),
-  },
-};
-
-export const Failed: Story = {
-  name: 'Resolved — failure',
-  args: {
-    encounter,
-    cell,
-    result: roll({ dice: 1, pips: 0 }, new Rng('lose'), 99),
-  },
-};
 
 export const WithoutALocation: Story = {
   name: 'No cell — grid movement with GPS denied',

@@ -12,7 +12,11 @@ function CanvasWrapper({ children }: { children: ReactNode }) {
       <Canvas camera={{ position: [0, 1, 4], fov: 55 }}>
         <mesh>
           <sphereGeometry args={[1.2, 48, 32]} />
-          <meshStandardMaterial color="#c8c8c8" metalness={1} roughness={0.15} />
+          <meshStandardMaterial
+            color="#c8c8c8"
+            metalness={1}
+            roughness={0.15}
+          />
         </mesh>
         {children}
       </Canvas>
@@ -58,7 +62,8 @@ export const Morning: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Lower sun angle — the IBL on the chrome sphere shifts warmer/lower.',
+        story:
+          'Lower sun angle — the IBL on the chrome sphere shifts warmer/lower.',
       },
     },
   },

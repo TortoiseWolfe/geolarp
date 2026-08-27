@@ -5,7 +5,6 @@ import { encounterFor } from '@/lib/geolarp/encounter';
 import { bandOf } from '@/lib/geolarp/ladder';
 import { cellOf, seedOf } from '@/lib/geolarp/cell';
 import { roll } from '@/lib/geolarp/dice';
-import { Rng } from '@/lib/geolarp/rng';
 
 const cell = cellOf(35.0456, -85.3097);
 const seed = seedOf(cell, new Date('2026-08-26T12:00:00Z'));
@@ -20,23 +19,25 @@ describe('EncounterCard', () => {
     expect(screen.getByText(encounter.description)).toBeInTheDocument();
   });
 
-  it('names the skill and states the target as a floor', () => {
+  it('rates the cell without restating what the roller says', () => {
     render(<EncounterCard encounter={encounter} />);
-    expect(screen.getByText(encounter.skill)).toBeInTheDocument();
 
     // The band NAMES the cell — a rating, and honest.
     expect(
       screen.getByText(bandOf(encounter.difficulty).label)
     ).toBeInTheDocument();
 
-    // But the range must not appear where it reads as the number to beat.
+    // The card used to add "Roll Search. Needs 13 or more." beneath it, which
+    // the roller already says next to the button that acts on it. Two copies
+    // of an instruction are not twice as clear; they are one more thing to
+    // read before the description, which is the only text here the player has
+    // not already seen.
+    expect(screen.queryByText(/Needs \d+ or more/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Roll /)).not.toBeInTheDocument();
+
+    // And the range must never appear where it reads as the number to beat.
     // `roll()` succeeds on `total >= floor`, so a printed "(13-17)" told the
     // player 18 overshoots. It does not.
-    expect(
-      screen.getByText(
-        new RegExp(`Needs ${bandOf(encounter.difficulty).floor} or more`)
-      )
-    ).toBeInTheDocument();
     expect(screen.queryByText(/\(\d+-\d+\)/)).not.toBeInTheDocument();
   });
 
@@ -64,42 +65,14 @@ describe('EncounterCard', () => {
     expect(screen.getByText(seed)).toBeInTheDocument();
   });
 
-  it('says nothing about an outcome before a roll', () => {
-    render(<EncounterCard encounter={encounter} />);
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
-  });
-
-  it('reports a success', () => {
-    const result = roll({ dice: 9, pips: 0 }, new Rng('win'), 2);
-    render(<EncounterCard encounter={encounter} result={result} />);
-    expect(screen.getByRole('status')).toHaveTextContent(/You get past it/);
-  });
-
-  it('reports a failure', () => {
-    const result = roll({ dice: 1, pips: 0 }, new Rng('lose'), 99);
-    render(<EncounterCard encounter={encounter} result={result} />);
-    expect(screen.getByRole('status')).toHaveTextContent(/It holds/);
-  });
-
-  it('calls out a wild-die complication even on a success', () => {
-    // Scan for a seed whose wild die shows 1 but whose total still clears a
-    // low target — the case that makes the Wild Die interesting.
-    let result = roll({ dice: 6, pips: 0 }, new Rng(0), 2);
-    for (let s = 0; s < 500; s += 1) {
-      const r = roll({ dice: 6, pips: 0 }, new Rng(s), 2);
-      if (r.outcome === 'complication' && r.success) {
-        result = r;
-        break;
-      }
-    }
-    expect(result.outcome).toBe('complication');
-    expect(result.success).toBe(true);
-    render(<EncounterCard encounter={encounter} result={result} />);
-    const status = screen.getByRole('status');
-    expect(status).toHaveTextContent(/You get past it/);
-    expect(status).toHaveTextContent(/something goes wrong either way/);
-  });
-
+  /*
+    The outcome tests that lived here are gone with the region they tested.
+    `D7Roller` owns the single surviving live region and already covers the
+    success, failure and wild-die sentences — duplicating them here would be
+    two suites asserting one behaviour, which is how the duplicate region got
+    written in the first place. Deleted whole rather than emptied: a passing
+    `it()` with no assertion fails the #861 gate.
+  */
   it('renders a roller passed as a child', () => {
     render(
       <EncounterCard encounter={encounter}>
