@@ -98,6 +98,7 @@ import { join } from 'node:path';
 import { CRITICAL_MOBILE_WIDTHS } from '@/config/test-viewports';
 import { dismissCookieBanner } from '../utils/test-user-factory';
 import { waitForLoadStateOrGiveUp } from '../utils/settle';
+import { longestPost, richestPost } from '../utils/blog-corpus';
 
 const APP_DIR = join(process.cwd(), 'src/app');
 
@@ -338,7 +339,7 @@ test.describe('Horizontal Scroll Detection', () => {
 
   test('Images do not cause horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/blog/countdown-timer-tutorial');
+    await page.goto(`/blog/${richestPost().slug}`);
     await dismissCookieBanner(page);
     await page.waitForTimeout(800);
 
@@ -366,7 +367,7 @@ test.describe('Horizontal Scroll Detection', () => {
     // so this loop never entered its body and the test reported zero assertions on
     // every shard. Tables live inside posts, and only since #421 taught the markdown
     // processor to render them (before that they shipped as literal pipe rows).
-    await page.goto('/blog/cursor-github-identity/');
+    await page.goto(`/blog/${longestPost().slug}/`);
     await dismissCookieBanner(page);
     await page.waitForTimeout(800);
 
@@ -404,7 +405,7 @@ test.describe('Horizontal Scroll Detection', () => {
 
   test('Pre/code blocks are responsive', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/blog/countdown-timer-tutorial');
+    await page.goto(`/blog/${richestPost().slug}`);
     await dismissCookieBanner(page);
     await page.waitForTimeout(800);
 
