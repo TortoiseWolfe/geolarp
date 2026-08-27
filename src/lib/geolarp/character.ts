@@ -94,6 +94,21 @@ export interface Character {
   skills: Partial<Record<SkillName, DiceCode>>;
   /** Spendable for a reroll; D6's Character Points. */
   characterPoints: number;
+  /**
+   * When this character was last exported FROM THIS BROWSER, ISO 8601.
+   *
+   * The published promise is that the game "will warn you rather than quietly
+   * lose it" (`the-world-is-the-board.md:103`). A warning with no state behind
+   * it is the ambient paragraph on the sheet that every player scrolls past;
+   * with this, the sheet can say "you have never exported this character" at
+   * the moment it is about to be destroyed, which is a warning.
+   *
+   * OPTIONAL ON PURPOSE, so `version` stays 1 and every character already in
+   * localStorage — and every previously exported file — still loads unchanged.
+   * `toExportJSON` STRIPS it: it is device-local bookkeeping, and a character
+   * imported onto a new device genuinely has never been exported from there.
+   */
+  exportedAt?: string;
   /** ISO timestamp. */
   created: string;
 }
@@ -217,7 +232,19 @@ export function saveCharacter(char: Character): void {
 
 /** The export the published promise makes the player responsible for (`:101`). */
 export function toExportJSON(char: Character): string {
-  return JSON.stringify(char, null, 2);
+  // `exportedAt` describes THIS browser's relationship to the character, not
+  // the character. Carrying it into the file would tell a new device it had
+  // already been backed up there.
+  const { exportedAt: _exportedAt, ...portable } = char;
+  return JSON.stringify(portable, null, 2);
+}
+
+/** Record that the player has just taken a copy. */
+export function markExported(
+  char: Character,
+  when: Date = new Date()
+): Character {
+  return { ...char, exportedAt: when.toISOString() };
 }
 
 export function fromExportJSON(text: string): Character {

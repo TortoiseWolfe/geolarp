@@ -27,6 +27,7 @@ import {
   fromExportJSON,
   generateCharacter,
   loadCharacter,
+  markExported,
   ratingFor,
   saveCharacter,
   spendCharacterPoints,
@@ -334,5 +335,46 @@ describe('Character Points buy dice', () => {
     expect(spendCharacterPoints(c, 5).characterPoints).toBe(0);
     expect(() => spendCharacterPoints(c, 6)).toThrow(/only 5 Character Points/);
     expect(() => spendCharacterPoints(c, -1)).toThrow(/negative/);
+  });
+});
+
+describe('exportedAt is device-local bookkeeping (#42)', () => {
+  beforeEach(() => window.localStorage.clear());
+
+  it('is absent on a fresh character and does not bump the version', () => {
+    const c = generateCharacter('Ada', new Rng(1));
+    expect(c.exportedAt).toBeUndefined();
+    expect(c.version).toBe(1);
+  });
+
+  it('a stored v1 character without the field still loads', () => {
+    // The regression this guards: adding a required field, or bumping version,
+    // makes loadCharacter return null and drops the player into the name gate
+    // with a NEW character — the quiet loss `:103` forbids.
+    const legacy = generateCharacter('Ada', new Rng(2));
+    delete (legacy as { exportedAt?: string }).exportedAt;
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(legacy));
+    expect(loadCharacter()).toEqual(legacy);
+  });
+
+  it('records the export, and STRIPS it from the exported file', () => {
+    const c = generateCharacter('Ada', new Rng(3));
+    const marked = markExported(c, new Date('2026-08-27T00:00:00.000Z'));
+    expect(marked.exportedAt).toBe('2026-08-27T00:00:00.000Z');
+
+    // The file must not carry it: a character imported onto a new device has
+    // genuinely never been exported FROM there, so claiming otherwise would
+    // suppress the warning exactly where it is most needed.
+    const parsed = JSON.parse(toExportJSON(marked));
+    expect(parsed.exportedAt).toBeUndefined();
+    expect(fromExportJSON(toExportJSON(marked)).exportedAt).toBeUndefined();
+  });
+
+  it('round-trips everything else unchanged', () => {
+    const c = markExported(generateCharacter('Ada', new Rng(4)));
+    const back = fromExportJSON(toExportJSON(c));
+    expect(back).toEqual({ ...c, exportedAt: undefined });
+    expect(back.attributes).toEqual(c.attributes);
+    expect(back.skills).toEqual(c.skills);
   });
 });

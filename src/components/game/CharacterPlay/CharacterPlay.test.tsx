@@ -195,7 +195,11 @@ describe('CharacterPlay', () => {
     let after = before;
     // Regenerate until the dice differ; identical draws are possible.
     for (let i = 0; i < 10 && after === before; i += 1) {
+      // Two presses now: the first opens the guard, the second means it.
       await user.click(screen.getByRole('button', { name: 'New character' }));
+      await user.click(
+        screen.getByRole('button', { name: /Discard and roll a new one/ })
+      );
       await waitFor(() => {
         after = JSON.stringify(loadCharacter()?.attributes);
       });
@@ -224,5 +228,79 @@ describe('CharacterPlay', () => {
     expect(createObjectURL).toHaveBeenCalled();
     expect(click).toHaveBeenCalled();
     expect(revokeObjectURL).toHaveBeenCalled();
+  });
+});
+
+describe('the roll is under the thumb that opened it', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    mockGeo.position = null;
+    mockGeo.error = null;
+    window.matchMedia = vi.fn().mockImplementation((q: string) => ({
+      matches: q.includes('prefers-reduced-motion'),
+      media: q,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+  });
+
+  async function begin() {
+    const user = userEvent.setup();
+    render(<CharacterPlay today={today} />);
+    await screen.findByRole('button', { name: 'Roll a character' });
+    await user.type(screen.getByLabelText('Name'), 'Ada Wren');
+    await user.click(screen.getByRole('button', { name: 'Roll a character' }));
+    await screen.findByRole('heading', { name: 'Ada Wren', level: 2 });
+    return user;
+  }
+
+  it("opens the encounter's own suggestion, so the common case costs no taps", async () => {
+    await begin();
+
+    // Exactly one roll control exists, and exactly one row reports itself open.
+    const rollButtons = screen.getAllByRole('button', { name: /^Roll / });
+    expect(rollButtons).toHaveLength(1);
+
+    const opened = screen
+      .getAllByRole('button')
+      .filter((b) => b.getAttribute('aria-expanded') === 'true');
+    expect(opened).toHaveLength(1);
+
+    // They are the same skill: the row that is open is the one being rolled.
+    const skill = rollButtons[0].textContent!.replace(/^Roll\s+/, '').trim();
+    expect(opened[0].textContent).toContain(skill);
+  });
+
+  it('moves the open row when a different skill is tapped', async () => {
+    const user = await begin();
+    const sheet = screen
+      .getByRole('heading', { name: 'Ada Wren', level: 2 })
+      .closest('article') as HTMLElement;
+
+    await user.click(within(sheet).getByRole('button', { name: /^Lore/ }));
+
+    const opened = screen
+      .getAllByRole('button')
+      .filter((b) => b.getAttribute('aria-expanded') === 'true');
+    expect(opened).toHaveLength(1);
+    expect(opened[0].textContent).toContain('Lore');
+    expect(
+      screen.getByRole('button', { name: 'Roll Lore' })
+    ).toBeInTheDocument();
+  });
+
+  it('keeps the roll inside the sheet, not above it', async () => {
+    await begin();
+    const sheet = screen
+      .getByRole('heading', { name: 'Ada Wren', level: 2 })
+      .closest('article') as HTMLElement;
+    const roll = screen.getAllByRole('button', { name: /^Roll / })[0];
+    // The defect this replaces: the roller mounted inside EncounterCard, two
+    // to three phone screens above the row the player actually touched.
+    expect(sheet.contains(roll)).toBe(true);
   });
 });

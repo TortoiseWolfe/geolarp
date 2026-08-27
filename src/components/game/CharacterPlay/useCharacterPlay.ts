@@ -4,6 +4,7 @@ import {
   SkillName,
   generateCharacter,
   loadCharacter,
+  markExported,
   ratingFor,
   saveCharacter,
   spendCharacterPoints,
@@ -106,10 +107,15 @@ export function useCharacterPlay(
   );
 
   // A new cell is a new encounter, so nothing from the last one may linger.
+  //
+  // The selection RESETS TO THE ENCOUNTER'S OWN SUGGESTION rather than to null.
+  // The skill is already computed (`encounter.skill`) and already shown as
+  // advice; opening it means the common path — roll what the cell asks for —
+  // costs no taps at all, while every other row stays one tap away.
   useEffect(() => {
     setResult(null);
-    setSelectedSkill(null);
-  }, [encounter?.seed]);
+    setSelectedSkill(encounter?.skill ?? null);
+  }, [encounter?.seed, encounter?.skill]);
 
   const begin = useCallback((name: string) => {
     const trimmed = name.trim();
@@ -141,6 +147,15 @@ export function useCharacterPlay(
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    // Record it, so the sheet can tell the player whether a copy exists at the
+    // moment they are about to destroy this one.
+    setCharacter((prev) => {
+      if (!prev) return prev;
+      const next = markExported(prev);
+      saveCharacter(next);
+      return next;
+    });
   }, [character]);
 
   const setCellFromFix = useCallback((lat: number, lon: number) => {
