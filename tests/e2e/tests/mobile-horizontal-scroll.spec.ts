@@ -194,6 +194,22 @@ function measureOverflow(vpWidth: number) {
   let excused = 0;
 
   for (const el of Array.from(document.querySelectorAll('body *'))) {
+    // NEVER-RENDERED SVG TEMPLATE CONTENT, dropped before measuring rather
+    // than excused after (#45). `<defs>` and `<symbol>` children are geometry
+    // for `<use>` to instantiate; they are not painted anywhere, so there is
+    // no box on screen that could pass the viewport.
+    //
+    // This is an ENGINE DISAGREEMENT, which is why it read as a real defect on
+    // two browsers and clean on the third. Chromium returns a zero rect for
+    // them and the width check below drops them. WebKit and Firefox return
+    // their SVG user-space bounds, so `coming-soon.tsx`'s 400x400 sprite sheet
+    // — a `<svg width="0" height="0">` full of `<defs>` — reported 45 elements
+    // up to 384px wide hanging past a 320px viewport. `/` and the seven
+    // `/admin` routes failed on webkit-gen and firefox-gen only; the admin
+    // ones because AdminGate redirects a non-admin to `/`, so all eight were
+    // measuring the same page.
+    if (el.closest('defs, symbol')) continue;
+
     const r = el.getBoundingClientRect();
     if (r.width === 0 && r.height === 0) continue;
     if (r.x + r.width <= vpWidth + 1) continue;
