@@ -122,6 +122,23 @@ const SECRET_RULES: SecretRule[] = [
       'smtp_user',
       'smtp_admin_email',
       'smtp_sender_name',
+      // NOT AN SMTP FIELD, AND IT HAS TO BE HERE ANYWAY (#9).
+      //
+      // Supabase couples the two: raising the email rate limit is only allowed
+      // on a project with custom SMTP. Withholding the smtp_* fields while
+      // still sending this one gets the WHOLE PATCH rejected —
+      //
+      //   401 Custom SMTP required to configure SMTP_SENDER_NAME or
+      //       RATE_LIMIT_EMAIL_SENT. Missing SMTP_ADMIN_EMAIL, SMTP_HOST,
+      //       SMTP_PORT, SMTP_USER, SMTP_PASS fields.
+      //
+      // and the Management API applies a patch atomically, so nothing lands.
+      // The withhold was therefore not degrading gracefully; it was making
+      // `--apply` impossible for anyone without RESEND_API_KEY, which is how a
+      // live project sat on `site_url: http://localhost:3000` — every auth
+      // email pointing a real user at their own machine — while the drift
+      // check reported it correctly every single day.
+      'rate_limit_email_sent',
     ],
     harm: 'a custom SMTP host with no password sends NOTHING — worse than the built-in fallback mailer',
   },
@@ -352,16 +369,63 @@ async function main(): Promise<void> {
   const diff = computeDiff(current, desired);
   printDiff(diff);
 
-  // --check: a read-only CI gate. Non-zero exit on ANY drift so the pipeline
-  // fails when the live project has diverged from the checked-in desired state
-  // (the #287 class: prod config drifts, tests stay green, sign-up breaks).
+  // --check: a read-only CI gate. Non-zero exit on drift the runner could
+  // actually fix, so the pipeline fails when the live project has diverged from
+  // the checked-in desired state (the #287 class: prod config drifts, tests stay
+  // green, sign-up breaks).
+  //
+  // A FIELD WHOSE SECRET IS ABSENT HERE IS NOT ASSESSABLE, AND IS NOT DRIFT (#9).
+  // `--apply` refuses to touch those fields on purpose — SMTP with no password
+  // sends nothing, CAPTCHA with no secret rejects every signup — so demanding
+  // they match is demanding a state no action available in this environment can
+  // reach. `auth-config-drift.yml` passes only SUPABASE_ACCESS_TOKEN and the
+  // public `vars.AUTH_*`, never RESEND_API_KEY or the OAuth secrets, so before
+  // this the gate was unsatisfiable in CI by construction. A permanently red
+  // required check is not protection; it is how this one became background noise
+  // while `site_url` pointed at localhost for months.
+  //
+  // It is reported, never swallowed. "Could not assess" must be as visible as a
+  // failure and must never read as a pass — the same rule the #459 contrast
+  // fallback exists for. The moment a secret appears in the environment, the
+  // fields it guards are assessed again with no further change here.
   if (args.check) {
-    if (diff.length > 0) {
+    const unassessable = new Map<string, string>();
+    for (const rule of SECRET_RULES) {
+      if (!rule.wanted(desired)) continue;
+      if (envOrDotenv(rule.envNames)) continue;
+      for (const f of rule.fields) unassessable.set(f, rule.label);
+    }
+
+    const blocked = diff.filter((d) => unassessable.has(d.key));
+    const actionable = diff.filter((d) => !unassessable.has(d.key));
+
+    if (blocked.length > 0) {
+      console.warn(
+        `\n⚠ ${blocked.length} field(s) NOT ASSESSED — their secret is absent in this environment, ` +
+          `and \`--apply\` withholds them for the same reason:`
+      );
+      for (const d of blocked) {
+        console.warn(`    ${d.key}  (${unassessable.get(d.key)})`);
+      }
+      console.warn(
+        '    Supply the secret to bring these back under the gate. Until then ' +
+          'they are drifted and known to be.'
+      );
+    }
+
+    if (actionable.length > 0) {
       console.error(
-        `\n✗ Drift detected: ${diff.length} field(s) differ from ${args.configPath}. ` +
-          'Reconcile with `pnpm supabase:auth-config --apply`.'
+        `\n✗ Drift detected: ${actionable.length} field(s) differ from ${args.configPath} ` +
+          'and can be fixed here. Reconcile with `pnpm supabase:auth-config --apply`.'
       );
       process.exit(1);
+    }
+
+    if (blocked.length > 0) {
+      console.log(
+        `\n✓ No actionable drift. ${blocked.length} field(s) await a secret (above).`
+      );
+      return;
     }
     console.log(
       '✓ No drift — the live project matches the checked-in desired config.'
