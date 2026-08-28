@@ -89,15 +89,28 @@ function revalidates(cacheControl) {
 /**
  * The header that lets this prober past the edge's bot checks (#10).
  *
- * Cloudflare answers GitHub Actions runners with 403 — `browser_check` is on and
- * `security_level` is medium, and a datacenter IP with no browser fingerprint is
- * exactly what those exist to stop. A WAF custom rule skips them for requests
- * carrying this header, so the probe measures the cache contract rather than
- * measuring the bot policy.
+ * THIS HEADER DOES NOT CURRENTLY DO ANYTHING, and the reason is worth keeping.
  *
- * A SECRET HEADER RATHER THAN AN ASN ALLOW-LIST, deliberately. Exempting GitHub's
- * ASN means exempting all of Microsoft Azure to admit one prober, and an ASN
- * cannot be rotated or revoked. This can be: change the secret, change the rule.
+ * Cloudflare answered GitHub Actions runners with 403. The intended fix was a WAF
+ * custom rule skipping bot checks for requests carrying this header — narrow,
+ * rotatable, revocable. It was built, and it could never have worked.
+ *
+ * A diagnostic run from an actual runner showed `cf-mitigated: challenge`,
+ * IDENTICALLY with and without the header. That is Bot Fight Mode, which on the
+ * free plan runs OUTSIDE the rules engine and cannot be skipped by a WAF custom
+ * rule at any `products` setting. The rule matched nothing and was deleted.
+ *
+ * What actually unblocked the probe is an IP Access Rule allowing GitHub's ASN
+ * (AS8075), which does bypass Bot Fight Mode. That exempts all of Microsoft Azure
+ * from BFM on this zone — broader than a header, and the trade was accepted only
+ * after the narrow option was proven impossible. It is still strictly NARROWER
+ * than the alternative of disabling Bot Fight Mode zone-wide, which is the only
+ * other lever the free plan offers.
+ *
+ * The header is kept because it costs nothing and becomes the right mechanism the
+ * day this zone moves to a plan where bot management is rule-addressable — at
+ * which point the ASN allow should go. Until then, do not read its presence as
+ * the thing granting access.
  *
  * ABSENT IS A SUPPORTED STATE. A fork with no `CF_PROBE_TOKEN` sends no header and
  * behaves exactly as before, including the UNASSESSABLE path below — whose whole
