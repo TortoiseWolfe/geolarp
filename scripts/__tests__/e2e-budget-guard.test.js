@@ -360,18 +360,49 @@ test('budgetWindowStart: empty or invalid epoch falls back to the billing cycle'
 test('budgetWindowStart: an ABSENT epoch keeps the default, an EMPTY one opts out', async () => {
   // The pair that makes the distinction above executable rather than a comment.
   const { budgetWindowStart } = await import(MOD);
-  const now = new Date('2026-08-08T12:00:00Z');
-  assert.strictEqual(budgetWindowStart(now), '2026-08-07T06:00:00.000Z');
+  // After the epoch, the window clamps to it rather than to the cycle start.
+  const now = new Date('2026-08-25T12:00:00Z');
+  assert.strictEqual(budgetWindowStart(now), '2026-08-22T05:30:35.000Z');
   assert.strictEqual(budgetWindowStart(now, ''), '2026-08-02T00:00:00.000Z');
 });
 
-test('budgetWindowStart: the shipped default reflects the live backend', async () => {
-  const { budgetWindowStart, BACKEND_EPOCH } = await import(MOD);
-  assert.strictEqual(BACKEND_EPOCH, '2026-08-07T06:00:00Z');
+/**
+ * PINS THE SHIPPED CONSTANT. It does NOT verify it against the live backend, and
+ * its old name — "the shipped default reflects the live backend" — claimed that
+ * it did.
+ *
+ * It asserted `BACKEND_EPOCH === '2026-08-07T06:00:00Z'`: the constant compared
+ * to a hardcoded copy of itself, which agrees no matter which project the repo
+ * actually meters. Both values were inherited verbatim from the ScriptHammer
+ * template and described a project geoLARP has never used, for the whole life of
+ * this repo, while this test stayed green (#726).
+ *
+ * Only the RUNTIME check can catch that: `e2e-budget-guard.mjs` compares
+ * `BACKEND_EPOCH_PROJECT_REF` against `SUPABASE_PROJECT_REF` and warns on a
+ * mismatch. It was warning about itself, correctly, and nobody was reading it.
+ * A unit test has no live project ref to compare against, so the honest thing is
+ * to pin the pair and say plainly what the pin is worth.
+ */
+test('budgetWindowStart: the shipped epoch is pinned so a change is deliberate', async () => {
+  const { budgetWindowStart, BACKEND_EPOCH, BACKEND_EPOCH_PROJECT_REF } =
+    await import(MOD);
+  assert.strictEqual(BACKEND_EPOCH, '2026-08-22T05:30:35Z');
+  // The two travel together: an epoch without the project it belongs to is the
+  // exact ambiguity #726 is about.
+  assert.strictEqual(BACKEND_EPOCH_PROJECT_REF, 'xsnvwamytkniojrdnavt');
   assert.strictEqual(
-    budgetWindowStart(new Date('2026-08-08T12:00:00Z')),
-    '2026-08-07T06:00:00.000Z'
+    budgetWindowStart(new Date('2026-08-25T12:00:00Z')),
+    '2026-08-22T05:30:35.000Z'
   );
+});
+
+test('the template default cannot survive into this fork', async () => {
+  // The specific way this went wrong: a rebrand copies the file and nobody
+  // updates the two constants, so the guard meters a project that was never
+  // this repo's. Same class as the OAuth client IDs in auth-config.json.
+  const { BACKEND_EPOCH, BACKEND_EPOCH_PROJECT_REF } = await import(MOD);
+  assert.notStrictEqual(BACKEND_EPOCH_PROJECT_REF, 'ozbdyopxmeqmwnfsmglp');
+  assert.notStrictEqual(BACKEND_EPOCH, '2026-08-07T06:00:00Z');
 });
 
 test('budgetWindowStart: never returns a window start in the future', async () => {
@@ -628,7 +659,11 @@ test('#726: opting out really does widen the window — the regression this prev
     BACKEND_EPOCH,
     EPOCH_OPT_OUT,
   } = await import(MOD);
-  const now = new Date('2026-08-19T12:00:00Z');
+  // AFTER the epoch on purpose: before it, the window falls back to the billing
+  // cycle and the default/opt-out comparison below has nothing to distinguish.
+  // This date was 2026-08-19, which stopped being after the epoch when #726
+  // corrected it to the project this repo actually meters.
+  const now = new Date('2026-08-25T12:00:00Z');
 
   const withDefault = budgetWindowStart(now, resolveBackendEpoch(''));
   const withOptOut = budgetWindowStart(now, resolveBackendEpoch(EPOCH_OPT_OUT));

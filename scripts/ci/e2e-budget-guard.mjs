@@ -55,15 +55,23 @@ export const WORKFLOW_FILE = 'e2e.yml';
 /**
  * When the Supabase project currently being metered came into service.
  *
- * The #567 migration deleted the old project and created `ozbdyopxmeqmwnfsmglp`
- * around 2026-08-07T06:00Z. Runs before this point were billed to a project that
- * no longer exists, so counting them tells you nothing about today's quota — see
- * budgetWindowStart() for the measurement.
+ * geoLARP's project `xsnvwamytkniojrdnavt` was created 2026-08-22T05:30:35Z —
+ * taken from the Management API rather than a changelog, because this constant
+ * being wrong is the entire content of #726. Runs before this point were billed
+ * to a different project, so counting them tells you nothing about today's
+ * quota — see budgetWindowStart() for the measurement.
+ *
+ * IT WAS WRONG HERE FROM THE FIRST COMMIT. Both this date and the ref below were
+ * inherited verbatim from the ScriptHammer template, where they described the
+ * #567 migration to `ozbdyopxmeqmwnfsmglp` around 2026-08-07T06:00Z. geoLARP has
+ * never used that project. The guard's runtime warning has been firing about
+ * itself, correctly, and the mismatch is the same rebrand-leftover class as the
+ * OAuth client IDs in `auth-config.json` and the 42 upstream issue URLs in #12.
  *
  * Override with E2E_BUDGET_BACKEND_EPOCH (ISO 8601), or set it empty to fall back
  * to a pure billing-cycle window.
  */
-export const BACKEND_EPOCH = '2026-08-07T06:00:00Z';
+export const BACKEND_EPOCH = '2026-08-22T05:30:35Z';
 
 /**
  * The project that epoch belongs to.
@@ -78,7 +86,7 @@ export const BACKEND_EPOCH = '2026-08-07T06:00:00Z';
  * count may still be roughly right — but it says so loudly, because the epoch is then
  * stale by definition.
  */
-export const BACKEND_EPOCH_PROJECT_REF = 'ozbdyopxmeqmwnfsmglp';
+export const BACKEND_EPOCH_PROJECT_REF = 'xsnvwamytkniojrdnavt';
 
 /**
  * Explicit opt-out value for the epoch override.
