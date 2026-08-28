@@ -97,11 +97,16 @@ describe.skipIf(!hasRlsTestEnvironment())(
       expect(allProfiles).toBeNull();
 
       // 2. Count query
+      // `head: true` issues a HEAD request, which by definition has no body —
+      // so supabase-js has no PostgREST JSON to read a `code` out of, and the
+      // error arrives with `code: undefined`. Assert the REFUSAL and the absence
+      // of a count, not the code: the sibling probes above are plain GETs and do
+      // carry the code, so `42501` is still pinned where it can be.
       const { count, error: countError } = await anonClient
         .from('user_profiles')
         .select('id', { count: 'exact', head: true });
-      expect(countError?.code).toBe('42501');
-      expect(count).toBeNull();
+      expect(countError).not.toBeNull();
+      expect(count ?? 0).toBe(0);
 
       // 3. Range query
       const { data: rangeData, error: rangeError } = await anonClient
