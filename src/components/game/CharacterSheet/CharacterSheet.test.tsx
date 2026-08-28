@@ -295,3 +295,58 @@ describe('replacing a character is guarded (#42)', () => {
     expect(onRegenerate).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('the skill list is two columns wide (#59)', () => {
+  it('lays skills out in a grid rather than one per row', () => {
+    // Measured on production: each 298px row held ~55px of text, so 73-88% of
+    // every row was empty, and twenty of them made the sheet 2116px of a
+    // 3318px page. Two columns halves the row count at the same row height.
+    const { container } = render(<CharacterSheet character={character} />);
+    const lists = container.querySelectorAll('ul');
+    expect(lists.length).toBeGreaterThan(0);
+    lists.forEach((ul) => {
+      expect(ul.className).toContain('grid-cols-2');
+      expect(ul.className).not.toContain('flex-col');
+    });
+  });
+
+  it('KEEPS THE 44px TARGET — it halves the row count, never the row height', () => {
+    // `mobile-touch-targets.spec.ts` carries a coverage floor precisely so
+    // nobody shrinks a target to make a layout fit (#396). This change buys its
+    // space from the column count instead.
+    const { container } = render(
+      <CharacterSheet character={character} onRoll={() => {}} />
+    );
+    const rows = container.querySelectorAll('li > button');
+    expect(rows).toHaveLength(20);
+    rows.forEach((b) => expect(b.className).toContain('min-h-11'));
+  });
+
+  it('gives the OPEN row the full width, so the roller is not trapped in a column', () => {
+    // `renderExpanded` mounts the roller inside the `li` on purpose — the row
+    // you touch opens under your thumb. In a two-column grid that would put a
+    // dice tray, a spend control and a Roll button in a ~147px column.
+    const { container } = render(
+      <CharacterSheet
+        character={character}
+        onRoll={() => {}}
+        expandedSkill="Search"
+        renderExpanded={() => <div data-testid="panel">roller</div>}
+      />
+    );
+    const spanning = container.querySelectorAll('li.col-span-2');
+    expect(spanning).toHaveLength(1);
+    expect(spanning[0].querySelector('[data-testid="panel"]')).not.toBeNull();
+  });
+
+  it('lets a cell shrink inside its track', () => {
+    // A grid item defaults to `min-width: auto`, which lets a long skill name
+    // push the cell wider than its column instead of fitting inside it. That is
+    // the overflow this change was most likely to cause, and 320px is where it
+    // would have landed.
+    const { container } = render(<CharacterSheet character={character} />);
+    const items = container.querySelectorAll('li');
+    expect(items.length).toBeGreaterThan(0);
+    items.forEach((li) => expect(li.className).toContain('min-w-0'));
+  });
+});
