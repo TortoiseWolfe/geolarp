@@ -1,0 +1,79 @@
+# Cloudflare cache-rule drift gate (#10).
+#
+# #635: production served UNSTYLED PAGES eight times because GitHub Pages sends
+# `cache-control: max-age=600` on documents and every deploy deletes the previous
+# build's hashed assets. The fix is a Cloudflare Response Header Transform Rule
+# that makes documents revalidate — and it lives in a DASHBOARD, not in this repo.
+# Delete it, rotate the token or move the zone and production silently regresses,
+# with no commit anywhere showing it.
+#
+# `scripts/ci/check-cache-headers.mjs` was the only thing watching, and it watches
+# the EFFECT (what a visitor receives) over HTTP. That went blind for six days when
+# Cloudflare started answering GitHub Actions runners with 403. This watches the
+# CONFIGURATION instead, over the API, so the two fail independently:
+#
+#   probe blind + config read green  -> a network problem
+#   probe green + config read failing -> the rule is gone; the edge is coasting
+#   both failing                      -> believe it
+#
+# Its header names the shape to copy — "a scheduled probe against the hosted
+# project, in the shape of auth-config-drift.yml" — and this is modelled on that
+# file directly, including its trigger set.
+#
+# READ-ONLY. The script issues GETs and nothing else. Its token needs only
+# Zone Settings: Read and Firewall Services: Read, scoped to the one zone; a token
+# that could rewrite rules would be a far larger blast radius for a check whose
+# entire job is to look.
+name: Cache Rules Drift
+
+# THE CRON IS THE POINT, not the push trigger. The failure is out-of-band: someone
+# changes something in a dashboard and no commit is ever made. A check that runs
+# only on PRs can never see it.
+#
+# NO TRIGGER `paths:` FILTER, deliberately — same reasoning as auth-config-drift.yml
+# (#870, pattern from #869). A filtered workflow reports NOTHING on an unrelated PR,
+# and a required check that never reports is pending forever rather than skipped.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '40 15 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: cache-rules-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    name: Cloudflare cache rules still exist
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20.x
+          # This job installs NOTHING — the script uses only global fetch — so
+          # there is no lockfile to key a cache on. Left at its default of true,
+          # setup-node goes looking for pnpm and fails the job with
+          # "Unable to locate executable file: pnpm".
+          package-manager-cache: false
+
+      # No install step: the script uses only global fetch.
+      #
+      # A fork, or this repo before the secrets exist, reaches the script with both
+      # values empty. It then prints a NOTICE and exits 0 — it must not fail a fork
+      # that has no Cloudflare zone, and it must not claim the rules are fine
+      # either. Read its header for why those are different outcomes.
+      - name: Check the #635 rules are present and enabled
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_READ_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+        run: node scripts/ci/check-cache-rules.mjs

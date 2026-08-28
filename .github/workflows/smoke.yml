@@ -101,6 +101,16 @@ jobs:
       - name: Cache contract is still served (Cloudflare rules still in place)
         env:
           SITE: ${{ vars.NEXT_PUBLIC_DEPLOY_URL }}
+          # #10: Cloudflare 403s GitHub Actions runners — `browser_check` is on and
+          # a datacenter IP with no browser fingerprint is what that exists to
+          # stop. A WAF custom rule skips those checks for requests carrying this
+          # value in `x-geolarp-probe`, so the probe measures the cache contract
+          # rather than the bot policy.
+          #
+          # Unset is a supported state: the script then sends no header and behaves
+          # exactly as before, including reporting UNASSESSABLE rather than
+          # accusing the cache contract. A fork needs no Cloudflare anything.
+          CF_PROBE_TOKEN: ${{ secrets.CF_PROBE_TOKEN }}
         run: node scripts/ci/check-cache-headers.mjs "${SITE:-https://geolarp.com}"
 
       # The third dashboard-resident control, alongside the two above (#393).
