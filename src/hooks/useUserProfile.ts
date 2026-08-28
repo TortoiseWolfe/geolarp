@@ -49,7 +49,14 @@ export function useUserProfile(): UseUserProfileReturn {
       const supabase = createClient();
       const { data, error: fetchError } = await supabase
         .from('user_profiles')
-        .select('*')
+        // EXPLICIT COLUMNS, NOT `*` (#38). `authenticated` no longer holds
+        // SELECT on `is_admin`, and `SELECT *` needs the privilege on EVERY
+        // column — so a star here fails outright rather than quietly omitting
+        // the one it cannot read. These are exactly the fields `UserProfile`
+        // declares above.
+        .select(
+          'id, username, display_name, avatar_url, bio, created_at, updated_at'
+        )
         .eq('id', user.id)
         .single();
 
