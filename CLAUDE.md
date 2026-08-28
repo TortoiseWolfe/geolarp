@@ -689,7 +689,28 @@ Required checks are **`Test (20.x)`, `accessibility`, `E2E (local) result`, `Con
 
 Requiring `Build` or the raw `Validate Component Structure` job would still make every docs-only PR permanently unmergeable: a required check that never reports is _pending forever_, not skipped. **Note the distinction that makes the four additions safe** — `Component Structure result` is the always-reporting aggregate, not the `Validate Component Structure` job it wraps. The job skips on unrelated changes; the aggregate runs `if: always()` and reports green when the job was legitimately skipped. Same for the other three. The sharded E2E jobs stay excluded too — their names carry the shard count (`E2E (chromium-gen 3/6)`), so changing the matrix would orphan every required context.
 
-**`scripts/__tests__/required-checks-documented.test.js` fails when this list and branch protection disagree** (#782). This passage said "two" for two days after the third was added, which made a legitimate merge refusal — "the base branch policy prohibits the merge", while both documented checks were green — read as a broken protection rule.
+**`scripts/__tests__/required-checks-documented.test.js` does NOT check live branch
+protection, and this passage used to say it did** (#11). The test says so itself, at the top
+of the file: reading `GET /branches/{branch}/protection` needs admin scope, which CI's
+default `GITHUB_TOKEN` does not have. What it actually asserts is that CLAUDE.md agrees with
+itself and that every check named here comes from a workflow that can legitimately BE
+required — real, and not the same thing.
+
+The gap that claim papered over was not hypothetical: `main` sat **entirely unprotected**
+from the first commit until 2026-08-28, while this file told every reader that direct pushes
+were rejected for everyone. Five PRs merged in one evening reporting "all seven required
+checks green" when nothing was enforcing them. Verify live protection by hand — it is one
+command, and nothing in CI runs it for you:
+
+```bash
+gh api repos/OWNER/REPO/branches/main/protection \
+  --jq '"protected: \(.required_status_checks.contexts|length) checks, admins=\(.enforce_admins.enabled)"'
+```
+
+**A `git push --dry-run` does not test this.** `--dry-run` is client-side: it prints the ref
+transition it _would_ attempt and never asks the server to evaluate protection, so it
+"succeeds" against a fully protected branch. It is a probe that cannot fail — the exact shape
+this file warns about everywhere else. This passage said "two" for two days after the third was added, which made a legitimate merge refusal — "the base branch policy prohibits the merge", while both documented checks were green — read as a broken protection rule.
 
 To lift it: `gh api -X DELETE repos/TortoiseWolfe/geoLARP/branches/main/protection`.
 

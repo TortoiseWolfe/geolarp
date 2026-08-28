@@ -213,3 +213,42 @@ test('the PR template does not contradict CLAUDE.md about required checks', () =
       'non-required failure, or they will think their PR is broken'
   );
 });
+
+/**
+ * The doc must not claim this file checks something it cannot (#11).
+ *
+ * CLAUDE.md asserted "`required-checks-documented.test.js` fails when this list and branch
+ * protection disagree". It does not, and the header of this very file says so. That single
+ * sentence is why `main` sat unprotected from the first commit to 2026-08-28 without anyone
+ * noticing: the documentation described a guard, cited a test as its proof, and the test
+ * agreed with the documentation because it only ever compared the documentation to itself.
+ *
+ * A stated capability nobody owns is worse than a stated gap. This asserts the gap stays
+ * stated.
+ */
+test('CLAUDE.md does not claim this test verifies live branch protection', () => {
+  // WHITESPACE-NORMALISED, because prettier rewraps this file. A first draft
+  // matched the raw text and failed on the CORRECTED doc — the sentence it was
+  // looking for had been split across a line break. An assertion about prose in
+  // a formatted document has to read it the way a reader does, not the way the
+  // formatter left it.
+  const md = claudeMd().replace(/\s+/g, ' ');
+  const mentions = md.includes('required-checks-documented.test.js');
+  assert.ok(mentions, 'CLAUDE.md no longer mentions this test at all');
+
+  // The overclaim, in the shape it actually took.
+  assert.doesNotMatch(
+    md,
+    /required-checks-documented\.test\.js`? fails when this list and branch protection disagree/,
+    'CLAUDE.md claims this test checks live branch protection. It cannot — reading ' +
+      'GET /branches/{branch}/protection needs admin scope that CI\'s GITHUB_TOKEN lacks. ' +
+      'Say what is actually checked, and leave the live check as a documented manual step.'
+  );
+
+  // And the honest version has to be present, not merely the false one absent.
+  assert.match(
+    md,
+    /does NOT check live branch protection/,
+    'CLAUDE.md should state plainly that live protection is not verified here'
+  );
+});
