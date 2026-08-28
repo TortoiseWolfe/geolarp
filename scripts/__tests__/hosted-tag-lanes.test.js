@@ -57,10 +57,25 @@ const HOSTED_TITLES = [
   'OAuth redirect_uri should point to Supabase callback',
 ];
 
-/** Pure DOM, passes against a local stack, and the only local guard that the OAuth
- *  buttons still render. It must NEVER be tagged. */
+/**
+ * Pure DOM, passes against a local stack, and the only test in this file that runs
+ * in the local lane. It must NEVER be tagged.
+ *
+ * RENAMED 2026-08-28 (#9), and the old name is worth recording because it described
+ * a guarantee that turned out to be false. It was "OAuth buttons should be visible
+ * and enabled on sign-in page", and this comment called it "the only local guard
+ * that the OAuth buttons still render" — but the buttons rendered unconditionally
+ * while the live project had both providers disabled, so what it guarded was markup
+ * existing, not a control that could work.
+ *
+ * The buttons are now gated on configuration, so "they render" is not a property to
+ * assert. What this test guards instead is the PRECONDITION the six @hosted tests
+ * below depend on: any OAuth control the page does offer is visible, enabled, and
+ * names a real provider — because a disabled button would make every redirect
+ * assertion in this file vacuous rather than failing.
+ */
 const LOCAL_ONLY_TITLE =
-  'OAuth buttons should be visible and enabled on sign-in page';
+  'any OAuth button the page offers is one the CSRF tests can click';
 
 /**
  * Parse `test('title'[, { tag: '...' }], ...)` declarations out of a spec.
