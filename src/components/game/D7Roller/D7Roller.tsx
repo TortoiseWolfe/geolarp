@@ -8,6 +8,7 @@ import {
   roll as rollDice,
 } from '@/lib/geolarp/dice';
 import { Difficulty, bandOf, formatTarget } from '@/lib/geolarp/ladder';
+import { successChance, describeChance } from '@/lib/geolarp/odds';
 import { Rng } from '@/lib/geolarp/rng';
 
 export interface D7RollerProps {
@@ -196,6 +197,29 @@ export default function D7Roller({
             {staked > 0 ? ` + ${staked}d7` : ''}
           </p>
         </div>
+
+        {/*
+          WHAT THE STAKE BUYS, WHILE THERE IS STILL TIME TO CHANGE IT.
+
+          A playtester spent all five Character Points on a Heroic cell and
+          lost. The premise everyone worked from — including the ticket — was
+          that a starting sheet simply cannot beat Heroic. It can: 0.1% at zero
+          stake, 43% at five. They were not hitting a wall, they were taking a
+          coin-flip nobody had shown them.
+
+          So the economy was never the defect; the silence was. This line moves
+          with the ± buttons, so a player watching 0.1% become 43% is making a
+          decision instead of a wish — and one watching 16.7% become 47.9%
+          against a Difficult cell can see what a point is actually worth.
+        */}
+        {difficulty && target !== undefined && (
+          <p className="text-base-content text-sm">
+            Chance at this stake:{' '}
+            <strong>
+              {describeChance(successChance(rating, target, staked))}
+            </strong>
+          </p>
+        )}
 
         {difficulty && (
           <p className="text-base-content text-sm">

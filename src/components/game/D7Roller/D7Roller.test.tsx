@@ -49,6 +49,46 @@ describe('D7Roller', () => {
     expect(screen.queryByText(/13-17/)).not.toBeInTheDocument();
   });
 
+  it('prices the stake, and REPRICES IT as the stake changes', async () => {
+    // The fix for the session that started all this. A playtester spent five
+    // Character Points on a Heroic cell and lost, and the premise everyone
+    // carried — the ticket included — was that a starting sheet cannot beat
+    // Heroic. It can, at 43% with the whole purse in. They were taking a
+    // coin-flip nobody had shown them.
+    const user = userEvent.setup();
+    render(
+      <D7Roller
+        label="Search"
+        rating={{ dice: 3, pips: 1 }}
+        difficulty="heroic"
+        availablePoints={5}
+      />
+    );
+
+    expect(screen.getByText(/Chance at this stake/)).toHaveTextContent(
+      'almost never'
+    );
+
+    for (let i = 0; i < 5; i += 1) {
+      await user.click(
+        screen.getByRole('button', { name: 'Spend one more Character Point' })
+      );
+    }
+
+    // A number a player can act on, where before there was silence.
+    expect(screen.getByText(/Chance at this stake/)).toHaveTextContent(
+      'about 43%'
+    );
+  });
+
+  it('says nothing about odds when there is no cell to have odds against', () => {
+    // Same discipline as the "fixed until midnight" line: with no difficulty
+    // there is no target, and inventing a percentage would be worse than
+    // showing none.
+    render(<D7Roller label="Search" rating={rating} />);
+    expect(screen.queryByText(/Chance at this stake/)).not.toBeInTheDocument();
+  });
+
   it('counts a roll above the band as a success', () => {
     // The regression this copy invited: a total of 18 against Moderate is a
     // success, and any UI that implies a ceiling is lying about the rules.
