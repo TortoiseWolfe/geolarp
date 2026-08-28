@@ -101,7 +101,7 @@ async function head(url) {
 /**
  * "THE EDGE REFUSED ME" IS NOT "THE CACHE CONTRACT BROKE".
  *
- * Cloudflare answers GitHub Actions runner IPs with 403 (#57). This check then
+ * Cloudflare answers GitHub Actions runner IPs with 403 (#10). This check then
  * reported three cache-contract failures — two 403s and, downstream of them, a
  * missing-assets error — under the banner "production has served unstyled
  * pages eight times from exactly this". Every word of that was wrong: the
@@ -125,7 +125,7 @@ function noteBlocked(url, status) {
   blocked.push(
     `${url} returned ${status}: the edge refused this prober, so the cache ` +
       `contract could not be read. This is NOT evidence the contract broke. ` +
-      `See #57 — Cloudflare 403s GitHub Actions runner IPs, while the same URL ` +
+      `See #10 — Cloudflare 403s GitHub Actions runner IPs, while the same URL ` +
       `answers 200 with the right headers from an ordinary network.`
   );
 }
@@ -261,7 +261,7 @@ if (blocked.length > 0) {
     `\nUNASSESSABLE: ${blocked.length} probe(s) were refused by the edge, so the ` +
       `cache contract at ${BASE} was NOT verified. This is not a failure of the ` +
       `contract and is not evidence of #635 — it is a failure to measure, which ` +
-      `is tracked as #57. Confirm by hand from an unblocked network:\n` +
+      `is tracked as #10. Confirm by hand from an unblocked network:\n` +
       `  curl -sSI ${BASE}/ | grep -iE 'cache-control|cf-ray'\n` +
       `Exiting non-zero deliberately: a check that could not measure must never ` +
       `report green.`

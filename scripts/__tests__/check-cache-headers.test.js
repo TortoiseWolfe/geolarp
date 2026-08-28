@@ -233,7 +233,7 @@ test('checks EVERY configured path, not just the first', async () => {
 });
 
 /**
- * #57: Cloudflare answers GitHub Actions runner IPs with 403, and this check
+ * #10: Cloudflare answers GitHub Actions runner IPs with 403, and this check
  * reported that as three cache-contract failures under the banner "production
  * has served unstyled pages eight times from exactly this". The contract was
  * intact the whole time.
@@ -255,7 +255,7 @@ test('a refused probe reports as UNASSESSABLE, not as a broken contract', async 
     // Still non-zero: a check that could not measure must never report green.
     assert.equal(code, 1);
     assert.match(stderr, /UNASSESSABLE/);
-    assert.match(stderr, /#57/);
+    assert.match(stderr, /#10/);
 
     // And it must NOT accuse the cache contract, which is the whole defect.
     assert.doesNotMatch(stderr, /cache-contract failure/);
@@ -276,7 +276,7 @@ test('a refused probe reports as UNASSESSABLE, not as a broken contract', async 
 });
 
 test('a genuinely broken contract still fails loudly, block handling notwithstanding', async () => {
-  // The negative control. If the #57 handling ever swallowed a real failure,
+  // The negative control. If the #10 handling ever swallowed a real failure,
   // the guard would be worse than before rather than better.
   await withFixture(
     { docCacheControl: 'max-age=600', assetCacheControl: 'max-age=31536000' },

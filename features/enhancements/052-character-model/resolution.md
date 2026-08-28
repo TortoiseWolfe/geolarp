@@ -139,8 +139,34 @@ gated, and the entire difference comes from cells not worth walking to.
 
 **Measured at 0.27 points per encounter** over 400k simulated encounters against the real
 band weights (moderate 0.19, difficult 0.06, very-difficult 0.02, heroic ~0, trivial 0).
-An eight-cell session earns about 2.2. **No stake is farming-positive** — 0.55 gross at a
-stake of 2 against 2 spent — so points come from walking and are burned to force a win.
+An eight-cell session earns about 2.2. A later end-to-end reproduction measured 0.286 with
+the same per-band shape; treat 0.27–0.29 as the range rather than 0.27 as a constant.
+
+**Almost no stake is farming-positive, and the exception is named** (#62). This sentence
+previously read "No stake is farming-positive", justified by a single sampled case — 0.55
+gross at a stake of 2. That was written from a sample rather than from the space, and
+enumerating every (pool, band, stake) against the real reward gates finds two exceptions:
+
+| pool  | band                 | stake | net EV     |
+| ----- | -------------------- | ----- | ---------- |
+| `5d7` | Very Difficult (24+) | 1     | **+0.175** |
+| `6d7` | Very Difficult (24+) | 1     | **+0.576** |
+
+Everything below `5d7` is negative at every stake, and trivial cells pay nothing at any
+stake. The edge is bounded three ways: a `5d7`+ pool needs a trained skill on a high
+attribute, Very Difficult is 12% of cells, and `DAILY_EARN_CAP` closes the loop at five a
+day regardless. So the design claim survives in its useful form — points come from walking
+and are burned to force a win — but the absolute version of it was false.
+
+**Getting this right requires conditioning on the wild die's first face.** A critical
+explodes, so it raises the total, so success and "the wild die showed 7" are positively
+correlated. Treating them as independent — the obvious first calculation — understates
+this edge by roughly a factor of four (+0.045 against the true +0.175). Two independent
+passes disagreed here and the correlated one was correct.
+
+`tests/unit/economy-invariants.test.ts` now enumerates the space and owns this, including a
+check that its own reconstruction reproduces `successChance` exactly, so neither the
+invariant nor the method can drift back into a slogan.
 
 Earning is capped at **5 per UTC day** (`DAILY_EARN_CAP`), matching the starting stake:
 one day of the best possible luck refills what you began with. A normal session never
