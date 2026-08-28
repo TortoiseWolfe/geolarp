@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import SignUpForm from '@/components/auth/SignUpForm';
 import OAuthButtons from '@/components/auth/OAuthButtons';
+import { hasOAuthProviders } from '@/config/auth-providers';
 import Link from 'next/link';
 import { getInternalUrl } from '@/config/project.config';
 
@@ -48,11 +49,19 @@ export default function SignUpPage() {
               treatment is letter-spaced small-caps, and typing the caps in the
               markup would leave the tracking applied to already-uppercase text
               on one page and not the other. */}
-          <div className="divider my-6 font-mono text-[10.5px] tracking-[.16em] uppercase">
-            or
-          </div>
+          {/* #9: the divider is gated on the same condition as the buttons.
+              Both providers were disabled on the live project while both
+              buttons shipped, so every press failed — and hiding only the
+              buttons would leave a rule labelled "or" with nothing under it. */}
+          {hasOAuthProviders() && (
+            <>
+              <div className="divider my-6 font-mono text-[10.5px] tracking-[.16em] uppercase">
+                or
+              </div>
 
-          <OAuthButtons />
+              <OAuthButtons />
+            </>
+          )}
         </div>
 
         <p className="mt-6 text-center text-sm">

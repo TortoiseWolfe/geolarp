@@ -68,10 +68,18 @@ test.describe('@smoke production deploy (#288)', () => {
     page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
 
     await page.goto('/sign-in');
-    // The real app rendered (OAuth buttons are part of the sign-in page).
-    await expect(
-      page.getByRole('button', { name: /continue with github/i })
-    ).toBeVisible();
+    /*
+      A MARKER THAT DOES NOT DEPEND ON CONFIGURATION (#9).
+
+      This used the GitHub OAuth button as its proof that "the real app
+      rendered". That button now appears only when a provider is configured, and
+      production has `external_github_enabled: false` — so the marker would
+      vanish on a correctly-built page and report a broken deploy.
+
+      The email field is the right proxy: it is the reason the page exists, and
+      no amount of auth-provider configuration removes it.
+    */
+    await expect(page.getByLabel(/email/i).first()).toBeVisible();
 
     // Benign third-party noise (analytics, Cloudflare bot cookie, favicon).
     const IGNORE =

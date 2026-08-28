@@ -1,9 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import OAuthButtons from './OAuthButtons';
 
+// `NEXT_PUBLIC_*` is inlined at build, so Storybook cannot enable a provider at
+// runtime — without an explicit `providers` prop this component correctly
+// renders nothing (#9). The stories pass it so the buttons are visible here.
 const meta: Meta<typeof OAuthButtons> = {
   title: 'Features/Authentication/OAuthButtons',
   component: OAuthButtons,
+  args: { providers: ['github', 'google'] },
   parameters: {
     layout: 'centered',
     docs: {
