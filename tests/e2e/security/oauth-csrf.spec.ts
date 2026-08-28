@@ -81,25 +81,51 @@ async function clickOAuthAndCaptureRequest(
 }
 
 test.describe('OAuth CSRF Protection - REQ-SEC-002', () => {
-  test('OAuth buttons should be visible and enabled on sign-in page', async ({
+  /*
+    THE ONLY TEST IN THIS FILE THAT IS NOT `@hosted` — and it did not test CSRF.
+
+    It asserted the GitHub and Google buttons were visible, which passed for
+    months while the live project had `external_github_enabled: false` and
+    `external_google_enabled: false`: an assertion about markup that said
+    nothing about whether pressing one could succeed (#9).
+
+    Buttons now render only for providers this build configured, which locally
+    is none. What this test can still usefully own for the suite below it is the
+    PRECONDITION those `@hosted` tests depend on: whatever OAuth control the page
+    does offer must be clickable, because a disabled button would make every
+    redirect assertion below vacuous rather than failing.
+  */
+  test('any OAuth button the page offers is one the CSRF tests can click', async ({
     page,
   }) => {
     await page.goto('/sign-in');
     await dismissCookieBanner(page);
 
-    // Verify GitHub OAuth button
-    const githubButton = page.getByRole('button', {
-      name: /Continue with GitHub/i,
-    });
-    await expect(githubButton).toBeVisible();
-    await expect(githubButton).toBeEnabled();
+    const buttons = page
+      .locator('button')
+      .filter({ hasText: /continue with/i });
+    const count = await buttons.count();
 
-    // Verify Google OAuth button
-    const googleButton = page.getByRole('button', {
-      name: /Continue with Google/i,
-    });
-    await expect(googleButton).toBeVisible();
-    await expect(googleButton).toBeEnabled();
+    if (count === 0) {
+      // No provider configured for this build. The six `@hosted` tests below
+      // need a real provider anyway, so there is nothing here to protect — but
+      // say so rather than passing silently on an empty page.
+      const divider = page
+        .locator('.divider')
+        .filter({ hasText: /^\s*or\s*$/i });
+      expect(
+        await divider.count(),
+        'an "or" divider is rendered with no OAuth buttons beneath it'
+      ).toBe(0);
+      return;
+    }
+
+    for (let i = 0; i < count; i += 1) {
+      const button = buttons.nth(i);
+      await expect(button).toBeVisible();
+      await expect(button).toBeEnabled();
+      expect(await button.innerText()).toMatch(/github|google/i);
+    }
   });
 
   test(
