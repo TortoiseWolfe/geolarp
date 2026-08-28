@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import SignInForm from '@/components/auth/SignInForm';
 import OAuthButtons from '@/components/auth/OAuthButtons';
+import { hasOAuthProviders } from '@/config/auth-providers';
 import { LayeredGeoLARPLogo } from '@/components/atomic/SpinningLogo';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -157,11 +158,19 @@ export default function SignInPage() {
             }}
           />
 
-          <div className="divider my-6 font-mono text-[10.5px] tracking-[.16em] uppercase">
-            or
-          </div>
+          {/* #9: the divider is gated on the same condition as the buttons.
+              Both providers were disabled on the live project while both
+              buttons shipped, so every press failed — and hiding only the
+              buttons would leave a rule labelled "or" with nothing under it. */}
+          {hasOAuthProviders() && (
+            <>
+              <div className="divider my-6 font-mono text-[10.5px] tracking-[.16em] uppercase">
+                or
+              </div>
 
-          <OAuthButtons />
+              <OAuthButtons />
+            </>
+          )}
         </div>
       </div>
     </main>
