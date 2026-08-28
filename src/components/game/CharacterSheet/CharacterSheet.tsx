@@ -121,7 +121,21 @@ export default function CharacterSheet({
                 </span>
               </h3>
 
-              <ul className="mt-2 flex flex-col gap-1">
+              {/*
+                TWO COLUMNS, BECAUSE THE ROWS WERE 82% EMPTY (#59).
+
+                Measured on production at 390px: each skill row was a 298px
+                `justify-between` flex holding about 55px of text, so 73-88% of
+                every row was nothing — and twenty of them stacked one-per-row
+                made the sheet 2116px of a 3318px page.
+
+                THE ROW HEIGHT IS NOT THE THING TO CUT. 44px is a mandated
+                touch target, and `mobile-touch-targets.spec.ts` carries a
+                coverage floor precisely so nobody shrinks one to make a layout
+                fit (#396). So this halves the row COUNT instead: four skills
+                per attribute become two rows of two, at the same height.
+              */}
+              <ul className="mt-2 grid grid-cols-2 gap-1">
                 {grouped[attr].map((skill) => {
                   const trained = character.skills[skill];
                   const code = trained ?? character.attributes[attr];
@@ -138,7 +152,37 @@ export default function CharacterSheet({
                   const open = Boolean(onRoll) && expandedSkill === skill;
                   const panelId = `roll-${skill.toLowerCase()}`;
                   return (
-                    <li key={skill}>
+                    <li
+                      key={skill}
+                      /*
+                        THE OPEN ROW TAKES THE FULL WIDTH.
+
+                        `renderExpanded` mounts the roller inside this `li` on
+                        purpose — "the roller lives in the row, not above the
+                        sheet", so the row you touch opens under your thumb. In
+                        a two-column grid that would trap a dice tray, a spend
+                        control and a Roll button in a ~145px column. Spanning
+                        the open row restores the full width exactly where it
+                        is needed, and only while it is needed.
+
+                        `min-w-0` because a grid item defaults to `min-width:
+                        auto`, which lets a long name push the cell wider than
+                        its track instead of fitting inside it — the overflow
+                        this change is most likely to cause.
+                      */
+                      /*
+                        TWO WHOLE CLASS STRINGS, NOT AN INTERPOLATION.
+
+                        This was `` `min-w-0${open ? ' col-span-2' : ''}` `` and
+                        the Tailwind Prettier plugin ate the leading space on
+                        format, fusing them into the single garbage class
+                        `min-w-0col-span-2`. The E2E layout check had already
+                        passed — it ran BEFORE the formatter — so the only thing
+                        that caught it was the unit test asserting `li.col-span-2`
+                        exists. Keep both branches as complete literals.
+                      */
+                      className={open ? 'col-span-2 min-w-0' : 'min-w-0'}
+                    >
                       {onRoll ? (
                         <button
                           type="button"

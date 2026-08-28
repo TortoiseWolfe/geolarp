@@ -486,6 +486,56 @@ test.describe('/character played — no horizontal overflow', () => {
       });
 
       expect(overflow.offenders, JSON.stringify(overflow, null, 2)).toEqual([]);
+
+      /*
+        TWO COLUMNS, PROVEN BY LAYOUT (#59).
+
+        jsdom cannot do layout, so the component tests can only assert the
+        CLASSES are present. Whether two cells actually sit side by side, and
+        whether a long skill name clips inside a 112px cell at 320px, is only
+        answerable in a real engine — and 320px is precisely where the naive
+        version of this change would have broken.
+      */
+      const cols = await page.evaluate(() => {
+        const rows = Array.from(
+          document.querySelectorAll(
+            'article[aria-labelledby="character-sheet-name"] li > button'
+          )
+        ) as HTMLElement[];
+        const closed = rows.filter(
+          (b) => b.getAttribute('aria-expanded') !== 'true'
+        );
+        const boxes = closed.map((b) => b.getBoundingClientRect());
+        // Two cells share a row band when their tops match and their lefts do not.
+        const sideBySide = boxes.some((a, i) =>
+          boxes.some(
+            (b, j) =>
+              i !== j &&
+              Math.abs(a.top - b.top) < 2 &&
+              Math.abs(a.left - b.left) > 8
+          )
+        );
+        return {
+          rowCount: rows.length,
+          sideBySide,
+          shortestRowPx: Math.min(...boxes.map((b) => Math.round(b.height))),
+          clipped: closed
+            .filter((b) => b.scrollWidth > b.clientWidth + 1)
+            .map(
+              (b) =>
+                `${b.textContent?.trim().slice(0, 20)} ${b.scrollWidth}>${b.clientWidth}`
+            ),
+        };
+      });
+
+      expect(cols.rowCount).toBe(20);
+      expect(
+        cols.sideBySide,
+        `skills are not in two columns at ${width}px`
+      ).toBe(true);
+      // Never buy width by shrinking the touch target (#396).
+      expect(cols.shortestRowPx).toBeGreaterThanOrEqual(44);
+      expect(cols.clipped, JSON.stringify(cols, null, 2)).toEqual([]);
     });
   }
 });
