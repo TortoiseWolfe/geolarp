@@ -9,6 +9,7 @@ import {
   SkillName,
 } from '@/lib/geolarp/character';
 import { formatCode } from '@/lib/geolarp/dice';
+import { skillRating } from '@/lib/geolarp/character';
 import CharacterSigil from '@/components/game/CharacterSigil';
 
 export interface CharacterSheetProps {
@@ -137,8 +138,21 @@ export default function CharacterSheet({
               */}
               <ul className="mt-2 grid grid-cols-2 gap-1">
                 {grouped[attr].map((skill) => {
-                  const trained = character.skills[skill];
-                  const code = trained ?? character.attributes[attr];
+                  // THROUGH `skillRating`, NOT AN INLINE LOOKUP.
+                  //
+                  // This used to be `character.skills[skill] ?? attributes[attr]`,
+                  // repeating the rule `ratingFor` already owned. Two copies is
+                  // two chances to disagree, and once `ratingFor` clamps to the
+                  // governing attribute (#64) a stale copy here would print one
+                  // number while the roller rolled another.
+                  //
+                  // `trained` now means "stored AND actually beats the
+                  // attribute". A stored code that lost to its attribute rolls
+                  // as the attribute, so calling it trained would be the same
+                  // lie moved one line down.
+                  const rating = skillRating(character, skill);
+                  const trained = rating.trained;
+                  const code = rating.code;
                   // The name and the rating are separate elements in BOTH
                   // branches. Concatenating them read identically on screen
                   // and made the row a single text node, which is a different
