@@ -142,9 +142,63 @@ export interface Character {
   created: string;
 }
 
-/** The rating actually rolled for a skill: its own, or its attribute's. */
+export interface SkillRating {
+  /** The code actually rolled: the stored skill, or its attribute — whichever is higher. */
+  code: DiceCode;
+  /** The governing attribute's own code. */
+  attribute: DiceCode;
+  /** A stored code exists AND beats the attribute. */
+  trained: boolean;
+  /**
+   * A stored code exists and does NOT beat its attribute.
+   *
+   * `generateCharacter` cannot produce this — it skips a skill whose overage is
+   * zero (`if (over === 0) continue`), so a stored code is always strictly
+   * above its attribute at creation. The state arises exactly one way: a skill
+   * is remapped to a different attribute, and every character already in a
+   * browser is re-read against the new map.
+   */
+  inert: boolean;
+}
+
+/**
+ * What a skill actually rolls, and whether its stored code is doing anything.
+ *
+ * ONE FUNCTION OWNS BOTH FACTS, DELIBERATELY. `ratingFor` used to return
+ * `char.skills[skill] ?? char.attributes[...]` and `CharacterSheet` repeated
+ * that lookup inline to decide what to print and whether to say "(trained)".
+ * Two copies of a rule is two chances to disagree, and clamping only one of
+ * them would desynchronise the number shown from the number rolled — a worse
+ * bug than the one being fixed (#64).
+ *
+ * THE CLAMP. A skill starts AT its governing attribute and rises above it in
+ * pips; a skill below its attribute is a state the system says cannot exist.
+ * Rather than trust the stored value, this returns whichever is higher. That is
+ * non-destructive on purpose: the stored code is kept, so a skill remapped back
+ * — or an attribute that later falls — makes it meaningful again rather than
+ * having silently discarded it.
+ *
+ * Nothing generated today changes behaviour: at creation a stored code always
+ * beats its attribute, so the clamp is a no-op until the day it is not.
+ */
+export function skillRating(char: Character, skill: SkillName): SkillRating {
+  const attribute = char.attributes[SKILLS[skill]];
+  const stored = char.skills[skill];
+  if (!stored) {
+    return { code: attribute, attribute, trained: false, inert: false };
+  }
+  const beatsAttribute = toPips(stored) > toPips(attribute);
+  return {
+    code: beatsAttribute ? stored : attribute,
+    attribute,
+    trained: beatsAttribute,
+    inert: !beatsAttribute,
+  };
+}
+
+/** The rating actually rolled for a skill. Never below its governing attribute. */
 export function ratingFor(char: Character, skill: SkillName): DiceCode {
-  return char.skills[skill] ?? char.attributes[SKILLS[skill]];
+  return skillRating(char, skill).code;
 }
 
 /**

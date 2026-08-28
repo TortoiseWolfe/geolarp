@@ -2,7 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CharacterSheet from './CharacterSheet';
-import { generateCharacter, SKILLS, SkillName } from '@/lib/geolarp/character';
+import {
+  generateCharacter,
+  ratingFor,
+  SKILLS,
+  SkillName,
+} from '@/lib/geolarp/character';
 import { formatCode } from '@/lib/geolarp/dice';
 import { Rng } from '@/lib/geolarp/rng';
 
@@ -348,5 +353,41 @@ describe('the skill list is two columns wide (#59)', () => {
     const items = container.querySelectorAll('li');
     expect(items.length).toBeGreaterThan(0);
     items.forEach((li) => expect(li.className).toContain('min-w-0'));
+  });
+});
+
+describe('a stored skill below its attribute (#64)', () => {
+  /** The state a skill remap creates on a character already in a browser. */
+  function corrupted() {
+    const attr = character.attributes[SKILLS.Haggle];
+    return {
+      ...character,
+      skills: { ...character.skills, Haggle: { dice: 1, pips: 0 } },
+      _attr: attr,
+    } as typeof character & { _attr: unknown };
+  }
+
+  it('SHOWS what it ROLLS — the sheet and the roller cannot disagree', () => {
+    // The trap this fix had to avoid. `CharacterSheet` used to repeat
+    // `skills[skill] ?? attributes[attr]` inline; clamping only `ratingFor`
+    // would have printed the stored 1d7 while the roller rolled the
+    // attribute — a worse bug than the one being fixed.
+    const c = corrupted();
+    render(<CharacterSheet character={c} />);
+    const row = screen.getByText('Haggle').closest('p, button') as HTMLElement;
+    const shown = within(row).getByText(/^\d+d7/).textContent;
+    expect(shown).toBe(formatCode(ratingFor(c, 'Haggle')));
+    expect(shown).toBe(formatCode(c.attributes[SKILLS.Haggle]));
+    expect(shown).not.toBe('1d7');
+  });
+
+  it('does not call it trained when it confers nothing', () => {
+    // It rolls at the attribute, so "(trained)" would be the same lie one
+    // line further down.
+    const c = corrupted();
+    render(<CharacterSheet character={c} />);
+    const row = screen.getByText('Haggle').closest('p, button') as HTMLElement;
+    expect(row.textContent).toContain('untrained, rolls at Luck');
+    expect(row.textContent).not.toContain('(trained)');
   });
 });
