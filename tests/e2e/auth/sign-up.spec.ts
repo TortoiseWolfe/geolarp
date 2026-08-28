@@ -318,18 +318,53 @@ test.describe('Sign-up E2E Tests (Feature 027)', () => {
     console.log('Navigation to sign-in works correctly');
   });
 
-  test('should display OAuth buttons on sign-up page', async ({ page }) => {
-    await page.goto('/sign-up');
+  test('the OAuth section is present only when a provider is configured', async ({
+    page,
+  }) => {
+    await page.goto('/sign-up', { waitUntil: 'domcontentloaded' });
     await dismissCookieBanner(page);
 
-    // Verify OAuth buttons present (may be GitHub, Google, etc.)
-    const oauthButtons = page
-      .locator('button')
-      .filter({ hasText: /github|google|continue with/i });
-    const count = await oauthButtons.count();
+    /*
+      THE OAUTH SECTION MUST AGREE WITH ITSELF (#9).
 
-    expect(count).toBeGreaterThan(0);
-    console.log(`Found ${count} OAuth button(s)`);
+      This used to assert the GitHub and Google buttons were visible — an
+      assertion about markup that said nothing about whether pressing one could
+      work. It passed for months while the live project had
+      `external_github_enabled: false` and `external_google_enabled: false`, so
+      every press failed at the provider.
+
+      The buttons now render only for providers this build has configured, which
+      in CI is none. Asserting "zero buttons" would be just as brittle in the
+      other direction — it would fail the day someone legitimately enables one.
+
+      So this asserts the INVARIANT that holds either way: the "or" rule and the
+      buttons appear together or not at all. It fails if the gating regresses in
+      either direction, and it is the specific defect the change introduced a
+      risk of — hiding the buttons while leaving a rule labelled "or" with
+      nothing under it.
+    */
+    const buttons = page
+      .locator('button')
+      .filter({ hasText: /continue with/i });
+    const divider = page.locator('.divider').filter({ hasText: /^\s*or\s*$/i });
+
+    const buttonCount = await buttons.count();
+    const dividerCount = await divider.count();
+
+    if (buttonCount === 0) {
+      expect(
+        dividerCount,
+        'an "or" divider is rendered with no OAuth buttons beneath it'
+      ).toBe(0);
+    } else {
+      expect(
+        dividerCount,
+        'OAuth buttons are rendered with no "or" divider above them'
+      ).toBeGreaterThan(0);
+      // Every rendered button must name a provider rather than be a stub.
+      await expect(buttons.first()).toBeVisible();
+      expect(await buttons.first().innerText()).toMatch(/github|google/i);
+    }
   });
 });
 
