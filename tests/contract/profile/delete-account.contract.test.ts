@@ -6,6 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+// #38: `authenticated` no longer holds SELECT on `is_admin`, and a
+// `select('*')` needs the privilege on EVERY column — so a star now fails
+// outright. These are exactly the columns this file already asserts on.
 import { createClient } from '../../helpers/real-supabase';
 
 describe('Account Deletion Contract', () => {
@@ -35,7 +38,9 @@ describe('Account Deletion Contract', () => {
     // Verify profile exists
     const { data: beforeProfile } = await supabase
       .from('user_profiles')
-      .select('*')
+      .select(
+        'id, username, display_name, avatar_url, bio, created_at, updated_at'
+      )
       .eq('id', testUserId)
       .single();
 
@@ -60,7 +65,9 @@ describe('Account Deletion Contract', () => {
     // Verify audit log exists
     const { data: beforeLogs } = await supabase
       .from('auth_audit_logs')
-      .select('*')
+      .select(
+        'id, username, display_name, avatar_url, bio, created_at, updated_at'
+      )
       .eq('user_id', testUserId);
 
     expect(beforeLogs).toBeDefined();
@@ -83,7 +90,9 @@ describe('Account Deletion Contract', () => {
     // Verify payment intent exists
     const { data: beforePayments } = await supabase
       .from('payment_intents')
-      .select('*')
+      .select(
+        'id, username, display_name, avatar_url, bio, created_at, updated_at'
+      )
       .eq('template_user_id', testUserId);
 
     expect(beforePayments).toBeDefined();
