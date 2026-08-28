@@ -288,3 +288,106 @@ test('a genuinely broken contract still fails loudly, block handling notwithstan
     }
   );
 });
+
+/**
+ * The probe header is sent when configured, and only then (#10).
+ *
+ * Cloudflare 403s GitHub Actions runners, so a WAF custom rule skips its bot
+ * checks for requests carrying `x-geolarp-probe`. If this script stops sending
+ * the header the probe silently goes back to being refused — and the UNASSESSABLE
+ * path would report that honestly, which is exactly why it would not be noticed
+ * as a regression. Pin it here instead.
+ *
+ * The absent case matters as much: a fork with no `CF_PROBE_TOKEN` must send no
+ * header at all rather than an empty one, which some edges treat differently.
+ */
+test('sends the probe header when CF_PROBE_TOKEN is set', async () => {
+  const seen = [];
+  const server = createServer((req, res) => {
+    seen.push(req.headers['x-geolarp-probe']);
+    const headers = { 'cf-ray': '8f0000000000abcd-ATL' };
+    if (req.url.startsWith('/_next/static/')) {
+      res.writeHead(200, { ...headers, 'Cache-Control': 'max-age=31536000' });
+      res.end('console.log(1)');
+      return;
+    }
+    res.writeHead(200, {
+      ...headers,
+      'Content-Type': 'text/html',
+      'Cache-Control': 'no-cache',
+    });
+    res.end(PAGE);
+  });
+  const port = await listen(server);
+  try {
+    const { code } = await runProbe(`http://127.0.0.1:${port}`, {
+      CF_PROBE_TOKEN: 'sekrit-value',
+    });
+    assert.equal(code, 0);
+    assert.ok(seen.length > 0, 'the probe made no requests');
+    assert.ok(
+      seen.every((v) => v === 'sekrit-value'),
+      `every request must carry the header; saw ${JSON.stringify(seen)}`
+    );
+  } finally {
+    server.close();
+  }
+});
+
+test('sends NO probe header when CF_PROBE_TOKEN is absent', async () => {
+  const seen = [];
+  const server = createServer((req, res) => {
+    seen.push(
+      Object.prototype.hasOwnProperty.call(req.headers, 'x-geolarp-probe')
+    );
+    const headers = { 'cf-ray': '8f0000000000abcd-ATL' };
+    if (req.url.startsWith('/_next/static/')) {
+      res.writeHead(200, { ...headers, 'Cache-Control': 'max-age=31536000' });
+      res.end('console.log(1)');
+      return;
+    }
+    res.writeHead(200, {
+      ...headers,
+      'Content-Type': 'text/html',
+      'Cache-Control': 'no-cache',
+    });
+    res.end(PAGE);
+  });
+  const port = await listen(server);
+  try {
+    // Explicitly empty, which is what a fork without the secret gets from
+    // GitHub Actions — not "undefined".
+    const { code } = await runProbe(`http://127.0.0.1:${port}`, {
+      CF_PROBE_TOKEN: '',
+    });
+    assert.equal(code, 0);
+    assert.ok(seen.length > 0, 'the probe made no requests');
+    assert.ok(
+      seen.every((present) => present === false),
+      'an unconfigured fork must send no header at all, not an empty one'
+    );
+  } finally {
+    server.close();
+  }
+});
+
+test('a refusal WITH the token blames the rule, not the contract', async () => {
+  // The message has to distinguish "no header was sent" from "the header was
+  // sent and the edge still refused" — those need different fixes.
+  const server = createServer((req, res) => {
+    res.writeHead(403, { 'Content-Type': 'text/html' });
+    res.end('<html><body>blocked</body></html>');
+  });
+  const port = await listen(server);
+  try {
+    const { code, stderr } = await runProbe(`http://127.0.0.1:${port}`, {
+      CF_PROBE_TOKEN: 'sekrit-value',
+    });
+    assert.equal(code, 1);
+    assert.match(stderr, /UNASSESSABLE/);
+    assert.match(stderr, /CF_PROBE_TOKEN was sent/);
+    assert.doesNotMatch(stderr, /cache-contract failure/);
+  } finally {
+    server.close();
+  }
+});

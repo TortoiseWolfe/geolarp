@@ -86,10 +86,34 @@ function revalidates(cacheControl) {
   return age === 0;
 }
 
+/**
+ * The header that lets this prober past the edge's bot checks (#10).
+ *
+ * Cloudflare answers GitHub Actions runners with 403 — `browser_check` is on and
+ * `security_level` is medium, and a datacenter IP with no browser fingerprint is
+ * exactly what those exist to stop. A WAF custom rule skips them for requests
+ * carrying this header, so the probe measures the cache contract rather than
+ * measuring the bot policy.
+ *
+ * A SECRET HEADER RATHER THAN AN ASN ALLOW-LIST, deliberately. Exempting GitHub's
+ * ASN means exempting all of Microsoft Azure to admit one prober, and an ASN
+ * cannot be rotated or revoked. This can be: change the secret, change the rule.
+ *
+ * ABSENT IS A SUPPORTED STATE. A fork with no `CF_PROBE_TOKEN` sends no header and
+ * behaves exactly as before, including the UNASSESSABLE path below — whose whole
+ * job is to be honest when the probe cannot see, rather than to accuse the cache
+ * contract of something it did not do.
+ */
+const PROBE_TOKEN = process.env.CF_PROBE_TOKEN || '';
+const PROBE_HEADER = 'x-geolarp-probe';
+
 async function head(url) {
   // GET, not HEAD: some edges answer HEAD from a different path than the real
   // request, and the header under test is the one a browser actually receives.
-  const res = await fetch(url, { redirect: 'follow' });
+  const res = await fetch(url, {
+    redirect: 'follow',
+    headers: PROBE_TOKEN ? { [PROBE_HEADER]: PROBE_TOKEN } : {},
+  });
   return {
     status: res.status,
     cacheControl: res.headers.get('cache-control'),
@@ -125,6 +149,10 @@ function noteBlocked(url, status) {
   blocked.push(
     `${url} returned ${status}: the edge refused this prober, so the cache ` +
       `contract could not be read. This is NOT evidence the contract broke. ` +
+      (PROBE_TOKEN
+        ? `CF_PROBE_TOKEN was sent, so either the WAF skip rule is gone or its ` +
+          `value no longer matches this secret. `
+        : `CF_PROBE_TOKEN is unset, so no skip header was sent. `) +
       `See #10 — Cloudflare 403s GitHub Actions runner IPs, while the same URL ` +
       `answers 200 with the right headers from an ordinary network.`
   );
