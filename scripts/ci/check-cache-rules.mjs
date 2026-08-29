@@ -107,9 +107,44 @@ async function checkZoneReachable() {
   }
 }
 
+/**
+ * The CSP rule (#393, restored in #74).
+ *
+ * Added because its disappearance is exactly what this check exists to catch and
+ * did not: production served NO Content-Security-Policy for an unknown period,
+ * and the only detector — `check-csp-header.mjs` in the same smoke job — was
+ * dying on the edge's 403 before reaching its own assertion. A rule that lives in
+ * a dashboard needs a watcher that reads the dashboard.
+ */
+async function checkCspRule() {
+  const entry = await get(
+    `/zones/${ZONE}/rulesets/phases/http_response_headers_transform/entrypoint`
+  );
+  const rules = (entry && entry.rules) || [];
+  const csp = rules.filter(
+    (r) =>
+      r.enabled &&
+      /content-security-policy/i.test(JSON.stringify(r.action_parameters || {}))
+  );
+  if (csp.length === 0) {
+    failures.push(
+      'no ENABLED response-header transform rule sets `Content-Security-Policy`. ' +
+        'The policy authored in src/app/layout.tsx renders as `<meta name>`, which ' +
+        'browsers IGNORE — only this header is honoured (#393). Without the rule ' +
+        'the site has no CSP at all, which is the state #74 found it in.'
+    );
+  } else {
+    console.log(
+      `  ok  CSP header rule: ${csp.length} enabled — ` +
+        csp.map((r) => (r.description || r.id).slice(0, 60)).join(', ')
+    );
+  }
+}
+
 try {
   await checkZoneReachable();
   await checkDocumentRevalidation();
+  await checkCspRule();
 } catch (err) {
   console.error(`::error::${err.message}`);
   console.error(
