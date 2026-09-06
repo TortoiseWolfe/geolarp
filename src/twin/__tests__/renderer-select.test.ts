@@ -38,7 +38,8 @@ describe('selectRenderer', () => {
     expect(selectRenderer(q('?nofx'))).toBe('diorama');
   });
 
-  // Same omission, third recurrence. The nav's Play link happens to pass `?diorama&walk`, so
+  // Same omission, third recurrence. The nav's Chattanooga link ("Walk", under Demos; it was
+  // the top-level "Play" slot until the game took that name) passes `?diorama&walk`, so
   // this stayed invisible: a bare `?walk` opened Cesium, which has no first-person camera,
   // and TwinCanvas — the component that owns walk mode — never mounted at all.
   it('?walk implies the diorama — Cesium has no first-person mode', () => {

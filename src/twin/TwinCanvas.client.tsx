@@ -174,7 +174,7 @@ export function parseWeatherParam(search: string): WeatherKind {
     : 'none';
 }
 
-/** `?walk` — "this is a walk session". The navbar Play link (GlobalNav.tsx) and every
+/** `?walk` — "this is a walk session". The navbar Walk link (GlobalNav.tsx, under Demos) and every
  *  marker return link (`markerBlock`, src/lib/twin-location.ts) carry it.
  *
  *  Parsed in ONE exported place because two components have to agree on it and they use it
@@ -830,7 +830,7 @@ function SceneInner({
   }, [walkCtrl, onWalkReady]);
 
   // Resume Web Audio on the FIRST gesture in Walk — click OR keypress. The
-  // `?walk` deep-link ("Play") auto-enters Walk with no canvas click, so keydown
+  // `?walk` deep-link ("Walk", under Demos) auto-enters Walk with no canvas click, so keydown
   // (WASD) must also wake the AudioContext or footsteps stay silent. resume() is
   // idempotent.
   useEffect(() => {
@@ -1208,9 +1208,9 @@ function TwinCanvasInner({
       ),
     []
   );
-  // `?walk` drops you straight into first-person Walk mode (the navbar "Play"
-  // link), instead of the default orbit/tour — so the game isn't buried behind
-  // the ⋯ mode overflow.
+  // `?walk` drops you straight into first-person Walk mode (the navbar "Walk"
+  // link, under Demos), instead of the default orbit/tour — so the city demo
+  // isn't buried behind the ⋯ mode overflow.
   const walkParam = useMemo(
     () =>
       parseWalkParam(
@@ -1221,7 +1221,7 @@ function TwinCanvasInner({
   const [mode, setMode] = useState<CameraMode>(
     orthoParam.on ? 'ortho' : hasTour ? 'tour' : 'orbit'
   );
-  // `?walk` deep-link (the navbar "Play" link): do NOT enter Walk until the
+  // `?walk` deep-link (the navbar "Walk" link, under Demos): do NOT enter Walk until the
   // embodied controller has been built from the city meshes. Entering early makes
   // the Rig fall back to its kinematic glide — which moves at the orbit
   // move-speed (~1,200 m/s) with no terrain-follow: "running under the city at
