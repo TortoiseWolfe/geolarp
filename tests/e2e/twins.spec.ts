@@ -166,8 +166,10 @@ test.describe('/twins/[slug]?diorama — the R3F exhibit (opt-in since #292)', (
     // which never becomes clickable.
     // Addressed by href, not by role+name. The dropdown is a DaisyUI `menu`,
     // whose items did not resolve to `getByRole('link', { name: 'Atlas' })`
-    // once opened. `/chatt/` is Atlas's own href — the nav's other twin entry,
-    // Play, is `/chatt?diorama&walk` — so this cannot pick the wrong one.
+    // once opened. `/chatt/` is Atlas's own href, and the match is EXACT — the
+    // menu's other twin entries are `/chatt?diorama` (Diorama) and
+    // `/chatt?diorama&walk` (Walk, moved here from the top-level Play slot when
+    // Play was pointed at the game), so this cannot pick the wrong one.
     // `visible=true` because the nav renders both a desktop rail and a mobile
     // menu, and document order lands on the hidden copy.
     await nav

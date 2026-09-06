@@ -318,11 +318,12 @@ export function GlobalNav() {
   const navItems: NavEntry[] = [
     { href: '/docs', label: 'Docs' },
     { href: '/blog', label: 'Blog' },
-    // Top-level so the walkable/bikeable 3D Chattanooga isn't buried under
-    // Demos → Diorama → ⋯ → Walk. Deep-links straight in: ?diorama picks the
-    // Three renderer, ?walk opens first-person Walk mode. reload:true so both
-    // query flags are read at mount (same reason Atlas/Diorama reload below).
-    { href: '/chatt?diorama&walk', label: 'Play', reload: true },
+    // "Play" is geoLARP itself — the character, the cell grid, the encounter,
+    // the d7. It used to point at `/chatt?diorama&walk`, the inherited
+    // Chattanooga tech demo, while the actual game sat two levels down in
+    // Demos → Character. The one word in the nav that names the product took a
+    // visitor somewhere the product isn't.
+    { href: '/character', label: 'Play' },
     // TOP LEVEL, deliberately not inside Demos. Until this landed, the only
     // payment-adjacent destination in the whole nav was `/payment-demo` labelled
     // "Payments" — a DEMO, sitting in the Demos menu between Diorama and Game.
@@ -340,7 +341,14 @@ export function GlobalNav() {
         { href: '/wireframes', label: 'Wireframes' },
         { href: '/map', label: 'Map' },
         { href: '/game', label: 'Game' },
-        { href: '/character', label: 'Character' },
+        // The walkable/bikeable 3D Chattanooga, moved here from the top-level
+        // "Play" slot. It does NOT go away: the `ride-the-open-source-city`
+        // post links it four times and /credits links it once, so retiring the
+        // route would retract published writing. Deep-links straight in:
+        // ?diorama picks the Three renderer, ?walk opens first-person Walk
+        // mode. reload:true so both query flags are read at mount (same reason
+        // Atlas/Diorama reload above).
+        { href: '/chatt?diorama&walk', label: 'Walk', reload: true },
         { href: '/payment-demo', label: 'Payments' },
         { href: '/schedule', label: 'Schedule' },
       ],

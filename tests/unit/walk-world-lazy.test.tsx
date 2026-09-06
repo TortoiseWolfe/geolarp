@@ -12,7 +12,8 @@
  * The bug it missed was a four-hop cycle: `mode === 'walk'` needs `walkReady`, which needs
  * `walkCtrl`, which needs `tryBuildWalk` to pass its gate, which needs `wantsWalkWorldRef`,
  * which was assigned `mode === 'walk'`. The gate asked its own output for permission to open.
- * `/chatt?diorama&walk` — the navbar "Play" link — sat in a slowly rotating orbit shot
+ * `/chatt?diorama&walk` — the navbar "Walk" link, under Demos — sat in a slowly rotating
+ * orbit shot
  * forever.
  *
  * WHY A RENDER TEST AND NOT A SIMULATION. The defect is not in any predicate; every one of
