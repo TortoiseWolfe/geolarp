@@ -62,5 +62,12 @@ jobs:
       - name: Compare production against INTENDED
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'ozbdyopxmeqmwnfsmglp' }}
+          # No `|| '<ref>'` fallback, deliberately. `check-prod-schema-drift.mjs:195-199`
+          # already refuses to run without this variable and says so — and a default
+          # here would guarantee the variable is never empty, so that refusal could
+          # never fire. What you would get instead of a loud failure is a green run
+          # against SOMEBODY ELSE'S DATABASE: the value inherited at the fork was
+          # ScriptHammer's project, not geoLARP's. Unset the variable and this job
+          # must fail, not quietly guard the wrong thing.
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
         run: node scripts/ci/check-prod-schema-drift.mjs
