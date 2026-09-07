@@ -41,18 +41,33 @@ export function getProjectConfig() {
     projectName:
       process.env.NEXT_PUBLIC_PROJECT_NAME || defaultConfig.projectName,
     /**
-     * The slug follows an explicit name override, or a fork's URLs break.
+     * The slug follows a name override only when the name is a DIFFERENT PROJECT.
      *
-     * A first draft pinned this to the tracked default, and
-     * `project.config.test.ts` caught it: a fork setting NEXT_PUBLIC_PROJECT_NAME
-     * kept geoLARP's slug, so its `projectUrl` pointed at THIS repository. The
-     * dedicated NEXT_PUBLIC_PROJECT_SLUG exists for the one case the two differ by
-     * more than case — a repo whose display name is not its directory name.
+     * Two drafts of this were wrong in opposite directions, and both were caught:
+     *
+     *   1. Pinned to the tracked default. `project.config.test.ts` failed — a fork
+     *      setting NEXT_PUBLIC_PROJECT_NAME kept geoLARP's slug, so its `projectUrl`
+     *      pointed at THIS repository.
+     *   2. Following the name unconditionally. That reintroduced the very bug #97
+     *      exists to kill: with `NEXT_PUBLIC_PROJECT_NAME=geoLARP` the slug became
+     *      `geoLARP`, and `https://tortoisewolfe.github.io/geoLARP/...` is a 404 while
+     *      `/geolarp/` is a 200. Display casing must never become a URL.
+     *
+     * So the name is inherited only when it names something else. `geoLARP` is THIS
+     * project's display name, so it can never override this project's slug; `MyFork`
+     * is a different project, so it does. Same shape as `displayNameFor()` in
+     * scripts/detect-project.js, mirrored — there a name wins only when it IS the
+     * slug, here a name wins only when it is NOT this project.
+     *
+     * NEXT_PUBLIC_PROJECT_SLUG is the explicit escape hatch for the remaining case:
+     * a repo whose display name is genuinely not its directory name.
      */
     projectSlug:
       process.env.NEXT_PUBLIC_PROJECT_SLUG ||
-      process.env.NEXT_PUBLIC_PROJECT_NAME ||
-      defaultConfig.projectSlug,
+      (process.env.NEXT_PUBLIC_PROJECT_NAME &&
+      process.env.NEXT_PUBLIC_PROJECT_NAME !== defaultConfig.projectName
+        ? process.env.NEXT_PUBLIC_PROJECT_NAME
+        : defaultConfig.projectSlug),
     projectOwner:
       process.env.NEXT_PUBLIC_PROJECT_OWNER || defaultConfig.projectOwner,
     projectDescription: defaultConfig.projectDescription,

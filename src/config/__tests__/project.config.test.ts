@@ -63,6 +63,43 @@ describe('Project Configuration', () => {
       );
     });
 
+    /**
+     * THIS PROJECT'S OWN DISPLAY NAME MUST NOT BECOME ITS URL SLUG (#97).
+     *
+     * `geoLARP` is the display name; `geolarp` is the repository. Measured against
+     * the live internet: `https://tortoisewolfe.github.io/geolarp/opengraph-image.png`
+     * returns 200 and `.../geoLARP/...` returns 404, because GitHub Pages paths are
+     * case-sensitive. A build that let the display casing reach a URL therefore shipped
+     * meta tags pointing at images that do not exist.
+     *
+     * The test above pins the opposite direction — a FORK's name must reach the slug,
+     * or its URLs point back at this repository. Both are needed: the rule is "inherit
+     * a name only when it names something else", and either half alone is a bug.
+     */
+    it("does not let this project's own display name become the slug", () => {
+      process.env.NEXT_PUBLIC_PROJECT_NAME = 'geoLARP';
+
+      const config = getProjectConfig();
+
+      expect(config.projectName).toBe('geoLARP');
+      expect(config.projectSlug).toBe('geolarp');
+      expect(config.projectUrl).toBe(
+        'https://github.com/TortoiseWolfe/geolarp'
+      );
+    });
+
+    it('lets an explicit slug override everything', () => {
+      process.env.NEXT_PUBLIC_PROJECT_NAME = 'My Fork';
+      process.env.NEXT_PUBLIC_PROJECT_SLUG = 'my-fork';
+      process.env.NEXT_PUBLIC_PROJECT_OWNER = 'SomeoneElse';
+
+      const config = getProjectConfig();
+
+      expect(config.projectName).toBe('My Fork');
+      expect(config.projectSlug).toBe('my-fork');
+      expect(config.projectUrl).toBe('https://github.com/SomeoneElse/my-fork');
+    });
+
     it('should use custom deploy URL when NEXT_PUBLIC_DEPLOY_URL is set', () => {
       process.env.NEXT_PUBLIC_DEPLOY_URL = 'https://custom-domain.com';
 
