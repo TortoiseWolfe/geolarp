@@ -346,10 +346,77 @@ export function remainingEarnToday(char: Character, day: string): number {
 
 export const STORAGE_KEY = 'geolarp_character';
 
-export function loadCharacter(): Character | null {
-  if (typeof window === 'undefined') return null;
+/**
+ * The smallest SYNCHRONOUS key-value surface a character needs.
+ *
+ * Synchronous is a requirement, not a preference. `useCharacterPlay.ts` writes the
+ * character from inside a `setCharacter` updater — render phase, which must be pure and
+ * cannot await. An async store would make that call site impossible rather than merely
+ * awkward, which is why React Native gets `expo-sqlite/kv-store` (it has a sync API)
+ * rather than AsyncStorage.
+ *
+ * A STRING STORE, NOT A CHARACTER STORE. Parsing, the `version === 1` check and the
+ * tolerance for junk below are RULES, and rules must be identical on every platform.
+ * Only the byte transport differs. An interface that returned a `Character` would hand
+ * each platform its own copy of the validation — two chances to disagree about what a
+ * valid character is.
+ */
+export interface CharacterStore {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+
+/** Reads nothing, keeps nothing. The default anywhere `localStorage` does not exist. */
+const NULL_STORE: CharacterStore = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+};
+
+const LOCAL_STORAGE_STORE: CharacterStore = {
+  getItem: (k) => window.localStorage.getItem(k),
+  setItem: (k, v) => window.localStorage.setItem(k, v),
+  removeItem: (k) => window.localStorage.removeItem(k),
+};
+
+/**
+ * GUARDED ON `localStorage`, NOT ON `window`, AND THAT IS THE WHOLE POINT.
+ *
+ * The previous guard was `typeof window === 'undefined'`. React Native DEFINES `window`
+ * (its polyfills alias it to `global`) and does NOT define `window.localStorage` — so on a
+ * phone that guard was false and the very next line threw on `undefined`. `loadCharacter`
+ * survived on its try/catch; `saveCharacter` had none, so the first save crashed.
+ */
+function detectStore(): CharacterStore {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    return typeof globalThis !== 'undefined' &&
+      typeof (globalThis as { localStorage?: unknown }).localStorage !==
+        'undefined'
+      ? LOCAL_STORAGE_STORE
+      : NULL_STORE;
+  } catch {
+    // Some browsers throw on merely touching localStorage when site data is blocked.
+    return NULL_STORE;
+  }
+}
+
+let defaultStore: CharacterStore = detectStore();
+
+/**
+ * Point the character at a different store. React Native calls this once, above the
+ * router, before the first screen. The web never needs it — `detectStore` finds
+ * `localStorage` on its own, which is why no existing call site changed.
+ */
+export function setDefaultCharacterStore(store: CharacterStore): void {
+  defaultStore = store;
+}
+
+export function loadCharacter(
+  store: CharacterStore = defaultStore
+): Character | null {
+  try {
+    const raw = store.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Character;
     return parsed?.version === 1 ? parsed : null;
@@ -358,9 +425,17 @@ export function loadCharacter(): Character | null {
   }
 }
 
-export function saveCharacter(char: Character): void {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(char));
+export function saveCharacter(
+  char: Character,
+  store: CharacterStore = defaultStore
+): void {
+  try {
+    store.setItem(STORAGE_KEY, JSON.stringify(char));
+  } catch {
+    // A device can refuse a write — quota, private mode, blocked site data. The
+    // in-memory character still plays; the published promise is already that the
+    // player owns the export.
+  }
 }
 
 /** The export the published promise makes the player responsible for (`:101`). */
