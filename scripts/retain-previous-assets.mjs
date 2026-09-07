@@ -69,6 +69,47 @@ async function get(url) {
 }
 
 /**
+ * Read a URL that MUST NOT come from a cache.
+ *
+ * THE LEDGER IS SERVED FROM THE PATH IT EXISTS TO ESCAPE (#84). Both ledger files sit
+ * under `/_next/static/`, which the edge caches for a year by design — that year-long
+ * rule is the whole point of the hashed-asset path, and these two are the one thing
+ * under it that must never be stale.
+ *
+ * Measured against production: `ASSET_AGES.txt` returned `cf-cache-status: HIT` with
+ * `age: 19782` (~5.5h), and the cached manifest DISAGREED with the origin — 174 lines
+ * against 170, naming three build IDs that no longer exist and MISSING the current
+ * build entirely. Retention then carries forward files that were deleted two deploys
+ * ago, and the post-deploy detector reports them missing. That is the `Retention
+ * result` failure in Production Smoke.
+ *
+ * A query string is enough: the same probe with `?cb=` returned `cf-cache-status: MISS`
+ * and `age: 0`. `cache: 'no-store'` is sent as well, but is NOT relied on — undici
+ * honours it inconsistently, and a header a proxy may ignore is not a guarantee. The
+ * buster is the mechanism; the header is politeness.
+ *
+ * This does not need a Cloudflare rule, which is why it is the fix that shipped:
+ * relocating the ledger or exempting the path both need the dashboard.
+ */
+async function getFresh(url, nonce) {
+  const busted = `${url}${url.includes('?') ? '&' : '?'}cb=${nonce}`;
+  try {
+    const res = await fetch(busted, {
+      redirect: 'follow',
+      cache: 'no-store',
+      headers: { 'cache-control': 'no-cache', pragma: 'no-cache' },
+    });
+    if (!res.ok) return null;
+    return res;
+  } catch {
+    return null;
+  }
+}
+
+/** One nonce per run, so the two ledger reads are consistent with each other. */
+const CACHE_BUST = `${Date.now()}`;
+
+/**
  * Routes to read. The live sitemap is authoritative; `/` is the fallback.
  *
  * REACHABILITY IS CHECKED FIRST AND SEPARATELY. The first version of this
@@ -275,7 +316,10 @@ async function publishManifest() {
  * deploy after this lands falls back to crawling and writes the first manifest.
  * The deploy after that gets complete retention.
  */
-const manifest = await get(`${BASE}/_next/static/ASSET_MANIFEST.txt`);
+const manifest = await getFresh(
+  `${BASE}/_next/static/ASSET_MANIFEST.txt`,
+  CACHE_BUST
+);
 if (manifest) {
   const lines = (await manifest.text())
     .split('\n')
@@ -358,7 +402,10 @@ console.log(`after one transitive pass: ${wanted.size} reference(s)`);
 const liveAges = new Map();
 const liveFirstSeen = new Map();
 let undated = 0;
-const agesRes = await get(`${BASE}/_next/static/ASSET_AGES.txt`);
+const agesRes = await getFresh(
+  `${BASE}/_next/static/ASSET_AGES.txt`,
+  CACHE_BUST
+);
 if (agesRes) {
   for (const line of (await agesRes.text()).split('\n')) {
     // New format `<age> <ISO> <path>`, and the OLD `<age> <path>` it replaces.
