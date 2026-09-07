@@ -33,9 +33,16 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const CHECKER = path.join(ROOT, 'scripts', 'ci', 'check-mail-policy.mjs');
 const SMOKE = path.join(ROOT, '.github', 'workflows', 'smoke.yml');
 
-/** A zone in the state this repo intends. Each case below breaks exactly one thing. */
+/**
+ * A zone in the state this repo intends. Each case below breaks exactly one thing.
+ *
+ * RAISED TO `p=reject` WITH STRICT ALIGNMENT on 2026-09-07 (#83). Until then the zone
+ * published exactly this policy while the repo declared `p=none`, and the checker was
+ * correctly failing over the gap. What closed it was publishing a DKIM key — Resend was
+ * configured and `resend._domainkey` verified — not relaxing the zone.
+ */
 const HEALTHY = {
-  dmarc: ['v=DMARC1; p=none; rua=mailto:admin@geolarp.com'],
+  dmarc: ['v=DMARC1; p=reject; rua=mailto:admin@geolarp.com; aspf=s; adkim=s'],
   spf: ['v=spf1 include:_spf.mx.cloudflare.net ~all'],
   dkim: ['v=DKIM1; k=rsa; p=MIIBIjAN'],
   mx: ['10 route1.mx.cloudflare.net.'],
@@ -70,16 +77,21 @@ describe('the mail-policy guard (#822)', () => {
     const { evaluate } = await import(`file://${CHECKER}`);
     const f = evaluate({
       ...HEALTHY,
-      dmarc: ['v=DMARC1; p=reject; rua=mailto:admin@geolarp.com'],
+      dmarc: [
+        'v=DMARC1; p=none; rua=mailto:admin@geolarp.com; aspf=s; adkim=s',
+      ],
     });
     assert.equal(f.length, 1);
-    assert.match(f[0], /intends p=none/);
+    assert.match(f[0], /intends p=reject/);
   });
 
   it('fails when aggregate reports have nowhere to go', async () => {
     // Without `rua` there is no evidence, and #822 cannot ever be finished.
     const { evaluate } = await import(`file://${CHECKER}`);
-    const f = evaluate({ ...HEALTHY, dmarc: ['v=DMARC1; p=none'] });
+    const f = evaluate({
+      ...HEALTHY,
+      dmarc: ['v=DMARC1; p=reject; aspf=s; adkim=s'],
+    });
     assert.equal(f.length, 1);
     assert.match(f[0], /does not report to/);
   });
@@ -97,9 +109,23 @@ describe('the mail-policy guard (#822)', () => {
     const { evaluate } = await import(`file://${CHECKER}`);
     const f = evaluate({
       ...HEALTHY,
-      dmarc: [HEALTHY.dmarc[0], 'v=DMARC1; p=reject'],
+      dmarc: [HEALTHY.dmarc[0], 'v=DMARC1; p=reject; aspf=s; adkim=s'],
     });
     assert.match(f[0], /receivers ignore all of them/);
+  });
+
+  it('fails when alignment is relaxed, even though p= is untouched', async () => {
+    // The failure mode `p=` alone cannot see: `aspf=r` widens who may send as this
+    // domain while the policy string still reads `reject`.
+    const { evaluate } = await import(`file://${CHECKER}`);
+    const f = evaluate({
+      ...HEALTHY,
+      dmarc: [
+        'v=DMARC1; p=reject; rua=mailto:admin@geolarp.com; aspf=r; adkim=s',
+      ],
+    });
+    assert.equal(f.length, 1);
+    assert.match(f[0], /intends aspf=s/);
   });
 
   it('reports every fault at once rather than stopping at the first', async () => {
@@ -113,9 +139,13 @@ describe('the mail-policy guard (#822)', () => {
     const { INTENDED } = await import(`file://${CHECKER}`);
     assert.equal(
       INTENDED.dmarcPolicy,
-      'none',
-      'the intended policy is no longer `none`'
+      'reject',
+      'the intended policy is no longer `reject`'
     );
+    // Alignment is the half that can be relaxed WITHOUT touching `p=`, so a zone can
+    // keep reading `p=reject` and quietly stop meaning it. Both tags are declared.
+    assert.equal(INTENDED.dmarcAspf, 's', 'SPF alignment must stay strict');
+    assert.equal(INTENDED.dmarcAdkim, 's', 'DKIM alignment must stay strict');
     assert.equal(
       INTENDED.dmarcRua,
       'admin@geolarp.com',

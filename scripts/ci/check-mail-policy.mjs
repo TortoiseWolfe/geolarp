@@ -35,18 +35,40 @@ const DOH = 'https://cloudflare-dns.com/dns-query';
 /**
  * The mail policy this repository intends to be published.
  *
- * `p: 'none'` is deliberate and currently correct — #822 has the reasoning. Two things must
- * be true before it is raised, and neither is today:
+ * `p: 'reject'` as of 2026-09-07, with strict alignment. This is a RAISE, and the two
+ * preconditions the previous note set are now met or moot:
  *
- *   1. Enough `rua` aggregate reports to show every legitimate sender aligns. In the 30 days
- *      to 2026-08-21 exactly ONE report arrived (Google, covering one day).
- *   2. #368 closed. Replies to `admin@` still leave through a personal Gmail, which is not in
- *      the root SPF and does not DKIM-sign as the domain — so `p=quarantine` would quarantine
- *      the maintainer's own replies.
+ *   1. A DKIM key is published. Resend was configured for `geolarp.com` and
+ *      `resend._domainkey` verified, so mail sent through it aligns on DKIM. Until that
+ *      day the zone published `p=reject; aspf=s; adkim=s` with NO key at all — the
+ *      strictest possible policy over no authentication, which is why this check was
+ *      failing rather than merely disagreeing.
+ *   2. The `rua` evidence argument no longer gates it. Nothing sends as the domain except
+ *      Resend, and Resend now aligns; the Supabase project still has `smtp_host = null`,
+ *      so auth mail leaves via Supabase's own sender and never claims to be us.
+ *
+ * WHAT THIS COSTS, STATED PLAINLY. Under `adkim=s; aspf=s` anything sending as
+ * `@geolarp.com` that is neither Resend nor in the root SPF is REJECTED, not quarantined.
+ * A maintainer replying as `admin@` from a personal Gmail is in that set. That was already
+ * true before this line changed — the zone has been at `p=reject` for some time — but the
+ * repo now says so out loud instead of claiming to intend something gentler.
+ *
+ * The reference implementation is ScriptHammer, which runs `p=none` WITH DKIM. geoLARP is
+ * deliberately stricter, and is only safe there because the key exists.
  */
 export const INTENDED = {
   domain: 'geolarp.com',
-  dmarcPolicy: 'none',
+  dmarcPolicy: 'reject',
+  /**
+   * Strict alignment, recorded so a silent relaxation is caught.
+   *
+   * `aspf=s; adkim=s` is what makes `p=reject` mean what it appears to mean: a subdomain
+   * or a relaxed-alignment sender cannot pass on a cousin domain. Dropping either tag
+   * would widen who may send as us without changing `p=`, and nothing else here would
+   * notice — which is the exact shape of silence this file exists to break.
+   */
+  dmarcAspf: 's',
+  dmarcAdkim: 's',
   // Aggregate reports must go somewhere that actually receives — see #881, where the
   // published security address had no mail route at all.
   dmarcRua: 'admin@geolarp.com',
@@ -108,6 +130,18 @@ export function evaluate(observed, intended = INTENDED) {
           'If the change was deliberate, update INTENDED in this file so the intent is recorded.'
       );
     }
+    for (const [tag, want] of [
+      ['aspf', intended.dmarcAspf],
+      ['adkim', intended.dmarcAdkim],
+    ]) {
+      if (want && tags[tag] !== want) {
+        failures.push(
+          `DMARC ${tag}=${tags[tag] ?? '<absent>'} but this repo intends ${tag}=${want}. ` +
+            'Relaxing alignment widens who may send as this domain without touching p=, ' +
+            'so it would not show up as a policy change.'
+        );
+      }
+    }
     if (!tags.rua || !tags.rua.includes(intended.dmarcRua)) {
       failures.push(
         `DMARC rua=${tags.rua ?? '<absent>'} does not report to ${intended.dmarcRua}; ` +
@@ -142,8 +176,12 @@ export function evaluate(observed, intended = INTENDED) {
 
 async function main(argv) {
   if (argv.includes('--selftest')) {
+    // Fixtures track INTENDED. When the policy was raised to `p=reject` with strict
+    // alignment (2026-09-07) the old `good` zone started failing three checks, which is
+    // the fixtures doing their job — a "correct zone" that no longer matches the declared
+    // intent is exactly what this file exists to catch.
     const good = {
-      dmarc: ['v=DMARC1; p=none; rua=mailto:admin@geolarp.com'],
+      dmarc: ['v=DMARC1; p=reject; rua=mailto:admin@geolarp.com; aspf=s; adkim=s'],
       spf: ['v=spf1 include:_spf.mx.cloudflare.net ~all'],
       dkim: ['v=DKIM1; k=rsa; p=MIIBIjAN'],
       mx: ['10 route1.mx.cloudflare.net.'],
@@ -151,7 +189,11 @@ async function main(argv) {
     const cases = [
       [good, 0, 'a correct zone passes'],
       [{ ...good, dmarc: [] }, 1, 'a missing DMARC record fails'],
-      [{ ...good, dmarc: ['v=DMARC1; p=reject; rua=mailto:admin@geolarp.com'] }, 1, 'an undeclared policy change fails'],
+      [{ ...good, dmarc: ['v=DMARC1; p=none; rua=mailto:admin@geolarp.com; aspf=s; adkim=s'] }, 1, 'an undeclared policy change fails'],
+      // Alignment is the half that can be relaxed WITHOUT touching `p=`, so a zone that
+      // still reads `p=reject` can quietly stop meaning it. Both tags are covered.
+      [{ ...good, dmarc: ['v=DMARC1; p=reject; rua=mailto:admin@geolarp.com; aspf=r; adkim=s'] }, 1, 'relaxed SPF alignment fails even at p=reject'],
+      [{ ...good, dmarc: ['v=DMARC1; p=reject; rua=mailto:admin@geolarp.com; aspf=s'] }, 1, 'a dropped adkim tag fails even at p=reject'],
       [{ ...good, dkim: [] }, 1, 'a missing DKIM key fails'],
       [{ ...good, mx: [] }, 1, 'a missing MX fails'],
       [{ ...good, spf: [] }, 1, 'a missing SPF fails'],
