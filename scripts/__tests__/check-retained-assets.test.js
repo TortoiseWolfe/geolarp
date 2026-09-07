@@ -135,19 +135,45 @@ const PAST_RAMP = {
   RETAIN_DAYS: '14',
 };
 
-const serveLedger = (entries, spanDays) => (request, response) => {
-  if (request.url === '/_next/static/ASSET_MANIFEST.txt') {
-    response.end(entries.join('\n'));
-    return;
-  }
-  if (request.url === '/_next/static/ASSET_AGES.txt') {
-    response.end(agesFor(entries, spanDays));
-    return;
-  }
-  response.writeHead(200).end();
-};
+/**
+ * `missing: true` 404s one promised asset while serving the ledger normally, so a
+ * test can hold the window narrow AND the chain broken at the same time. Without it
+ * the two conditions can only be exercised apart, and nothing proves the reachability
+ * assertion survives a change to the window one.
+ */
+const serveLedger =
+  (entries, spanDays, { missing = false } = {}) =>
+  (request, response) => {
+    if (request.url === '/_next/static/ASSET_MANIFEST.txt') {
+      response.end(entries.join('\n'));
+      return;
+    }
+    if (request.url === '/_next/static/ASSET_AGES.txt') {
+      response.end(agesFor(entries, spanDays));
+      return;
+    }
+    if (missing && request.url.endsWith('.css')) {
+      response.writeHead(404).end();
+      return;
+    }
+    response.writeHead(200).end();
+  };
 
-test('fails when the retention window has collapsed below RETAIN_DAYS', async (t) => {
+test('REPORTS a narrow window without failing, and says why (#82)', async (t) => {
+  // This test used to assert exit 1 here. It was changed deliberately, not relaxed
+  // to make a red run green — the assertion it encoded could not distinguish a
+  // broken retention chain from a slow deploy cadence.
+  //
+  // `firstSeen` is re-stamped to now for every file the new build reproduces, so the
+  // oldest stamp belongs to the last file that STOPPED being published. The span is
+  // therefore `D * floor(RETAIN_DAYS / D)` for a deploy every D days. Replaying this
+  // repo's 37 real deploys through a perfect, never-stale ledger still measures 11.6
+  // days and still failed. Nothing was wrong.
+  //
+  // What replaces it is in #82: assert the per-asset promise at DEPLOY time, where
+  // the previous ledger is in hand and "was anything dropped while still inside its
+  // window" is answerable. A post-deploy probe holding only the SURVIVING ledger
+  // structurally cannot answer that, which is why this half is now a report.
   const entries = retainedEntries(['/_next/static/css/app.css']);
   const server = await startServer(serveLedger(entries, 2));
   t.after(() => server.close());
@@ -155,8 +181,25 @@ test('fails when the retention window has collapsed below RETAIN_DAYS', async (t
   const result = await runProbe(server.baseUrl, PAST_RAMP);
   const output = result.stdout + result.stderr;
 
+  assert.equal(result.code, 0, output);
+  assert.match(output, /REPORTED, NOT ASSERTED/);
+  assert.match(output, /2\.0 day\(s\)/);
+  assert.match(output, /#82/);
+});
+
+test('can fail: a narrow window does NOT mask an unreachable asset', async (t) => {
+  // The half that still hard-fails, exercised in the condition that now only warns.
+  // Without this, downgrading the window check could have quietly taken the
+  // reachability assertion with it, and every test above would still pass.
+  const entries = retainedEntries(['/_next/static/css/app.css']);
+  const server = await startServer(serveLedger(entries, 2, { missing: true }));
+  t.after(() => server.close());
+
+  const result = await runProbe(server.baseUrl, PAST_RAMP);
+  const output = result.stdout + result.stderr;
+
   assert.equal(result.code, 1, output);
-  assert.match(output, /covers only 2\.0 day\(s\)/);
+  assert.match(output, /MISSING/);
 });
 
 test('passes when the window is at full width — the harness can reach success', async (t) => {

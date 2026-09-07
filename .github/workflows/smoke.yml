@@ -82,7 +82,20 @@ jobs:
       # This reads the ledger the deploy just published and asserts every promised
       # file is actually served. A 404 there means someone holding that HTML is
       # looking at an unstyled page right now.
+      #
+      # `continue-on-error` here is NOT a downgrade of this check — the aggregate at
+      # the end of this job still fails the run if this step failed. It exists because
+      # this step is FIRST, and a hard failure here SKIPS every step below it (#82).
+      # It did exactly that for ten days: eleven consecutive runs where a warning about
+      # mitigation depth switched off the monitors for a vanished Cloudflare rule, a
+      # dropped CSP header, a bundle pointing at the wrong Supabase project, a live
+      # Stripe key in the wrong mode, and the mail policy — one of which was genuinely
+      # failing the whole time and nobody could see it.
+      #
+      # A monitor that disables other monitors when it trips is worse than no monitor.
       - name: Retained assets are still served (unstyled-production detector)
+        id: retained
+        continue-on-error: true
         env:
           SITE: ${{ vars.NEXT_PUBLIC_DEPLOY_URL }}
         run: node scripts/ci/check-retained-assets.mjs "${SITE:-https://geolarp.com}"
@@ -239,3 +252,23 @@ jobs:
       # fail for reasons having nothing to do with the deploy it was monitoring.
       - name: Run the production @smoke suite
         run: scripts/ci/playwright-in-container.sh test --config playwright.smoke.config.ts
+
+      # The aggregate that keeps `continue-on-error` above honest.
+      #
+      # Without this, marking the retained-assets step non-blocking would genuinely
+      # weaken it — a real 404 on a promised asset means someone is looking at an
+      # unstyled page right now, and that must redden the run. With it, the step's
+      # failure is deferred rather than discarded: every other monitor gets to report
+      # first, and then the job fails anyway.
+      #
+      # `if: always()` because a step that never runs cannot report, and a required
+      # check that never reports is pending forever rather than skipped.
+      - name: Retention result
+        if: always()
+        run: |
+          if [ "${{ steps.retained.outcome }}" = "failure" ]; then
+            echo "::error::the retained-assets detector failed — see its step above."
+            echo "Every other monitor in this job still ran; scroll up for their results."
+            exit 1
+          fi
+          echo "retained-assets detector passed."
