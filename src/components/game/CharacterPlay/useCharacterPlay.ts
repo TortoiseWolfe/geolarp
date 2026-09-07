@@ -15,6 +15,7 @@ import {
   Cell,
   CellOffset,
   cellOf,
+  neighbour,
   offsetMetres,
   seedOf,
   utcDay,
@@ -232,7 +233,11 @@ export function useCharacterPlay(
    * the feedback permanently a lie.
    */
   const step = useCallback((dx: number, dy: number) => {
-    setCell((c) => (c ? { x: c.x + dx, y: c.y + dy } : c));
+    // `neighbour`, not `{x: c.x + dx, y: c.y + dy}`. `CellGrid` renders the
+    // cells `grid3x3` returns but hands back the DELTA that produced them, so
+    // if this walked the raw indices the tile a player taps and the cell they
+    // arrive in would be different cells (#86).
+    setCell((c) => (c ? neighbour(c, dx, dy) : c));
   }, []);
 
   const resetToOrigin = useCallback(() => {
