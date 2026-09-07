@@ -30,20 +30,43 @@ const PAGE = `<!doctype html><html><head>
  * @param {boolean} [o.edge]          whether to emit `cf-ray` (i.e. "Cloudflare answered")
  * @param {string[]} [o.missing]      paths that should 404
  */
+const LEDGER_PATHS = [
+  '/_next/static/ASSET_MANIFEST.txt',
+  '/_next/static/ASSET_AGES.txt',
+];
+
 function fixture({
   docCacheControl,
   assetCacheControl,
   edge = true,
   missing = [],
+  // #84 controls. `ledgerCacheStatus` is what the edge reports for a CACHE-BUSTED
+  // ledger read; 'HIT' means the query string stopped being part of the cache key,
+  // which is the condition that silently disables `getFresh()`. `ledgerStale` serves
+  // a different body without the buster, reproducing the real divergence measured in
+  // production (175 cached lines against 171 at origin).
+  ledgerCacheStatus = null,
+  ledgerStale = false,
 }) {
   return createServer((req, res) => {
     const url = req.url.split('?')[0];
+    const busted = req.url.includes('?cb=');
     const headers = {};
     if (edge) headers['cf-ray'] = '8f0000000000abcd-ATL';
 
     if (missing.includes(url)) {
       res.writeHead(404, headers);
       res.end('nope');
+      return;
+    }
+
+    if (LEDGER_PATHS.includes(url)) {
+      const h = { ...headers, 'Content-Type': 'text/plain' };
+      if (busted && ledgerCacheStatus) h['cf-cache-status'] = ledgerCacheStatus;
+      res.writeHead(200, h);
+      res.end(
+        ledgerStale && !busted ? 'stale-a\nstale-b\nstale-c\n' : 'fresh-a\n'
+      );
       return;
     }
 
@@ -390,4 +413,66 @@ test('a refusal WITH the token blames the rule, not the contract', async () => {
   } finally {
     server.close();
   }
+});
+
+/**
+ * THE #84 ASSERTION MUST BE ABLE TO FAIL.
+ *
+ * The mitigation for the stale-ledger read is a cache buster, and a buster only works
+ * while the query string is part of the edge's cache key. If that ever stops being
+ * true, `getFresh()` in retain-previous-assets.mjs keeps running and keeps returning
+ * the same stale bytes — a fix that is silently dead. This is the test that notices.
+ *
+ * A first draft asserted `age === 0` instead, and failed against production on a read
+ * that was demonstrably fresh: a MISS there carries `age: 118` from tiered caching
+ * while its body matches the origin. `cf-cache-status` is the signal; `age` is the
+ * edge's own bookkeeping.
+ */
+test('FAILS when a cache-busted ledger read is still served from cache (#84)', async () => {
+  await withFixture(
+    {
+      docCacheControl: 'no-cache',
+      assetCacheControl: 'max-age=31536000',
+      ledgerCacheStatus: 'HIT',
+    },
+    async (base) => {
+      const { code, stderr } = await runProbe(base);
+      assert.equal(
+        code,
+        1,
+        'a buster that no longer reaches the origin must fail the check'
+      );
+      assert.match(stderr, /served from cache/);
+      assert.match(stderr, /no longer doing anything/);
+      assert.match(stderr, /#84/);
+    }
+  );
+});
+
+/**
+ * The other half: staleness itself is REPORTED, not asserted.
+ *
+ * The ledger sits under the year-long Cache Rule by construction, so the edge copy
+ * being behind the origin is the expected steady state, not a regression. Failing on
+ * it would leave Production Smoke permanently red for a condition the buster already
+ * handles — and a permanently-red check is one nobody reads.
+ */
+test('a stale edge ledger warns but does not fail (#84)', async () => {
+  await withFixture(
+    {
+      docCacheControl: 'no-cache',
+      assetCacheControl: 'max-age=31536000',
+      ledgerStale: true,
+    },
+    async (base) => {
+      const { code, stdout, stderr } = await runProbe(base);
+      assert.equal(code, 0, `staleness must not fail:\n${stderr}`);
+      assert.match(stdout, /cache contract holds/);
+      assert.match(stderr, /::warning::/);
+      assert.match(stderr, /is STALE at the edge/);
+      // It must report the real numbers, or the next reader cannot judge severity.
+      assert.match(stderr, /3 line\(s\).*against 1 at origin/);
+      assert.doesNotMatch(stderr, /cache-contract failure/);
+    }
+  );
 });
