@@ -11,7 +11,17 @@
 
 // Default configuration
 const defaultConfig = {
+  /** What a person reads: the nav, the `<title>`, the PWA install prompt. */
   projectName: 'geoLARP',
+  /**
+   * What GitHub serves. Lowercase because the repository is, and a URL must match it.
+   *
+   * SEPARATE FROM `projectName` ON PURPOSE (#97). One field used to be both, so the
+   * git remote's slug won and production shipped `"name": "geolarp"` in its install
+   * prompt — while a display-cased `/geoLARP/` base path would have 404'd every icon
+   * on a Pages deploy. Names and paths want opposite things from the same word.
+   */
+  projectSlug: 'geolarp',
   projectOwner: 'TortoiseWolfe',
   projectDescription:
     'geo-located live action role playing. Real geography, real play.',
@@ -30,6 +40,34 @@ export function getProjectConfig() {
   const config = {
     projectName:
       process.env.NEXT_PUBLIC_PROJECT_NAME || defaultConfig.projectName,
+    /**
+     * The slug follows a name override only when the name is a DIFFERENT PROJECT.
+     *
+     * Two drafts of this were wrong in opposite directions, and both were caught:
+     *
+     *   1. Pinned to the tracked default. `project.config.test.ts` failed — a fork
+     *      setting NEXT_PUBLIC_PROJECT_NAME kept geoLARP's slug, so its `projectUrl`
+     *      pointed at THIS repository.
+     *   2. Following the name unconditionally. That reintroduced the very bug #97
+     *      exists to kill: with `NEXT_PUBLIC_PROJECT_NAME=geoLARP` the slug became
+     *      `geoLARP`, and `https://tortoisewolfe.github.io/geoLARP/...` is a 404 while
+     *      `/geolarp/` is a 200. Display casing must never become a URL.
+     *
+     * So the name is inherited only when it names something else. `geoLARP` is THIS
+     * project's display name, so it can never override this project's slug; `MyFork`
+     * is a different project, so it does. Same shape as `displayNameFor()` in
+     * scripts/detect-project.js, mirrored — there a name wins only when it IS the
+     * slug, here a name wins only when it is NOT this project.
+     *
+     * NEXT_PUBLIC_PROJECT_SLUG is the explicit escape hatch for the remaining case:
+     * a repo whose display name is genuinely not its directory name.
+     */
+    projectSlug:
+      process.env.NEXT_PUBLIC_PROJECT_SLUG ||
+      (process.env.NEXT_PUBLIC_PROJECT_NAME &&
+      process.env.NEXT_PUBLIC_PROJECT_NAME !== defaultConfig.projectName
+        ? process.env.NEXT_PUBLIC_PROJECT_NAME
+        : defaultConfig.projectSlug),
     projectOwner:
       process.env.NEXT_PUBLIC_PROJECT_OWNER || defaultConfig.projectOwner,
     projectDescription: defaultConfig.projectDescription,
@@ -47,7 +85,9 @@ export function getProjectConfig() {
   };
 
   // Computed values
-  const projectUrl = `https://github.com/${config.projectOwner}/${config.projectName}`;
+  // THE SLUG, NOT THE DISPLAY NAME (#97). `github.com/TortoiseWolfe/geoLARP` 404s —
+  // GitHub resolves the repository by its actual name. Same for the Pages host below.
+  const projectUrl = `https://github.com/${config.projectOwner}/${config.projectSlug}`;
 
   // Deploy URL priority:
   // 1. NEXT_PUBLIC_DEPLOY_URL (custom domain)
@@ -59,7 +99,7 @@ export function getProjectConfig() {
       ? `https://${config.projectOwner.toLowerCase()}.github.io${config.basePath}`
       : process.env.NODE_ENV === 'production' ||
           process.env.GITHUB_ACTIONS === 'true'
-        ? `https://${config.projectOwner.toLowerCase()}.github.io/${config.projectName}`
+        ? `https://${config.projectOwner.toLowerCase()}.github.io/${config.projectSlug}`
         : 'http://localhost:3000');
 
   return {

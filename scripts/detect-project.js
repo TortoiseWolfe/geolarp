@@ -103,6 +103,37 @@ function getProjectInfo() {
   };
 }
 
+/**
+ * The name a human wrote, as opposed to the slug GitHub serves.
+ *
+ * ONE FIELD WAS DOING TWO JOBS (#97). `projectName` came from the git remote, so it was
+ * the repository slug — correctly lowercase, because that is what the repo is called and
+ * what GitHub Pages serves at `/<repo>/`. But the same value was also the PWA's `name`,
+ * the nav label, the `<title>`, the blog's schema.org publisher and the email templates.
+ * Production shipped `"name": "geolarp"` in its install prompt as a result, while the
+ * page title said `geoLARP` because that one came from elsewhere.
+ *
+ * WHY NOT JUST HARD-CODE THE CASING. This is a template. A fork of `mygame` must be
+ * called `mygame`, not `geoLARP` — casing the name unconditionally would be the same
+ * fork trap as the `scripthammer` compose literal in #13, pointing the other way.
+ *
+ * So the rule is narrow: a display name only overrides the slug when it IS the slug,
+ * differing in case alone. `geolarp` -> `geoLARP` (same repo, human casing wins);
+ * `mygame` -> `mygame` (a real fork, detection wins). An explicit
+ * `NEXT_PUBLIC_PROJECT_NAME` beats both, which is how a fork sets a name that is not
+ * its slug at all.
+ */
+const DISPLAY_NAME = 'geoLARP';
+
+function displayNameFor(slug) {
+  if (process.env.NEXT_PUBLIC_PROJECT_NAME) {
+    return process.env.NEXT_PUBLIC_PROJECT_NAME;
+  }
+  return String(slug).toLowerCase() === DISPLAY_NAME.toLowerCase()
+    ? DISPLAY_NAME
+    : slug;
+}
+
 function generateConfig() {
   const info = getProjectInfo();
 
@@ -129,16 +160,26 @@ function generateConfig() {
   const basePath = basePathDisabled
     ? ''
     : process.env.NEXT_PUBLIC_BASE_PATH ||
+      // `info.projectName` here is the RAW detected value, i.e. the slug — the display
+      // name is derived from it below, deliberately after this point. GitHub Pages
+      // serves a repo named `geolarp` at `/geolarp/`, so a display-cased `/geoLARP/`
+      // would 404 every icon and break PWA install on a fork (#97).
       (isGitHubActions && info.isGitHub && !cnameExists
         ? `/${info.projectName}`
         : '');
 
+  // `projectSlug` is what GitHub serves and what a URL must contain; `projectName` is
+  // what a person reads. Everything below picks one on purpose — see `displayNameFor`.
+  const projectSlug = info.projectName;
+
   const config = {
-    projectName: info.projectName,
+    projectName: displayNameFor(projectSlug),
+    projectSlug,
     projectOwner: info.projectOwner,
     projectHost: info.projectHost || 'github.com',
+    // The SLUG, never the display name: `https://github.com/owner/geoLARP` 404s.
     projectUrl: info.isGitHub
-      ? `https://github.com/${info.projectOwner}/${info.projectName}`
+      ? `https://github.com/${info.projectOwner}/${projectSlug}`
       : info.gitUrl || '',
     basePath: basePath,
     isGitHub: info.isGitHub,
