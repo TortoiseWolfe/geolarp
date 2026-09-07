@@ -66,3 +66,9 @@ graphify-out/
 # comparable with upstream so the next port is a readable diff. The hand-written .d.ts
 # files and NOTICE.md are ours and stay formatted.
 src/lib/cod/*.js
+
+# Golden vectors — generated, and deliberately one vector per line. Prettier expands the
+# uint arrays across four lines each (254 lines becomes 786), which destroys the property
+# the file exists for: a failing vector should be one readable line in `git diff`, naming
+# which seed moved. Same reasoning as graphify-out above. Regenerate, never hand-edit.
+src/lib/geolarp/__vectors__/golden.json
