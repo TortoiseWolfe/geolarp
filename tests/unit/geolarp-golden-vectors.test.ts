@@ -10,17 +10,24 @@
  * what the app's own diagnostics screen is for, and why it exists before any UI.
  *
  * MUTATION EVIDENCE, MEASURED. Changing `hashSeed`'s FNV prime from 0x01000193 to
- * 0x01000195 and re-running this file fails 94 of 246 tests:
+ * 0x01000195 and re-running this file fails 94 of 279 tests:
  *
  *     34  roll              7  hashSeed            0  cellOf
  *     32  placeName         7  rngUints            0  cellCentreRoundTrip
  *                           7  encounterFor        0  seedOf
  *                           7  generateCharacter   0  successChance
+ *                                                  0  adjacency
  *
- * The asymmetry is the point. Everything that consumes a seed breaks; the four purely
+ * The asymmetry is the point. Everything that consumes a seed breaks; the five purely
  * geometric or analytic classes do not touch the hash and stay green. That is evidence
  * the table is wired to the real engine rather than to a copy of itself — a table
  * regenerated from the code under test would have passed the mutation happily.
+ *
+ * RE-MEASURED 2026-09-07 when `adjacency` was added for #86, rather than adjusted on
+ * paper. The 94 did not move and the denominator did: 246 → 279. `adjacency` landing in
+ * the zero column is the check that it is pinned to geometry rather than to the hash —
+ * had it appeared among the failures, it would have been reading a seed it has no
+ * business reading.
  *
  * Note `hashSeed` fails 7 of its 8, not 8. The empty-string seed never enters the
  * multiply loop, so its hash is the untouched FNV offset basis and no prime can move it.
@@ -45,12 +52,12 @@ describe('golden vectors', () => {
   it('the table is not empty, and covers every class', () => {
     // A fixture that silently emptied would otherwise pass every test below.
     const classes = Object.keys(expected);
-    expect(classes).toHaveLength(10);
+    expect(classes).toHaveLength(11);
     const total = classes.reduce(
       (n, c) => n + Object.keys(expected[c]).length,
       0
     );
-    expect(total).toBeGreaterThanOrEqual(232);
+    expect(total).toBeGreaterThanOrEqual(264);
     expect(VECTOR_SEEDS.length).toBeGreaterThanOrEqual(8);
     expect(VECTOR_FIXES.length).toBeGreaterThanOrEqual(32);
   });

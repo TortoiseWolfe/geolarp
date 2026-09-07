@@ -25,7 +25,15 @@
  * and inside the app itself on a real device. jest-expo runs on Node, so a green mobile
  * unit test still proves nothing about Hermes — only running this ON THE DEVICE does.
  */
-import { cellCentre, cellOf, seedOf, type Cell } from '../cell';
+import {
+  cellCentre,
+  cellOf,
+  grid3x3,
+  neighbour,
+  offsetMetres,
+  seedOf,
+  type Cell,
+} from '../cell';
 import { encounterFor } from '../encounter';
 import { generateCharacter } from '../character';
 import { fromPips, roll } from '../dice';
@@ -97,6 +105,23 @@ export interface VectorTable {
   rngUints: Record<string, number[]>;
   cellOf: Record<string, Cell>;
   cellCentreRoundTrip: Record<string, boolean>;
+  /**
+   * `grid3x3` and `offsetMetres` — THE CLASS THAT DID NOT EXIST WHEN #86 SHIPPED.
+   *
+   * Adjacency is public API of this layer and had no vector coverage at all, which is
+   * the structural reason a defect affecting 56% of inhabited latitudes stayed green
+   * through every gate. `cellOf` and `cellCentre` were pinned; the operator built on
+   * top of them was not.
+   *
+   * `ring` is the nine cells north-up and row-major, as keys. `northStep` is what a
+   * player is told after moving one cell north — `east,north,bearing` — and on the
+   * broken code it read `100,100,north-east` at Chattanooga.
+   *
+   * These values are NOT self-certified. `tests/unit/cell-grid.test.ts` derives the
+   * same neighbours from `cellCentre` plus real metres walked, which is an independent
+   * route to the same answer, and asserts they agree at four cities.
+   */
+  adjacency: Record<string, { ring: string[]; northStep: string }>;
   seedOf: Record<string, string>;
   placeName: Record<string, string>;
   encounterFor: Record<string, unknown>;
@@ -121,6 +146,7 @@ export function computeVectors(): VectorTable {
     rngUints: {},
     cellOf: {},
     cellCentreRoundTrip: {},
+    adjacency: {},
     seedOf: {},
     placeName: {},
     encounterFor: {},
@@ -157,6 +183,12 @@ export function computeVectors(): VectorTable {
 
     t.seedOf[key] = seedOf(cell, VECTOR_DATE);
     t.placeName[key] = placeName(cell);
+
+    const north = offsetMetres(cell, neighbour(cell, 0, 1));
+    t.adjacency[key] = {
+      ring: grid3x3(cell).map((c) => `${c.x}:${c.y}`),
+      northStep: `${north.east},${north.north},${north.bearing}`,
+    };
   }
 
   for (const code of DICE_CODES) {

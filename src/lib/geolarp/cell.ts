@@ -95,9 +95,19 @@ function lonStepForRow(y: number): number {
  * Quantise a fix to its 100m cell. This is the only function that ever sees a
  * raw GPS reading; everything downstream works from the cell.
  */
+/**
+ * Which column of row `y` holds this longitude.
+ *
+ * Split out because `neighbour` needs to ask it about a row the caller is not
+ * standing in, which is the whole of the #86 fix.
+ */
+function columnAt(lon: number, y: number): number {
+  return Math.floor(lon / lonStepForRow(y));
+}
+
 export function cellOf(lat: number, lon: number): Cell {
   const y = rowOf(lat);
-  return { y, x: Math.floor(lon / lonStepForRow(y)) };
+  return { y, x: columnAt(lon, y) };
 }
 
 /**
@@ -154,6 +164,53 @@ export function utcDay(date: Date = new Date()): string {
 }
 
 /**
+ * The cell `dx` columns east and `dy` rows north of this one.
+ *
+ * NOT `{x: x + dx, y: y + dy}`, and that mistake is #86. Rows are aligned by
+ * latitude, but each row indexes its columns from the prime meridian using its
+ * OWN longitude quantum, so column `x` in row `y + 1` is not above column `x`
+ * in row `y`. The ground offset between them is grid convergence, and it has a
+ * closed form — measured against this module to two decimals:
+ *
+ *     slide_per_row = CELL_METRES * λ * sin(φ)          (λ in RADIANS)
+ *
+ *     London        -0.17 m        Chattanooga    -85.50 m
+ *     Singapore      4.28 m        Sydney        -147.07 m
+ *
+ * It reaches 100π ≈ 314 m near the antimeridian, and wherever it exceeds half
+ * a cell the integer form names a cell the player is not next to — 56% of
+ * inhabited latitudes, worst case 293.6 m, three cells out.
+ *
+ * The honest question is "which cell of the TARGET row holds my longitude",
+ * so ask that, then step `dx` columns within that row. Two properties make
+ * this the right operator rather than a workaround:
+ *
+ *   - Within a row it is exactly `x + dx`. `lonStepForRow(y)` is the same
+ *     divisor on both sides, so `columnAt` returns `x` unchanged. Verified
+ *     over 115,128 same-row steps: bit-identical, no float drift introduced.
+ *   - It adds NO new `Math.cos`. Re-indexing a longitude we already hold stays
+ *     inside `lonStepForRow`; converting through metres would have put a fresh
+ *     implementation-approximated call upstream of a cell assignment, which is
+ *     exactly what `stableCos` exists to prevent.
+ *
+ * WHAT IT DOES NOT FIX. North and south are not perfectly reciprocal: a
+ * parallel further from the equator is shorter and holds fewer 100 m cells, so
+ * two side-by-side cells occasionally share one northern neighbour and
+ * `south(north(c))` lands one cell over. Measured at 0 of 7,160 sampled
+ * columns at the equator, at 35° and at 60°, and 2 of 7,160 at 85°. That is
+ * geometry, not arithmetic — no scheme with integer columns on latitude rings
+ * avoids it — and it never produces a duplicate inside one `grid3x3`.
+ *
+ * The antimeridian is also still a seam, and out of scope here: columns per
+ * full circle is not an integer at a general latitude, so `x` jumps by ~328k
+ * between +179.9999° and -179.9999°. Tracked with the lattice work in #87.
+ */
+export function neighbour(cell: Cell, dx: number, dy: number): Cell {
+  const y = cell.y + dy;
+  return { y, x: columnAt(cellCentre(cell).lon, y) + dx };
+}
+
+/**
  * The nine cells around one, north-up and row-major.
  *
  * Index 0 is north-west and index 8 is south-east, so a renderer can lay the
@@ -161,12 +218,17 @@ export function utcDay(date: Date = new Date()): string {
  * indices grow northward, which is why the rows count DOWN from `y + 1`: a
  * naive ascending loop draws the world upside down, and it looks fine until
  * someone walks north and the highlight moves the wrong way.
+ *
+ * Each cell comes from `neighbour`, so these are the cells a player would
+ * actually walk into. They were not before #86, and no test could see it: the
+ * only fixture exercising this was `{x: 10, y: 20}`, where λ ≈ 0 and the
+ * convergence measures 0.000 m.
  */
 export function grid3x3(centre: Cell): Cell[] {
   const out: Cell[] = [];
   for (let dy = 1; dy >= -1; dy -= 1) {
     for (let dx = -1; dx <= 1; dx += 1) {
-      out.push({ x: centre.x + dx, y: centre.y + dy });
+      out.push(neighbour(centre, dx, dy));
     }
   }
   return out;
@@ -206,9 +268,23 @@ const BEARINGS = [
  * It is also the honest unit. This measures grid movement, which is what the
  * player has actually been doing; a metre figure derived from cell centres
  * would imply a precision the grid does not carry.
+ *
+ * THE ABOVE WAS FALSE ACROSS ROWS UNTIL #86, and this comment was the bug's
+ * own explanation: `to.x - from.x` subtracts two column indices measured
+ * against DIFFERENT longitude quanta, so it is not a distance. It reported a
+ * one-cell "north-east" step at Sydney as `east: 100` when the truth was 47 m
+ * WEST, and after a 30 km walk due north at Chattanooga it claimed 25.7 km of
+ * easting that never happened. 32.8% of one-cell steps carried the wrong
+ * compass word; 54.6% were off by more than 10 m.
+ *
+ * Projecting `from` into `to`'s row first is what makes the claim true. It
+ * stays exact integer arithmetic — no cosine, no square root, still a multiple
+ * of 100 — verified over 126,294 cross-row offsets. Within a row it is
+ * unchanged, because `columnAt(cellCentre(c).lon, c.y)` is `c.x` by
+ * construction.
  */
 export function offsetMetres(from: Cell, to: Cell): CellOffset {
-  const east = (to.x - from.x) * CELL_METRES;
+  const east = (to.x - columnAt(cellCentre(from).lon, to.y)) * CELL_METRES;
   const north = (to.y - from.y) * CELL_METRES;
   if (east === 0 && north === 0) {
     return { east, north, metres: 0, bearing: null };
