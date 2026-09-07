@@ -49,14 +49,23 @@ const PROJECT_CONFIG_PATH = path.join(
  * gitignored, so it cannot be the source of truth for a test that must pass on a
  * clean checkout.
  */
-function defaultBasePath() {
+function trackedField(name) {
   const src = fs.readFileSync(PROJECT_CONFIG_PATH, 'utf8');
-  const match = /projectName:\s*'([^']+)'/.exec(src);
-  assert.ok(
-    match,
-    'could not read projectName from src/config/project.config.ts'
-  );
-  return `/${match[1]}`;
+  const match = new RegExp(`${name}:\\s*'([^']+)'`).exec(src);
+  assert.ok(match, `could not read ${name} from src/config/project.config.ts`);
+  return match[1];
+}
+
+/**
+ * The base path is built from the SLUG, never the display name (#97).
+ *
+ * This used to read `projectName`, which was both at the time. GitHub Pages serves a
+ * repo called `geolarp` at `/geolarp/`, so a display-cased `/geoLARP/` here would 404
+ * every icon and break PWA install on any fork deploying with the default — the exact
+ * artifact this file exists to keep reviewable.
+ */
+function defaultBasePath() {
+  return `/${trackedField('projectSlug')}`;
 }
 
 const readManifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
@@ -103,9 +112,7 @@ test('every icon in the committed manifest shares the manifest scope', () => {
 test('the generator applies the base path it is given, to every field', () => {
   // The companion to the pin above: the committed copy could be correct while the
   // generator that produces it is not, and a reviewer would never see it.
-  const fixture = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'geolarp-manifest-')
-  );
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'geolarp-manifest-'));
   fs.mkdirSync(path.join(fixture, 'public'), { recursive: true });
 
   try {
@@ -151,4 +158,73 @@ test('the generator applies the base path it is given, to every field', () => {
       `could not restore public/manifest.json after the generator run:\n${restore.stderr}`
     );
   }
+});
+
+/**
+ * THE DISPLAY NAME MUST SURVIVE DETECTION (#97).
+ *
+ * `detect-project.js` takes the project name from the git remote, which is the slug —
+ * lowercase, because that is what the repository is called. That value used to flow
+ * straight into the PWA's `name`, and production shipped `"name": "geolarp"` in its
+ * install prompt while the page `<title>` said `geoLARP`, because the two came from
+ * different places.
+ *
+ * Asserting the literal `geoLARP` would be the wrong test for a template: a fork of
+ * `mygame` must be called `mygame`. What is asserted is the RULE — the manifest's name
+ * matches the tracked display name, and differs from the slug only in case.
+ */
+test('the manifest display name is the tracked name, not the URL slug', () => {
+  const manifest = readManifest();
+  const name = trackedField('projectName');
+  const slug = trackedField('projectSlug');
+
+  assert.strictEqual(
+    manifest.name,
+    name,
+    `manifest name is "${manifest.name}"; detection overwrote the tracked display ` +
+      `name "${name}" with something else — most likely the git remote's slug.`
+  );
+  assert.strictEqual(manifest.short_name, name);
+
+  // The two must be the same word. If they ever diverge beyond case, the rule above
+  // ("casing wins only when the name IS the slug") no longer holds and the fork
+  // behaviour in `displayNameFor` needs rethinking rather than this test relaxing.
+  assert.strictEqual(
+    name.toLowerCase(),
+    slug.toLowerCase(),
+    `projectName "${name}" and projectSlug "${slug}" are different words, not one ` +
+      `word in two cases. See displayNameFor() in scripts/detect-project.js.`
+  );
+  assert.notStrictEqual(
+    name,
+    slug,
+    'projectName and projectSlug are identical, so this test proves nothing — it ' +
+      'exists because they differ in case.'
+  );
+});
+
+/**
+ * The description a user reads in the install prompt must be this project's.
+ *
+ * It was the upstream template's blurb ("a production Next.js and Supabase platform
+ * with auth, payments, encrypted messaging"), which describes ScriptHammer rather than
+ * a geolocation RPG. `generate-manifest.js` is plain JS and cannot import the
+ * TypeScript config, so the string is duplicated there; this is what stops the copy
+ * from drifting.
+ */
+test('the manifest description matches the tracked project description', () => {
+  const manifest = readManifest();
+  const description = trackedField('projectDescription');
+
+  assert.ok(
+    manifest.description.includes(description),
+    `manifest description is "${manifest.description}", which does not contain the ` +
+      `tracked projectDescription "${description}". The duplicated constant in ` +
+      `scripts/generate-manifest.js has drifted from src/config/project.config.ts.`
+  );
+  assert.doesNotMatch(
+    manifest.description,
+    /production Next\.js and Supabase platform/,
+    'the manifest still carries the upstream template boilerplate (#97)'
+  );
 });

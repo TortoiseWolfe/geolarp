@@ -15,9 +15,25 @@ const projectConfigPath = path.join(
 );
 let projectConfig = {
   projectName: 'geoLARP',
+  projectSlug: 'geolarp',
   projectOwner: 'TortoiseWolfe',
   basePath: '',
 };
+
+/**
+ * MUST MATCH `src/config/project.config.ts`'s `projectDescription`.
+ *
+ * This is a plain script and that is TypeScript, so the string cannot be imported and
+ * is repeated here. `generated-manifest.test.js` asserts the two agree, because the
+ * one thing worse than a duplicated constant is a duplicated constant that drifts.
+ *
+ * What it replaces was the upstream template's blurb — "a production Next.js and
+ * Supabase platform with auth, payments, encrypted messaging" — which described
+ * ScriptHammer, not a geolocation RPG, and was what a user read in the install
+ * prompt (#97).
+ */
+const PROJECT_DESCRIPTION =
+  'geo-located live action role playing. Real geography, real play.';
 
 // Try to load the auto-detected configuration
 if (fs.existsSync(projectConfigPath)) {
@@ -50,7 +66,7 @@ if (process.env.NEXT_PUBLIC_BASE_PATH !== undefined) {
 const manifest = {
   name: projectConfig.projectName,
   short_name: projectConfig.projectName.substring(0, 12),
-  description: `${projectConfig.projectName} - A production Next.js and Supabase platform with auth, payments, encrypted messaging, and an accessible offline-capable PWA`,
+  description: `${projectConfig.projectName} — ${PROJECT_DESCRIPTION}`,
   theme_color: '#1a1a2e',
   background_color: '#1a1a2e',
   display: 'standalone',

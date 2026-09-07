@@ -11,7 +11,17 @@
 
 // Default configuration
 const defaultConfig = {
+  /** What a person reads: the nav, the `<title>`, the PWA install prompt. */
   projectName: 'geoLARP',
+  /**
+   * What GitHub serves. Lowercase because the repository is, and a URL must match it.
+   *
+   * SEPARATE FROM `projectName` ON PURPOSE (#97). One field used to be both, so the
+   * git remote's slug won and production shipped `"name": "geolarp"` in its install
+   * prompt — while a display-cased `/geoLARP/` base path would have 404'd every icon
+   * on a Pages deploy. Names and paths want opposite things from the same word.
+   */
+  projectSlug: 'geolarp',
   projectOwner: 'TortoiseWolfe',
   projectDescription:
     'geo-located live action role playing. Real geography, real play.',
@@ -30,6 +40,19 @@ export function getProjectConfig() {
   const config = {
     projectName:
       process.env.NEXT_PUBLIC_PROJECT_NAME || defaultConfig.projectName,
+    /**
+     * The slug follows an explicit name override, or a fork's URLs break.
+     *
+     * A first draft pinned this to the tracked default, and
+     * `project.config.test.ts` caught it: a fork setting NEXT_PUBLIC_PROJECT_NAME
+     * kept geoLARP's slug, so its `projectUrl` pointed at THIS repository. The
+     * dedicated NEXT_PUBLIC_PROJECT_SLUG exists for the one case the two differ by
+     * more than case — a repo whose display name is not its directory name.
+     */
+    projectSlug:
+      process.env.NEXT_PUBLIC_PROJECT_SLUG ||
+      process.env.NEXT_PUBLIC_PROJECT_NAME ||
+      defaultConfig.projectSlug,
     projectOwner:
       process.env.NEXT_PUBLIC_PROJECT_OWNER || defaultConfig.projectOwner,
     projectDescription: defaultConfig.projectDescription,
@@ -47,7 +70,9 @@ export function getProjectConfig() {
   };
 
   // Computed values
-  const projectUrl = `https://github.com/${config.projectOwner}/${config.projectName}`;
+  // THE SLUG, NOT THE DISPLAY NAME (#97). `github.com/TortoiseWolfe/geoLARP` 404s —
+  // GitHub resolves the repository by its actual name. Same for the Pages host below.
+  const projectUrl = `https://github.com/${config.projectOwner}/${config.projectSlug}`;
 
   // Deploy URL priority:
   // 1. NEXT_PUBLIC_DEPLOY_URL (custom domain)
@@ -59,7 +84,7 @@ export function getProjectConfig() {
       ? `https://${config.projectOwner.toLowerCase()}.github.io${config.basePath}`
       : process.env.NODE_ENV === 'production' ||
           process.env.GITHUB_ACTIONS === 'true'
-        ? `https://${config.projectOwner.toLowerCase()}.github.io/${config.projectName}`
+        ? `https://${config.projectOwner.toLowerCase()}.github.io/${config.projectSlug}`
         : 'http://localhost:3000');
 
   return {
