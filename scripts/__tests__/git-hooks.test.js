@@ -281,3 +281,91 @@ test('Docker dependency stages copy the prepare script before pnpm install', () 
     );
   }
 });
+
+/**
+ * THE HOOK MUST NOT FAIL OPEN WHEN IT CANNOT FORMAT (#13).
+ *
+ * `pre-commit` argues at length that a scan which could not run must block just as
+ * hard as one that found something — "a green tick having measured nothing, which is
+ * worse than no hook" — and then the lint-staged half quietly disagreed, echoing a
+ * warning and letting the commit through. 129 files reached `main` prettier-dirty
+ * behind that green tick.
+ *
+ * The test above covers the gitleaks half by emptying PATH, which exits before
+ * lint-staged is ever reached. This one has to get PAST the secret scan to test the
+ * half that was broken, so it puts a stub `gitleaks` on PATH that reports clean.
+ */
+test('the hook blocks when lint-staged cannot run, rather than passing', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'git-hooks-no-lint-'));
+  const binDir = path.join(directory, 'bin');
+
+  try {
+    // A gitleaks that reports clean, so control reaches the lint-staged half.
+    // Docker is deliberately absent from PATH, and this temp dir is not a git
+    // worktree, so every branch falls through to the final `else`.
+    mkdirSync(binDir, { recursive: true });
+    const stub = path.join(binDir, 'gitleaks');
+    writeFileSync(stub, '#!/bin/sh\nexit 0\n');
+    chmodSync(stub, 0o755);
+    writeFileSync(path.join(directory, '.gitleaks.toml'), '');
+
+    const result = run('/bin/sh', [PRE_COMMIT], {
+      cwd: directory,
+      env: { PATH: binDir },
+    });
+    const output = result.stdout + result.stderr;
+
+    // The control: the stub must actually have been used, or this test is
+    // measuring the gitleaks path again and proves nothing about lint-staged.
+    assert.doesNotMatch(
+      output,
+      /Secret scan could NOT RUN/,
+      'the gitleaks stub was not used, so this never reached lint-staged: ' +
+        output
+    );
+
+    assert.strictEqual(
+      result.status,
+      1,
+      'lint-staged could not run and the hook still exited 0 — the #13 fail-open: ' +
+        output
+    );
+    assert.match(
+      output,
+      /could NOT RUN|NOT formatted/i,
+      'a hook that cannot format must say so: ' + output
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+/**
+ * NO HOOK MAY NAME A COMPOSE SERVICE AS A LITERAL (#13).
+ *
+ * Both Docker branches used to test `docker compose ps | grep -q scripthammer`. The
+ * service here is `geolarp`, so neither branch had fired since the fork — and the
+ * lint-staged one fell through to the fail-open above. Swapping one brand literal for
+ * another would only reset the same trap for the next fork, so the hook asks compose
+ * which service is running. This asserts nobody re-introduces a literal.
+ */
+test('hooks derive the compose service instead of hard-coding a brand', () => {
+  for (const hook of [PRE_COMMIT, PRE_PUSH]) {
+    const source = readFileSync(hook, 'utf8');
+    const code = source
+      .split('\n')
+      .filter((line) => !line.trim().startsWith('#'))
+      .join('\n');
+
+    assert.doesNotMatch(
+      code,
+      /docker compose exec\s+(-T\s+)?(scripthammer|geolarp)\b/,
+      hook + ' hard-codes a compose service name; derive it instead (#13)'
+    );
+    assert.doesNotMatch(
+      code,
+      /docker compose ps[^\n|]*\|\s*grep\s+-q\s+\w/,
+      hook + ' greps `docker compose ps` for a literal service name (#13)'
+    );
+  }
+});

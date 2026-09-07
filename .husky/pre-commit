@@ -22,6 +22,20 @@ in_worktree() {
   [ "$(git rev-parse --git-dir 2>/dev/null)" != "$(git rev-parse --git-common-dir 2>/dev/null)" ]
 }
 
+# The running compose service, ASKED FOR RATHER THAN HARD-CODED.
+#
+# Both Docker branches below used to test `docker compose ps | grep -q scripthammer`.
+# That is the fork trap in its purest form: a fork inherits a hook that looks for the
+# UPSTREAM project's container, never finds it, and falls through — and here the
+# fall-through was a warning and exit 0, so 129 files reached `main` prettier-dirty
+# behind a green tick (#13). The literal was also two brand renames stale; a rename
+# cannot break this version, because compose is the only thing that actually knows.
+#
+# `--status running` matters: a defined-but-stopped service must not be exec'd into.
+compose_service() {
+  docker compose ps --services --status running 2>/dev/null | head -1
+}
+
 # EXIT CODES ARE NOT ENOUGH TO TELL THESE APART, so invocability is checked first.
 # Measured: `gitleaks protect` exits 1 for leaks found AND 1 for a bad config. A
 # bare `if [ $? -ne 0 ]; then echo "Secrets detected"` therefore reported "env file
@@ -57,8 +71,9 @@ run_gitleaks_staged() {
     return $SCAN_UNAVAILABLE
   fi
 
-  if command -v docker >/dev/null 2>&1 && docker compose ps 2>/dev/null | grep -q scripthammer; then
-    docker compose exec -T scripthammer pnpm run gitleaks:staged
+  GL_SERVICE="$(command -v docker >/dev/null 2>&1 && compose_service)"
+  if [ -n "$GL_SERVICE" ]; then
+    docker compose exec -T "$GL_SERVICE" pnpm run gitleaks:staged
     GL=$?
     # Distinguishable here: 126/127 mean the command could not be executed at all,
     # and compose reports a missing env file or absent container the same way.
@@ -106,9 +121,19 @@ elif in_worktree; then
   echo "⚠️  No local lint-staged, and this is a git worktree."
   echo "   Skipping rather than formatting the primary checkout's files (#747)."
   echo "   Run prettier/eslint by hand on what you staged, per CLAUDE.md."
-elif command -v docker >/dev/null 2>&1 && docker compose ps 2>/dev/null | grep -q scripthammer; then
+elif [ -n "$(command -v docker >/dev/null 2>&1 && compose_service)" ]; then
   echo "🐳 Running via Docker..."
-  docker compose exec -T scripthammer pnpm exec lint-staged --no-stash
+  docker compose exec -T "$(compose_service)" pnpm exec lint-staged --no-stash
 else
-  echo "⚠️  lint-staged unavailable — staged files were NOT formatted or linted."
+  # FAILS CLOSED, like the secret scan above, and for the same reason.
+  #
+  # This branch used to echo a warning and let the hook exit 0. Everything above
+  # argues that "we could not look" must block just as hard as "we found something",
+  # because a green tick that measured nothing is worse than no hook — and then this
+  # line quietly disagreed. That inconsistency is #13: 129 files were committed
+  # prettier-dirty, and the hook that would have caught them reported success.
+  echo "❌ lint-staged could NOT RUN — commit blocked. Staged files were NOT formatted."
+  echo "   Start the dev container (docker compose up) and commit again, or run"
+  echo "   prettier and eslint over your staged files by hand first."
+  exit 1
 fi

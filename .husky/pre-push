@@ -20,6 +20,14 @@ in_worktree() {
   [ "$(git rev-parse --git-dir 2>/dev/null)" != "$(git rev-parse --git-common-dir 2>/dev/null)" ]
 }
 
+# The running compose service, ASKED FOR RATHER THAN HARD-CODED — same reasoning as
+# `pre-commit`. This file named `scripthammer`, two renames stale, so the Docker
+# fallback below had not fired since the fork (#13). Compose is the only thing that
+# actually knows which service is up, so ask it; a rename cannot break that.
+compose_service() {
+  docker compose ps --services --status running 2>/dev/null | head -1
+}
+
 run_gitleaks_full() {
   echo "🔐 Running full repository secret scan..."
 
@@ -45,8 +53,9 @@ run_gitleaks_full() {
     return $SCAN_UNAVAILABLE
   fi
 
-  if command -v docker >/dev/null 2>&1 && docker compose ps 2>/dev/null | grep -q scripthammer; then
-    docker compose exec -T scripthammer pnpm run gitleaks
+  GL_SERVICE="$(command -v docker >/dev/null 2>&1 && compose_service)"
+  if [ -n "$GL_SERVICE" ]; then
+    docker compose exec -T "$GL_SERVICE" pnpm run gitleaks
     GL=$?
     if [ $GL -eq 126 ] || [ $GL -eq 127 ]; then
       echo "⚠️  Could not execute gitleaks inside the container."
