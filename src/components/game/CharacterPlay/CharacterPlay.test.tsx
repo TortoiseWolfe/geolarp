@@ -92,6 +92,50 @@ describe('CharacterPlay', () => {
     );
   });
 
+  /**
+   * THE SAFETY NOTICE MUST SURVIVE HAVING A CHARACTER (#89).
+   *
+   * The rules primer is a `<details>` that shuts for a returning player — see the
+   * test directly below, which asserts exactly that. Copy telling someone to watch
+   * for traffic cannot live there: after the first session nobody would ever see
+   * it again. This asserts the notice is present in BOTH states and outside any
+   * disclosure, which is the property that makes it durable rather than decorative.
+   */
+  it('keeps the safety notice visible after the rules have shut', async () => {
+    const user = userEvent.setup();
+    render(<CharacterPlay today={today} />);
+
+    // New player: rules open, notice present.
+    const first = await screen.findByTestId('play-safety');
+    expect(first).toBeInTheDocument();
+    expect(
+      first.closest('details'),
+      'the notice is inside a disclosure, so a returning player never sees it'
+    ).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Roll a character' }));
+    await screen.findByRole('heading', { name: 'Wanderer', level: 2 });
+
+    // Returning player: rules shut, notice STILL present. This is the assertion
+    // the ticket is actually about.
+    const after = screen.getByTestId('play-safety');
+    expect(
+      screen.getByText('How geoLARP works').closest('details')
+    ).toHaveProperty('open', false);
+    expect(after).toBeInTheDocument();
+    expect(after.closest('details')).toBeNull();
+
+    // The three things it has to say, by substance rather than by exact wording,
+    // so a copy edit does not fail this but a deletion does.
+    expect(after.textContent).toMatch(/traffic/i);
+    expect(after.textContent).toMatch(/private property/i);
+    expect(after.textContent).toMatch(/13 and over/i);
+    // And the route to the binding version of all of it.
+    expect(
+      within(after).getByRole('link', { name: /terms/i })
+    ).toBeInTheDocument();
+  });
+
   it('opens the rules for a new player and shuts them once they have one', async () => {
     const user = userEvent.setup();
     render(<CharacterPlay today={today} />);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Metadata } from 'next';
+import Link from 'next/link';
 import { PrivacyActions } from '@/components/privacy/PrivacyActions';
 
 export const metadata: Metadata = {
@@ -38,10 +39,10 @@ export default function PrivacyPolicyPage() {
         <section className="mb-8">
           <h2>1. Introduction</h2>
           <p>
-            Welcome to geoLARP. We are committed to protecting your privacy
-            and ensuring you have a positive experience on our website. This
-            privacy policy explains how we collect, use, and protect your
-            personal information in compliance with the General Data Protection
+            Welcome to geoLARP. We are committed to protecting your privacy and
+            ensuring you have a positive experience on our website. This privacy
+            policy explains how we collect, use, and protect your personal
+            information in compliance with the General Data Protection
             Regulation (GDPR) and other applicable privacy laws.
           </p>
         </section>
@@ -66,9 +67,20 @@ export default function PrivacyPolicyPage() {
         <section className="mb-8">
           <h2>10. Children&apos;s Privacy</h2>
           <p>
-            Our website is not intended for children under 16 years of age. We
-            do not knowingly collect personal data from children. If you believe
-            we have collected data from a child, please contact us immediately.
+            <strong>geoLARP is for people aged 13 and over.</strong> Where the
+            law where you live sets a higher minimum age for consenting to
+            online services or to the processing of your location &mdash;
+            several EU and EEA countries set 16 under Article 8 GDPR &mdash;
+            that higher age applies to you instead.
+          </p>
+          <p>
+            We do not knowingly collect personal data from anyone below the age
+            that applies to them. If you believe we have, contact us and we will
+            delete it. The same minimum is stated in our{' '}
+            <Link href="/terms" className="link-hover link">
+              Terms of Service
+            </Link>
+            , which also covers playing safely.
           </p>
         </section>
         <section className="mb-8">

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import CharacterSheet, { skillRowId } from '@/components/game/CharacterSheet';
 import EncounterCard from '@/components/game/EncounterCard';
 import D7Roller from '@/components/game/D7Roller';
@@ -103,6 +104,40 @@ export default function CharacterPlay({
     </details>
   );
 
+  /**
+   * SAFETY COPY, AND IT IS DELIBERATELY NOT IN THE DISCLOSURE ABOVE (#89).
+   *
+   * The primer is a `<details>` that is `open` only when no character exists, so
+   * a returning player never sees it again. That is right for rules and wrong for
+   * this: a notice nobody reads twice has the same shape as a check that never
+   * runs, which this repo treats as worse than none at all. So it renders in
+   * every state, unconditionally — and it is the only thing on the play surface
+   * that says any of it. Measured before writing: no `safety`, `surroundings` or
+   * `traffic` string existed anywhere under src/app/{character,map,game} or
+   * src/components/game.
+   *
+   * It STATES "13 and over" rather than gating on an age. The minimum is binding
+   * in the terms, and there is no account, birthdate or profile here to check one
+   * against — an input asking a child to type a number is not a gate, it is a
+   * prompt to type a different number.
+   */
+  const safety = (
+    <p
+      className="border-base-300 bg-base-200 text-base-content rounded-lg border p-3 text-sm"
+      data-testid="play-safety"
+    >
+      <strong>Eyes up.</strong> geoLARP suggests places; it does not know what
+      is there and it is not watching out for you. Obey traffic laws, respect
+      private property, and decide for yourself whether somewhere is safe to go
+      and when. You never have to travel &mdash; grid movement plays the whole
+      game. For players 13 and over; see the{' '}
+      <Link href="/terms" className="link-hover link">
+        terms
+      </Link>
+      .
+    </p>
+  );
+
   if (!play.ready) {
     return (
       <p className="text-base-content" role="status">
@@ -115,6 +150,7 @@ export default function CharacterPlay({
     return (
       <div className={`flex flex-col gap-6${className ? ` ${className}` : ''}`}>
         {primer}
+        {safety}
         <section
           className="card bg-base-100 border-base-300 mx-auto w-full max-w-md border"
           aria-labelledby="begin-heading"
@@ -188,6 +224,7 @@ export default function CharacterPlay({
   return (
     <div className={`flex flex-col gap-6${className ? ` ${className}` : ''}`}>
       {primer}
+      {safety}
 
       {/*
         The heading stays INSIDE the summary and the labelled section stays
