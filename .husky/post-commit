@@ -1,4 +1,24 @@
 #!/bin/sh
+# PYTHONSAFEPATH, AND IT MUST STAY OUTSIDE THE MARKERS BELOW (#93).
+#
+# Everything between `graphify-*-hook-start` and `-end` is vendor-generated and is
+# rewritten by `graphify hook install`, so a fix placed inside it silently reverts.
+#
+# WHY IT IS NEEDED. The rebuild is launched as `python -c`, which puts the WORKING
+# DIRECTORY first on sys.path. A directory named `coverage/` at the repo root — the
+# default vitest coverage output until this commit — then becomes an implicit
+# namespace package, so `import coverage` SUCCEEDS and returns an empty module.
+# numba, which graphify uses, does `class NumbaTracer(coverage.types.Tracer)` behind
+# a `try: import coverage`; the try passes and the attribute access does not:
+#
+#     from repo root:    AttributeError: module 'coverage' has no attribute 'types'
+#     PYTHONSAFEPATH=1:  numba OK 0.66.0
+#
+# vitest now writes to `coverage-report/`, which cannot shadow anything — but a
+# checkout that predates that still has the old directory on disk, gitignored and
+# invisible. This keeps those working, and costs nothing once they are gone.
+export PYTHONSAFEPATH=1
+
 # graphify-hook-start
 # Auto-rebuilds the knowledge graph after each commit (code files only, no LLM needed).
 # Installed by: graphify hook install

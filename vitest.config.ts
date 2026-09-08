@@ -68,6 +68,27 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
+      /*
+       * NOT the default `./coverage` (#93).
+       *
+       * A directory named `coverage` at the repo root becomes an implicit Python
+       * NAMESPACE PACKAGE, because `python -c` and `python script.py` both put the
+       * working directory first on `sys.path`. So any Python tool run from here
+       * gets an EMPTY module called `coverage` instead of the real package — and
+       * the import succeeds, which is what makes it nasty.
+       *
+       * Measured: graphify's post-commit and post-checkout hooks rebuild the
+       * knowledge graph via numba, which does `class NumbaTracer(coverage.types.Tracer)`
+       * behind a `try: import coverage`. The try passes, the attribute does not:
+       *
+       *     from repo root:     AttributeError: module 'coverage' has no attribute 'types'
+       *     PYTHONSAFEPATH=1:   numba OK 0.66.0
+       *
+       * The graph went 12 commits and a day stale that way, while both CLAUDE.md
+       * files instruct every session to consult it first. `coverage-report` is not
+       * a valid module name, so it cannot shadow anything.
+       */
+      reportsDirectory: './coverage-report',
       reporter: ['text', 'json', 'html'],
       exclude: [
         'node_modules/**',

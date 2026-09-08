@@ -40,6 +40,7 @@ PATTERNS = {
             '.env.local',
             '.env.*.local',
             'coverage/',
+            'coverage-report/',
             '.nyc_output/',
         ],
         'dockerignore': [
@@ -50,6 +51,7 @@ PATTERNS = {
             '*.log',
             '.env*',
             'coverage/',
+            'coverage-report/',
             '.git/',
             '.gitignore',
             'README.md',
@@ -62,6 +64,7 @@ PATTERNS = {
             'build/',
             '.next/',
             'coverage/',
+            'coverage-report/',
         ],
     },
     'python': {
