@@ -135,6 +135,58 @@ describe('the mail-policy guard (#822)', () => {
     assert.equal(evaluate({ dmarc: [], spf: [], dkim: [], mx: [] }).length, 4);
   });
 
+  /**
+   * ONE FAILING MONITOR MUST NOT BLIND THE OTHERS (#100).
+   *
+   * The mail check had no `continue-on-error`, so a DNS disagreement aborted the job
+   * and three unrelated monitors below it never ran — for a whole day. One of them is
+   * the check that exists because production served a bundle pointing at a DELETED
+   * Supabase project for hours behind entirely green checks (`smoke.yml:165-174`).
+   *
+   * The split matters and both halves are asserted: `continue-on-error` decides
+   * whether the job STOPS at this step, the result step decides whether it FAILS.
+   * Dropping the second half would turn a real mail failure into a silent pass, which
+   * is strictly worse than the blinding this fixes.
+   */
+  it('does not abort the job, but still fails it, when the mail check fails', () => {
+    const yml = fs.readFileSync(SMOKE, 'utf8');
+
+    assert.match(
+      yml,
+      /id:\s*mail_policy/,
+      'the mail step needs an id, or the result step cannot read its outcome'
+    );
+    assert.match(
+      yml,
+      /id:\s*mail_policy[\s\S]{0,200}?continue-on-error:\s*true|continue-on-error:\s*true[\s\S]{0,200}?id:\s*mail_policy/,
+      'the mail step must not abort the job — the monitors after it never run (#100)'
+    );
+
+    // The half that keeps it fatal. Without this the check would pass silently.
+    const result =
+      /- name: Mail policy result[\s\S]*?(?=\n      - name:|$)/.exec(yml);
+    assert.ok(
+      result,
+      'no "Mail policy result" step — the failure would be silent'
+    );
+    assert.match(
+      result[0],
+      /if:\s*always\(\)/,
+      'a result step that can be skipped reports nothing, and a required check that ' +
+        'never reports is pending forever rather than skipped'
+    );
+    assert.match(
+      result[0],
+      /steps\.mail_policy\.outcome.*failure|failure.*steps\.mail_policy\.outcome/s,
+      'the result step must read the mail step outcome'
+    );
+    assert.match(
+      result[0],
+      /exit 1/,
+      'a failing mail policy must still fail the job'
+    );
+  });
+
   it('declares the intent it is enforcing', async () => {
     const { INTENDED } = await import(`file://${CHECKER}`);
     assert.equal(

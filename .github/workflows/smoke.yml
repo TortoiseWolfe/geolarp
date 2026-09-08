@@ -154,7 +154,16 @@ jobs:
       #
       # The intended policy is declared IN the script, so raising enforcement is a
       # one-line reviewable change this check then enforces against live DNS.
+      #
+      # NON-BLOCKING, BUT STILL FATAL (#100). `continue-on-error` decides whether the
+      # job STOPS here; the result step at the end decides whether it FAILS. Without
+      # the split, a DNS disagreement aborted the job and three unrelated monitors
+      # below never ran — including the one that exists because production served a
+      # bundle pointing at a DELETED Supabase project for hours behind green checks.
+      # Measured 2026-09-07: they were `skipped` on every run that day.
       - name: Mail policy still matches the intent declared in the repo (#822)
+        id: mail_policy
+        continue-on-error: true
         env:
           MAIL_DOMAIN: geolarp.com
         run: node scripts/ci/check-mail-policy.mjs "$MAIL_DOMAIN"
@@ -272,3 +281,19 @@ jobs:
             exit 1
           fi
           echo "retained-assets detector passed."
+
+      # Same split as the retention result above, and for the same reason: the mail
+      # check must be able to fail the job WITHOUT deciding whether the monitors after
+      # it get to run.
+      #
+      # `if: always()` because a step that never runs cannot report, and a required
+      # check that never reports is pending forever rather than skipped.
+      - name: Mail policy result
+        if: always()
+        run: |
+          if [ "${{ steps.mail_policy.outcome }}" = "failure" ]; then
+            echo "::error::the mail-policy check failed — see its step above."
+            echo "Every other monitor in this job still ran; scroll up for their results."
+            exit 1
+          fi
+          echo "mail policy matches the declared intent.""
