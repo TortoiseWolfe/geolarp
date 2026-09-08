@@ -13,7 +13,11 @@ import Link from 'next/link';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { PaymentStatusDisplay } from '@/components/payment/PaymentStatusDisplay/PaymentStatusDisplay';
 import { OfflineRetryBanner } from '@/components/payment/OfflineRetryBanner';
-import { featureFlags } from '@/config/payment';
+import {
+  featureFlags,
+  paymentUnavailableCopy,
+  showPaymentSetupHint,
+} from '@/config/payment';
 import { getInternalUrl } from '@/config/project.config';
 import { getPaymentStatus } from '@/lib/payments/payment-service';
 import { handleStripeRedirect } from '@/lib/payments/stripe';
@@ -170,13 +174,12 @@ function PaymentResultContent() {
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
             />
           </svg>
-          <div>
-            <p className="font-semibold">Payment providers not configured</p>
-            <p className="text-sm">
-              Set <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> and/or{' '}
-              <code>NEXT_PUBLIC_PAYPAL_CLIENT_ID</code> in <code>.env</code>.
-              See <code>docs/PAYMENT-DEPLOYMENT.md</code> for the full setup
-              walkthrough.
+          <div className="min-w-0 justify-self-stretch">
+            <p className="font-semibold">{paymentUnavailableCopy.heading}</p>
+            <p className="text-sm break-words">
+              {showPaymentSetupHint
+                ? paymentUnavailableCopy.setupHint
+                : paymentUnavailableCopy.body}
             </p>
           </div>
         </div>

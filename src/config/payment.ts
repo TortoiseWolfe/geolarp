@@ -275,6 +275,58 @@ export const featureFlags = {
 } as const;
 
 /**
+ * What to tell someone when no payment provider is configured.
+ *
+ * ONE COPY, BECAUSE THERE WERE FOUR (#102). /checkout, /payment-result, /payment
+ * and /payment-demo each rendered their own wording of this, and all four told
+ * the reader to set `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` in `.env`. Two of those
+ * are reachable from the global nav — /payment-demo sits in the Demos menu, and
+ * /checkout is one click from /pricing — so on a production build with no key,
+ * that is what a visitor is shown. Setup instructions for the site's own
+ * maintainer are not a customer-facing error message.
+ *
+ * THE ENVIRONMENT GUARD HAS A DIRECTION, and this is the legitimate one. Per
+ * CLAUDE.md, a protection must never be narrowed to development; a *convenience*
+ * may be. Nothing here protects anything — the refusal to charge is unconditional
+ * and lives in the feature flags above. All that varies is how much detail the
+ * reader gets, so the developer hint is the dev-only half and the plain sentence
+ * is what ships.
+ *
+ * IT ALSO CLOSED A MOBILE DEFECT ONLY PRODUCTION COULD HAVE.
+ * `tests/e2e/tests/mobile-horizontal-scroll.spec.ts` records this panel at 374px on
+ * a build with no keys, and notes CI "never shows" it: every E2E lane injects
+ * `pk_test_e2e_dummy_not_a_real_key`, so production — which has no key — is the only
+ * place these four routes render unconfigured, and the only place nothing measures
+ * them. /checkout, /payment, /payment-demo and /payment-result all overflowed.
+ *
+ * TWO WRONG GUESSES ARE WORTH RECORDING, because both looked obviously right.
+ * Shortening the copy took /checkout from 5 elements past the viewport to 3 — real,
+ * and not the cause. `min-w-0` on the wrapper changed nothing at all.
+ *
+ * The cause is that DaisyUI's `.alert` is `display: grid` with `justify-items: start`,
+ * so a grid item is sized to its MAX-CONTENT rather than stretched to its track.
+ * Measured at a 320px viewport: track `238px`, wrapper `391px`. `min-width: 0` cannot
+ * help an item that was never being stretched — hence `justify-self-stretch` on the
+ * wrapper in all four pages, which takes it to 238px and lets the text wrap.
+ *
+ * Any future alert whose content can be long needs the same, and no gate will tell
+ * you: the sweep only sees these routes in the configured state.
+ */
+export const paymentUnavailableCopy = {
+  heading: 'Payments are not available yet',
+  /** Shipped to everyone. No identifiers, nothing to act on, nothing to wrap badly. */
+  body: 'Nothing on this site can be bought right now. Please check back later.',
+  /** Development only — see above. */
+  setupHint:
+    'No payment provider is configured. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ' +
+    'and/or NEXT_PUBLIC_PAYPAL_CLIENT_ID in .env, plus their server secrets in ' +
+    'Supabase Vault. See docs/PAYMENT-DEPLOYMENT.md.',
+} as const;
+
+/** True only in development, where the setup hint is useful rather than confusing. */
+export const showPaymentSetupHint = process.env.NODE_ENV === 'development';
+
+/**
  * Returns list of enabled payment providers
  */
 export function getEnabledProviders(): string[] {

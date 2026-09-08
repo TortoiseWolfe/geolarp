@@ -57,6 +57,36 @@ test.describe('pricing → checkout links', () => {
       );
 
     const unique = [...new Set(skus.filter(Boolean))];
+
+    /*
+     * ZERO LINKS CAN NOW BE THE CORRECT STATE (#102).
+     *
+     * /pricing renders every buy action as a non-clickable "Coming soon" when no
+     * payment provider is configured, because /checkout cannot charge without one
+     * and a button that looks buyable is the exact defect this spec exists for.
+     * That is production today, and any local checkout without payment keys. Both
+     * CI lanes inject `pk_test_e2e_dummy_not_a_real_key`, so this branch does not
+     * run there — which is also why the gated state needs its own unit coverage,
+     * in tests/unit/pricing-payment-gate.test.tsx.
+     *
+     * THE FLOOR MOVES, IT DOES NOT DROP. Every package must still be advertised,
+     * so the same count is demanded of the badges. A grid that failed to render
+     * has neither links nor badges and still fails — which is the whole point of
+     * MIN_CHECKOUT_LINKS (#396). Never turn this into a skip: a skip would pass
+     * for a broken grid too.
+     */
+    if (unique.length === 0) {
+      const soon = await page.locator('[data-testid="coming-soon"]').count();
+      expect(
+        soon,
+        `/pricing offered no checkout links AND only ${soon} "Coming soon" ` +
+          `badges. With payments unconfigured every package must still be ` +
+          `advertised, so this means the grid did not render — not that buying ` +
+          `is correctly gated.`
+      ).toBeGreaterThanOrEqual(MIN_CHECKOUT_LINKS);
+      return;
+    }
+
     expect(
       unique.length,
       `Only ${unique.length} checkout links found on /pricing. Either the grid did ` +

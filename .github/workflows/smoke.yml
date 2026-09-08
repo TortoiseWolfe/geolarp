@@ -226,6 +226,25 @@ jobs:
       # live-key gate the moment `PAYMENT_MODE_EXPECTED` is set to `live`.
       #
       # Set it to `live` as part of going live. That is the whole ceremony.
+      #
+      # THIRD MODE: `none` MEANS PAYMENTS ARE DELIBERATELY OFF (#102).
+      #
+      # This step is written around "a key shipped; is it the right one?", so with
+      # no key at all it hard-failed — correctly by its own logic, and about
+      # something nobody intended yet. geoLARP is pre-launch with no store, so the
+      # absence IS the intent, and a monitor that reds on the intended state is one
+      # people learn to skip. That is how the Stripe check came to be invisible in
+      # the first place: it sat below a failing step and reported `skipped` on every
+      # run (#83, #100).
+      #
+      # `none` inverts the assertion rather than disabling it. A key appearing in
+      # the bundle while the declared intent is "no payments" is a REAL regression —
+      # someone set the variable, or a fork's key leaked into a build — and it is
+      # exactly as reportable as the wrong mode shipping. Deleting the check would
+      # have covered neither direction; this covers both.
+      #
+      # Flip to `test` the day a store exists. Until then /pricing must not offer
+      # Buy, which src/app/pricing/page.tsx now enforces from the same signal.
       - name: Deployed bundle ships the expected Stripe key mode
         env:
           SITE: ${{ vars.NEXT_PUBLIC_DEPLOY_URL }}
@@ -244,8 +263,21 @@ jobs:
           echo "expected mode : $EXPECTED"
           echo "in bundle     :$found"
 
+          # `none` asserts the OPPOSITE of the other two modes: nothing shipped,
+          # because nothing was meant to. Checked first — every assertion below
+          # assumes a key is supposed to exist.
+          if [ "$EXPECTED" = "none" ]; then
+            if [ -n "$found" ]; then
+              echo "::error::PAYMENT_MODE_EXPECTED is 'none' — payments are deliberately not configured — but production ships$found. A publishable key reached the bundle that nobody declared. Either set the variable to 'test'/'live', or find out whose key this is."
+              exit 1
+            fi
+            echo "no Stripe key in the bundle, and none intended (PAYMENT_MODE_EXPECTED=none)"
+            echo "::warning::Payments are OFF by declared intent (#102). /pricing offers no Buy. Set PAYMENT_MODE_EXPECTED=test when a store exists."
+            exit 0
+          fi
+
           if [ -z "$found" ]; then
-            echo "::error::no Stripe publishable key found in any deployed chunk — checkout cannot charge at all"
+            echo "::error::no Stripe publishable key found in any deployed chunk — checkout cannot charge at all. If that is intended, set PAYMENT_MODE_EXPECTED=none so this monitor asserts the absence instead of reporting it as a fault (#102)."
             exit 1
           fi
           case "$found" in
@@ -253,7 +285,7 @@ jobs:
             *) echo "::error::production ships$found but PAYMENT_MODE_EXPECTED is '${EXPECTED}'. If this is the go-live deploy, set the repo variable; if not, the wrong key shipped."; exit 1 ;;
           esac
           if [ "$EXPECTED" = "test" ]; then
-            echo "::warning::Production is in Stripe TEST mode — no customer can pay. Tracked in #629."
+            echo "::warning::Production is in Stripe TEST mode — no customer can pay. Tracked in #102."
           fi
 
       # No install step (#829): the browsers come from the image. This lane used to
