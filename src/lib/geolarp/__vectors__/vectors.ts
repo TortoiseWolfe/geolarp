@@ -28,7 +28,7 @@
 import {
   cellCentre,
   cellOf,
-  grid3x3,
+  flower,
   neighbour,
   offsetMetres,
   seedOf,
@@ -85,7 +85,7 @@ function boundaryFixes(): (readonly [number, number])[] {
   for (const [lat] of BASE_FIXES) {
     const here = cellOf(lat, 0);
     const a = cellCentre(here);
-    const b = cellCentre({ y: here.y, x: here.x + 1 });
+    const b = cellCentre({ r: here.r, q: here.q + 1 });
     const edge = (a.lon + b.lon) / 2;
     out.push([lat, edge - 1e-9], [lat, edge], [lat, edge + 1e-9]);
   }
@@ -113,15 +113,18 @@ export interface VectorTable {
    * through every gate. `cellOf` and `cellCentre` were pinned; the operator built on
    * top of them was not.
    *
-   * `ring` is the nine cells north-up and row-major, as keys. `northStep` is what a
-   * player is told after moving one cell north — `east,north,bearing` — and on the
-   * broken code it read `100,100,north-east` at Chattanooga.
+   * `ring` is the SEVEN cells of the flower, north-up and 2-3-2, as keys — six on a
+   * pointy-top hex lattice plus the centre at index 3 (#87). `northEastStep` is what
+   * a player is told after one step — `east,north,bearing`. North-east rather than
+   * north because a pointy-top hex has no due-north neighbour, and because it is the
+   * step whose east component the half-column stagger makes non-zero, so it pins the
+   * lattice as sharply as the old north step did.
    *
    * These values are NOT self-certified. `tests/unit/cell-grid.test.ts` derives the
    * same neighbours from `cellCentre` plus real metres walked, which is an independent
    * route to the same answer, and asserts they agree at four cities.
    */
-  adjacency: Record<string, { ring: string[]; northStep: string }>;
+  adjacency: Record<string, { ring: string[]; northEastStep: string }>;
   seedOf: Record<string, string>;
   placeName: Record<string, string>;
   encounterFor: Record<string, unknown>;
@@ -179,15 +182,19 @@ export function computeVectors(): VectorTable {
 
     const centre = cellCentre(cell);
     const back = cellOf(centre.lat, centre.lon);
-    t.cellCentreRoundTrip[key] = back.x === cell.x && back.y === cell.y;
+    t.cellCentreRoundTrip[key] = back.q === cell.q && back.r === cell.r;
 
     t.seedOf[key] = seedOf(cell, VECTOR_DATE);
     t.placeName[key] = placeName(cell);
 
-    const north = offsetMetres(cell, neighbour(cell, 0, 1));
+    // NORTH-EAST, not north (#87). A pointy-top hex has no due-north neighbour;
+    // the nearest thing to "one step up the map" is the north-east step, and it
+    // is the one whose east component the stagger makes non-zero (+50 m at the
+    // equator), so it pins the lattice as sharply as the old north step did.
+    const step = offsetMetres(cell, neighbour(cell, 'north-east'));
     t.adjacency[key] = {
-      ring: grid3x3(cell).map((c) => `${c.x}:${c.y}`),
-      northStep: `${north.east},${north.north},${north.bearing}`,
+      ring: flower(cell).map((c) => `${c.q}:${c.r}`),
+      northEastStep: `${step.east},${step.north},${step.bearing}`,
     };
   }
 
