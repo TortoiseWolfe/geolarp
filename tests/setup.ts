@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi, expect } from 'vitest';
+import { afterEach, beforeEach, vi, expect } from 'vitest';
 import { toHaveNoViolations } from 'jest-axe';
 import 'fake-indexeddb/auto';
 
@@ -272,19 +272,40 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Mock IntersectionObserver
-global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+/*
+ * Observer stubs, RE-INSTALLED PER TEST rather than once at module load.
+ *
+ * These used to be assigned once here. `vi.restoreAllMocks()` resets a `vi.fn()`
+ * to no implementation, so the first test file that called it in an `afterEach`
+ * silently destroyed the stub for every test after it in that file: the
+ * constructor then returned a bare object and any consumer died on
+ * `observer.observe is not a function`.
+ *
+ * That went unnoticed because nothing under such a file used one. It surfaced
+ * the moment a `next/link` — which observes for prefetch — was added to
+ * CharacterPlay, whose spec restores mocks after every test: 25 of 35 failed at
+ * once, none of them about the component (#89).
+ *
+ * A `beforeEach` costs nothing and makes the guarantee unconditional, rather
+ * than leaving every future test file one `restoreAllMocks()` away from the
+ * same afternoon.
+ */
+const installObserverStubs = () => {
+  global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  })) as unknown as typeof IntersectionObserver;
 
-// Mock ResizeObserver
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+  global.ResizeObserver = vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  })) as unknown as typeof ResizeObserver;
+};
+
+installObserverStubs();
+beforeEach(installObserverStubs);
 
 // Track blob dimensions for createImageBitmap
 const blobDimensions = new WeakMap<Blob, { width: number; height: number }>();

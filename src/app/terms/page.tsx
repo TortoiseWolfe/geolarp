@@ -44,12 +44,13 @@ export default function TermsOfServicePage() {
         <section className="mb-8">
           <h2>1. Who these terms are between</h2>
           <p>
-            These terms govern your purchase and use of services and digital
-            products from geoLARP (&ldquo;we&rdquo;, &ldquo;us&rdquo;). By
-            placing an order, or by accepting the payment consent prompt at
-            checkout, you agree to them. If you are buying on behalf of a
-            company, you confirm you are authorised to accept these terms for
-            it.
+            These terms govern your use of geoLARP (&ldquo;we&rdquo;,
+            &ldquo;us&rdquo;) &mdash; the website, the game, and any services or
+            digital products you buy from us. By using the site or playing the
+            game, by placing an order, or by accepting the payment consent
+            prompt at checkout, you agree to them. If you are buying on behalf
+            of a company, you confirm you are authorised to accept these terms
+            for it.
           </p>
           <p>
             How we handle your personal information is covered separately in our{' '}
@@ -61,7 +62,39 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>2. What we sell</h2>
+          <h2>2. Who can play, and playing safely</h2>
+          <p>
+            <strong>You must be at least 13 years old to play geoLARP.</strong>{' '}
+            Where the law where you live sets a higher minimum age for
+            consenting to online services or to the processing of your location
+            &mdash; several EU and EEA countries set 16 &mdash; that higher age
+            applies to you instead.
+          </p>
+          <p>
+            geoLARP is not offered to children under 13, and we do not knowingly
+            collect their personal information. If you believe a child under 13
+            has used it, contact us and we will delete what we hold. How we
+            handle location is covered in our{' '}
+            <Link href="/privacy" className="link-hover link">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+          <p>
+            geoLARP suggests places. It does not supervise you, and it does not
+            know what is actually there. <strong>You decide</strong> whether
+            somewhere is safe to go, and when. Obey traffic laws, respect
+            private property and posted access rules, and keep your attention on
+            your surroundings rather than your screen.
+          </p>
+          <p>
+            You never have to travel to play. Grid movement plays the entire
+            game without using your location at all.
+          </p>
+        </section>
+
+        <section className="mb-8">
+          <h2>3. What we sell</h2>
           <p>
             We offer <strong>one-time project work</strong> — discovery
             sessions, landing pages and full business sites — alongside
@@ -83,7 +116,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>3. Payment</h2>
+          <h2>4. Payment</h2>
           <p>
             Prices are in US dollars unless stated otherwise. Card payments are
             processed by our payment providers; we never receive or store your
@@ -100,7 +133,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>4. Subscriptions, renewal and cancellation</h2>
+          <h2>5. Subscriptions, renewal and cancellation</h2>
           <p>
             Monthly plans <strong>renew automatically</strong> each month at the
             then-current price until you cancel. We will tell you in advance of
@@ -120,7 +153,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>5. Refunds</h2>
+          <h2>6. Refunds</h2>
           <p>
             <strong>Before work begins</strong> on a one-time project, you may
             cancel for a full refund.
@@ -150,7 +183,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>6. Scope, changes and your input</h2>
+          <h2>7. Scope, changes and your input</h2>
           <p>
             Project work is delivered against the scope agreed in writing before
             it starts. Work outside that scope is a change: we will quote it,
@@ -165,7 +198,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>7. Ownership of delivered work</h2>
+          <h2>8. Ownership of delivered work</h2>
           <p>
             <strong>You own what you paid us to make</strong> — the code,
             content and configuration produced specifically for you — once the
@@ -190,7 +223,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>8. Acceptable use</h2>
+          <h2>9. Acceptable use</h2>
           <p>
             You agree not to use our services to break the law, to infringe
             someone else&rsquo;s rights, or to send unsolicited bulk messages.
@@ -200,7 +233,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>9. Warranties and limitation of liability</h2>
+          <h2>10. Warranties and limitation of liability</h2>
           <p>
             We provide our services with reasonable skill and care. Beyond that,
             and to the extent the law allows, services and products are provided
@@ -225,7 +258,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>10. Third-party services</h2>
+          <h2>11. Third-party services</h2>
           <p>
             Delivered work may rely on third-party services — hosting, payment
             processing, email delivery, analytics and similar. Those services
@@ -237,7 +270,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>11. Changes to these terms</h2>
+          <h2>12. Changes to these terms</h2>
           <p>
             We may update these terms. The version in force for a purchase is
             the one published when you placed that order. Material changes
@@ -247,7 +280,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>12. Governing law</h2>
+          <h2>13. Governing law</h2>
           <p>
             These terms are governed by the laws of the State of Tennessee, USA,
             and the courts of that state have jurisdiction — without affecting
@@ -256,7 +289,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section className="mb-8">
-          <h2>13. Contact</h2>
+          <h2>14. Contact</h2>
           <p>
             Questions about these terms, an order, or a refund should go through
             our{' '}
