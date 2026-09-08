@@ -208,8 +208,27 @@ const manifest = {
   },
 };
 
-// Write manifest to public directory
-const outputPath = path.join(__dirname, '../public/manifest.json');
+/*
+ * Write manifest to public directory.
+ *
+ * `MANIFEST_OUT_DIR` EXISTS SO A TEST NEED NOT WRITE THE REAL FILE (#95).
+ *
+ * This path is anchored on `__dirname`, so running the generator from a temp
+ * directory still overwrote the repo's committed manifest. The test that exercises
+ * the generator therefore "restored" it afterwards with
+ * `git checkout -- public/manifest.json` — which silently discards a legitimately
+ * regenerated manifest in the working tree, and reinstates whatever is committed.
+ * That is why the file appeared to revert itself: `pnpm test:scripts` reset it on
+ * every run.
+ *
+ * A destructive `git checkout` in a test is too sharp a tool for "put the file
+ * back". Given somewhere else to write, the test does not need to put anything back.
+ */
+const outDir = process.env.MANIFEST_OUT_DIR
+  ? path.resolve(process.env.MANIFEST_OUT_DIR)
+  : path.join(__dirname, '../public');
+const outputPath = path.join(outDir, 'manifest.json');
+fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(outputPath, JSON.stringify(manifest, null, 2));
 
 console.log(`✅ Generated manifest.json for ${projectConfig.projectName}`);
