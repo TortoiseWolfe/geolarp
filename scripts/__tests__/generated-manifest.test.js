@@ -7,23 +7,39 @@
  * would also mean a fresh clone's dev server 404s on the manifest, because `dev`
  * never runs the generators.
  *
- * WHAT ACTUALLY GOES WRONG. `DISABLE_BASE_PATH=true` is the documented recipe for a
- * local CI-matching E2E run, and running it rewrites this file:
+ * WHAT ACTUALLY GOES WRONG. A build configured for the ROOT rewrites this file:
  *
  *     -  "start_url": "/geoLARP/",      +  "start_url": "/",
  *     -  "scope":     "/geoLARP/",      +  "scope":     "/",
  *     -  "src": "/geoLARP/icon-72.svg"  +  "src": "/icon-72.svg"
  *
  * `git add -A` is the natural way to lose that, and the diff reads as harmless
- * config churn. On GitHub Pages under `/geoLARP/` it breaks PWA install and
+ * config churn. On a Pages deploy under `/reponame/` it breaks PWA install and
  * offline. This test is what turns that into a failing check.
  *
- * WHAT THIS DOES **NOT** CLAIM. The committed copy is not what production serves.
- * geolarp.com runs at the apex with no base path, and its deploy regenerates
- * the file — live values are `/`, while the committed copy is the default GitHub
- * Pages variant. So this pins the tracked artifact to the repo's DEFAULT
- * configuration, which is the thing a reviewer sees; production correctness is the
- * deploy's job, not this file's.
+ * THE EXPECTATION NOW FOLLOWS THE REPO'S OWN CONFIGURATION (#95), and it used to
+ * not. `defaultBasePath()` returned `/${projectSlug}` unconditionally, while
+ * `detect-project.js:151-166` sets the base path to '' whenever `public/CNAME`
+ * exists — and this repo has one, containing `geolarp.com`. So the generator and
+ * the guard disagreed by construction: every local run of the generator produced
+ * `/`, the guard demanded `/geolarp/`, and `public/manifest.json` sat permanently
+ * dirty in a tree that had merely built.
+ *
+ * The note that stood here called that deliberate — the committed copy pinned to
+ * "the repo's DEFAULT configuration, which is the thing a reviewer sees". The cost
+ * was not worth it: it made a tracked file this repo's own toolchain can never
+ * reproduce, so `git status` carried a permanent entry and four separate sessions
+ * "reverted" the correct value back to the stale one.
+ *
+ * `public/robots.txt` — tracked for the same reason, guarded by
+ * canonical-artifacts.test.js — already worked the other way: its committed value
+ * IS this deployment's value, a local run is a no-op, and it has never drifted.
+ * This makes the two consistent rather than inventing a third rule.
+ *
+ * A FORK IS UNAFFECTED. It has no CNAME, so the branch below computes
+ * `/theirreponame` and its first build writes exactly that. The check it inherits
+ * still fails on a root-configured build committed by mistake, which is the case
+ * this file was written for.
  */
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -64,7 +80,16 @@ function trackedField(name) {
  * every icon and break PWA install on any fork deploying with the default — the exact
  * artifact this file exists to keep reviewable.
  */
+/**
+ * What THIS repo's generator will produce, by the generator's own rule.
+ *
+ * Mirrors `detect-project.js`: a CNAME means a custom domain served at the apex, so
+ * there is no base path. Derived rather than hardcoded, which is what stops the
+ * guard and the generator disagreeing again (#95).
+ */
 function defaultBasePath() {
+  const cname = path.join(__dirname, '..', '..', 'public', 'CNAME');
+  if (fs.existsSync(cname)) return '';
   return `/${trackedField('projectSlug')}`;
 }
 
@@ -77,9 +102,10 @@ test('the committed manifest is not a base-path-disabled build', () => {
   assert.strictEqual(
     manifest.start_url,
     `${base}/`,
-    `start_url is "${manifest.start_url}". A local build with DISABLE_BASE_PATH=true ` +
-      `rewrites this file; committing that ships a manifest whose start_url, scope ` +
-      `and icon paths all point at the wrong root, which breaks PWA install and offline.`
+    `start_url is "${manifest.start_url}" but this repo's configuration produces ` +
+      `"${base}/". Regenerate with "node scripts/generate-manifest.js" and commit ` +
+      `the result; a manifest whose start_url, scope and icon paths point at the ` +
+      `wrong root breaks PWA install and offline.`
   );
   assert.strictEqual(
     manifest.scope,
@@ -121,6 +147,13 @@ test('the generator applies the base path it is given, to every field', () => {
       encoding: 'utf8',
       env: {
         ...process.env,
+        // WRITE SOMEWHERE ELSE (#95). This used to let the generator overwrite the
+        // real public/manifest.json and then put it back with
+        // `git checkout -- public/manifest.json`. That restore reinstates the
+        // COMMITTED copy, so a correctly regenerated manifest sitting in the
+        // working tree was silently discarded on every `pnpm test:scripts` — which
+        // is why the file looked like it kept reverting itself.
+        MANIFEST_OUT_DIR: path.join(fixture, 'public'),
         NEXT_PUBLIC_BASE_PATH: '/Fixture',
         NEXT_PUBLIC_PROJECT_NAME: 'Fixture',
         NEXT_PUBLIC_PROJECT_OWNER: 'ExampleOwner',
@@ -132,31 +165,25 @@ test('the generator applies the base path it is given, to every field', () => {
       `manifest generator failed:\n${result.stderr || result.stdout}`
     );
 
-    // The generator writes relative to its own directory, not cwd, so read it back
-    // from the repo and restore it afterwards — see the finally block.
-    const generated = readManifest();
+    const generated = JSON.parse(
+      fs.readFileSync(path.join(fixture, 'public', 'manifest.json'), 'utf8')
+    );
     assert.strictEqual(generated.start_url, '/Fixture/');
     assert.strictEqual(generated.scope, '/Fixture/');
     assert.ok(
       generated.icons.every((icon) => icon.src.startsWith('/Fixture/')),
       'an icon path ignored the configured base path'
     );
+
+    // The repo's own copy must be untouched by this test. Without this the fix
+    // above could regress to writing the real file and nothing would notice.
+    assert.strictEqual(
+      readManifest().start_url,
+      `${defaultBasePath()}/`,
+      "running the generator under test rewrote the repo's committed manifest"
+    );
   } finally {
     fs.rmSync(fixture, { recursive: true, force: true });
-    // Put the committed copy back: the generator overwrote it.
-    const restore = spawnSync(
-      'git',
-      ['checkout', '--', 'public/manifest.json'],
-      {
-        cwd: ROOT,
-        encoding: 'utf8',
-      }
-    );
-    assert.strictEqual(
-      restore.status,
-      0,
-      `could not restore public/manifest.json after the generator run:\n${restore.stderr}`
-    );
   }
 });
 
