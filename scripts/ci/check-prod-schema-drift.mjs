@@ -97,15 +97,23 @@ export async function observe(ref, token, intended = INTENDED) {
     query(
       ref,
       token,
+      // EVERY table, not just the INTENDED ones (#RLS). The list-scoped version of
+      // this query is what let `edge_idempotency_keys` ship with RLS off: it was not
+      // in INTENDED, so it was never asked about. Scoping the DETAILED checks is
+      // right — a diff of every grant is noise — but "is RLS on" is one boolean per
+      // table with no noise at all, and it is the check that matters most.
       `SELECT relname AS table_name, relrowsecurity FROM pg_class
-        WHERE relname IN (${list}) AND relnamespace = 'public'::regnamespace`
+        WHERE relkind = 'r' AND relnamespace = 'public'::regnamespace`
     ),
   ]);
 
   const out = {};
   for (const name of names) out[name] = { rls: null, grants: {}, policies: [] };
+  // Every public table appears, so the universal RLS sweep in `evaluate` has
+  // something to sweep. Tables outside INTENDED carry only their RLS flag.
   for (const r of rls) {
-    if (out[r.table_name]) out[r.table_name].rls = r.relrowsecurity;
+    out[r.table_name] ??= { rls: null, grants: {}, policies: [] };
+    out[r.table_name].rls = r.relrowsecurity;
   }
   for (const g of grants) {
     const t = out[g.table_name];
@@ -130,8 +138,41 @@ const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
  *
  * Returns a list of human-readable problems. Empty means no drift.
  */
+/**
+ * Tables deliberately allowed to run without RLS. Empty, and it should stay that way.
+ *
+ * An entry here is a claim that a table in `public` is safe to expose to `anon`, which
+ * is almost never true — Supabase's PostgREST publishes the whole schema.
+ */
+export const RLS_EXEMPT = [];
+
 export function evaluate(observed, intended = INTENDED) {
   const problems = [];
+
+  /*
+   * EVERY PUBLIC TABLE MUST HAVE RLS. This is the check that was missing.
+   *
+   * `edge_idempotency_keys` shipped with RLS off and `anon` holding SELECT, INSERT,
+   * UPDATE, DELETE and TRUNCATE. Confirmed reachable in production with the public
+   * anon key — HTTP 200 — on a table that caches the RESULT of outbound PAYMENT Edge
+   * Functions. It was empty, so nothing leaked; the exposure was real regardless, and
+   * an attacker could have INSERTed a forged key to choose what a payment function
+   * returned.
+   *
+   * The old check asked only about tables named in INTENDED — one of them. Its own
+   * comment called that "the security-relevant surface". A gate is only ever as wide
+   * as what it points at, and this one pointed at 1 of 20 tables.
+   */
+  for (const [table, got] of Object.entries(observed ?? {})) {
+    if (RLS_EXEMPT.includes(table)) continue;
+    if (got?.rls === false) {
+      problems.push(
+        `${table}: RLS is DISABLED. PostgREST publishes every table in \`public\`, so ` +
+          'this is reachable with the anon key that ships in the client bundle. Enable ' +
+          'RLS, or add it to RLS_EXEMPT with a reason.'
+      );
+    }
+  }
 
   // ANTI-VACUITY, FIRST AND LOUDEST. A wrong project ref, an expired token or a renamed
   // table yields an empty observation, and every comparison below would then pass by
