@@ -328,4 +328,4 @@ jobs:
             echo "Every other monitor in this job still ran; scroll up for their results."
             exit 1
           fi
-          echo "mail policy matches the declared intent.""
+          echo "mail policy matches the declared intent."
