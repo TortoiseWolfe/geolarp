@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { coarseFixFrom, type CoarseFix } from '@/lib/geolarp/coarseFix';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CharacterPlay from './CharacterPlay';
@@ -10,7 +11,8 @@ import { ZONES } from './useCharacterPlay';
 const today = new Date('2026-08-26T12:00:00Z');
 
 const mockGeo = vi.hoisted(() => ({
-  position: null as GeolocationPosition | null,
+  fix: null as CoarseFix | null,
+  accuracy: null as number | null,
   error: null as GeolocationPositionError | null,
   getCurrentPosition: vi.fn(),
 }));
@@ -21,7 +23,6 @@ vi.mock('@/hooks/useGeolocation', () => ({
     permission: 'prompt',
     isSupported: true,
     clearWatch: vi.fn(),
-    distanceFrom: () => null,
     loading: false,
   }),
 }));
@@ -29,7 +30,8 @@ vi.mock('@/hooks/useGeolocation', () => ({
 describe('CharacterPlay', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    mockGeo.position = null;
+    mockGeo.fix = null;
+    mockGeo.accuracy = null;
     mockGeo.error = null;
     mockGeo.getCurrentPosition = vi.fn();
     window.matchMedia = vi.fn().mockImplementation((q: string) => ({
@@ -287,19 +289,37 @@ describe('CharacterPlay', () => {
     expect(screen.getByText(/everyone in this cell today/)).toBeInTheDocument();
   });
 
+  /**
+   * THROUGH THE REAL QUANTISER, NOT A HAND-ROUNDED MOCK (#39).
+   *
+   * The hook no longer returns a raw position at all, so a mock supplying one
+   * would not compile and a mock supplying an already-rounded `fix` could not
+   * fail — the raw digits would be absent because the test author removed them,
+   * which proves nothing.
+   *
+   * So the raw reading goes through `coarseFixFrom`, the real function on the real
+   * path. If it ever stops rounding, the raw digits reach the DOM and this fails.
+   * The component-level claim and the library-level claim are then the same claim.
+   */
   it('never prints the raw fix it was handed', async () => {
-    mockGeo.position = {
+    mockGeo.fix = coarseFixFrom({
       coords: {
         latitude: 35.045612345,
         longitude: -85.309787654,
         accuracy: 5,
       },
-    } as GeolocationPosition;
+      timestamp: 1_757_000_000_000,
+    } as GeolocationPosition);
+    mockGeo.accuracy = 5;
     const user = await begin();
     await user.click(screen.getByRole('button', { name: 'Use my location' }));
     await screen.findByText(/precise fix was discarded/);
-    expect(document.body.textContent).not.toContain('35.045612');
-    expect(document.body.textContent).not.toContain('-85.309787');
+    // The shipped sentence at CharacterPlay.tsx:310 says the precise fix was
+    // discarded. Until #39 that sentence was false. These two lines are what
+    // make it true, and `page.content()`-style markup coverage is why the
+    // assertion reads the whole body rather than a single node.
+    expect(document.body.innerHTML).not.toContain('35.045612');
+    expect(document.body.innerHTML).not.toContain('-85.309787');
   });
 
   it('rolls a skill picked from the sheet and reports the outcome', async () => {
@@ -381,7 +401,8 @@ describe('CharacterPlay', () => {
 describe('the roll is under the thumb that opened it', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    mockGeo.position = null;
+    mockGeo.fix = null;
+    mockGeo.accuracy = null;
     mockGeo.error = null;
     window.matchMedia = vi.fn().mockImplementation((q: string) => ({
       matches: q.includes('prefers-reduced-motion'),
@@ -468,7 +489,8 @@ describe('the roll is under the thumb that opened it', () => {
 describe('resolving a cell pays, once', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    mockGeo.position = null;
+    mockGeo.fix = null;
+    mockGeo.accuracy = null;
     mockGeo.error = null;
     window.matchMedia = vi.fn().mockImplementation((q: string) => ({
       matches: q.includes('prefers-reduced-motion'),

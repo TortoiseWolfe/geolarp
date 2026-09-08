@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { GRID_POSITION_OPTIONS } from '@/lib/geolarp/coarseFix';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useGeolocation } from './useGeolocation';
 
@@ -47,7 +48,7 @@ describe('useGeolocation', () => {
 
     const { result } = renderHook(() => useGeolocation());
 
-    expect(result.current.position).toBeNull();
+    expect(result.current.fix).toBeNull();
     expect(result.current.loading).toBe(false);
     expect(result.current.error).toBeNull();
     expect(result.current.permission).toBe('prompt');
@@ -90,7 +91,25 @@ describe('useGeolocation', () => {
     expect(result.current.loading).toBe(true);
 
     await waitFor(() => {
-      expect(result.current.position).toEqual(mockPosition);
+      // THE CELL, NOT THE READING (#39). Hardcoded rather than re-derived from
+      // cellOf/cellCentre: an expectation computed by the code under test cannot
+      // detect that code changing. 51.505/-0.09 lands in cell {y:57335, x:-63},
+      // whose centre is 51.505120373697444 / -0.09019989877336257.
+      expect(result.current.fix).toEqual({
+        cell: { y: 57335, x: -63 },
+        lat: 51.505120373697444,
+        lon: -0.09019989877336257,
+        accuracy: 10,
+        timestamp: mockPosition.timestamp,
+      });
+      // The raw pair must be absent, not merely unused.
+      expect(Object.keys(result.current.fix!).sort()).toEqual([
+        'accuracy',
+        'cell',
+        'lat',
+        'lon',
+        'timestamp',
+      ]);
       expect(result.current.loading).toBe(false);
       expect(result.current.permission).toBe('granted');
     });
@@ -219,45 +238,17 @@ describe('useGeolocation', () => {
     expect(mockGeolocation.clearWatch).toHaveBeenCalledWith(watchId);
   });
 
-  it('should calculate distance from target correctly', () => {
-    const mockPosition: GeolocationPosition = {
-      coords: {
-        latitude: 51.505,
-        longitude: -0.09,
-        accuracy: 10,
-        altitude: null,
-        altitudeAccuracy: null,
-        heading: null,
-        speed: null,
-        toJSON: () => ({ latitude: 51.505, longitude: -0.09, accuracy: 10 }),
-      } as GeolocationCoordinates,
-      timestamp: Date.now(),
-      toJSON: () => ({
-        coords: { latitude: 51.505, longitude: -0.09, accuracy: 10 },
-        timestamp: Date.now(),
-      }),
-    };
-
-    mockGeolocation.getCurrentPosition.mockImplementation(
-      (success: PositionCallback) => {
-        success(mockPosition);
-      }
-    );
-
-    mockPermissions.query.mockResolvedValue({ state: 'granted' });
-
-    const { result } = renderHook(() => useGeolocation());
-
-    act(() => {
-      result.current.getCurrentPosition();
-    });
-
-    waitFor(() => {
-      const distance = result.current.distanceFrom([51.51, -0.08]);
-      expect(distance).toBeGreaterThan(0);
-      expect(distance).toBeLessThan(1000); // Should be less than 1km for nearby points
-    });
-  });
+  /*
+   * `distanceFrom` and its test are GONE (#39).
+   *
+   * The test computed haversine metres between the raw fix and a target — which
+   * required the hook to hold the raw pair, the one thing this change exists to
+   * stop. It was also a probe that could not fail: its assertions sat inside a
+   * `waitFor` callback whose returned promise was never awaited, so the block
+   * never ran. cell.ts refuses this calculation on purpose ("a metre figure
+   * derived from cell centres would imply a precision the grid does not carry");
+   * `offsetMetres` is the grid-aware answer if one is ever wanted.
+   */
 
   it('should handle missing geolocation API', () => {
     // Save original geolocation
@@ -327,40 +318,46 @@ describe('useGeolocation', () => {
     });
   });
 
-  it('should accept custom options', () => {
+  /**
+   * INVERTED BY #39. This used to assert that a caller's own options were passed
+   * through to the device, which is exactly the property that had to go: the
+   * product had three different answers to "what does this app request" living in
+   * three files, and an external reviewer had no single thing to read.
+   *
+   * `toEqual` rather than `toMatchObject`, kept from the original: removing a key
+   * from GRID_POSITION_OPTIONS must fail this, not silently pass.
+   */
+  it('always makes the same ask, and no caller can change it', () => {
     type PositionOptions = {
       enableHighAccuracy?: boolean;
       timeout?: number;
       maximumAge?: number;
     };
+    let seen: PositionOptions | null = null;
     mockGeolocation.getCurrentPosition.mockImplementation(
       (
         success: PositionCallback,
         error: PositionErrorCallback,
         options: PositionOptions
       ) => {
-        expect(options).toEqual({
-          enableHighAccuracy: false,
-          timeout: 10000,
-          maximumAge: 5000,
-        });
+        seen = options;
       }
     );
 
     mockPermissions.query.mockResolvedValue({ state: 'granted' });
 
-    const { result } = renderHook(() =>
-      useGeolocation({
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 5000,
-      })
-    );
+    const { result } = renderHook(() => useGeolocation());
 
     act(() => {
       result.current.getCurrentPosition();
     });
 
     expect(mockGeolocation.getCurrentPosition).toHaveBeenCalled();
+    expect(seen).toEqual(GRID_POSITION_OPTIONS);
+    expect(seen).toEqual({
+      enableHighAccuracy: true,
+      timeout: 10_000,
+      maximumAge: 0,
+    });
   });
 });
