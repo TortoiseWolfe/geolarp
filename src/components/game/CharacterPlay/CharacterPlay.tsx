@@ -58,16 +58,17 @@ export default function CharacterPlay({
   const [name, setName] = useState('');
   const geo = useGeolocation();
 
-  // The fix is handed straight to the quantiser and never stored.
+  // Already a cell centre by the time it gets here (#39): the hook now returns a
+  // CoarseFix, and the rounding happened in the callback the platform invoked.
+  // Passing the centre back through `setCellFromFix` is provably identical to
+  // passing the reading — `cellOf(cellCentre(cellOf(p))) === cellOf(p)`, asserted
+  // in tests/unit/coarse-fix.test.ts — so the encounter seed is unchanged.
   React.useEffect(() => {
-    if (play.mode !== 'gps' || !geo.position) return;
-    play.setCellFromFix(
-      geo.position.coords.latitude,
-      geo.position.coords.longitude
-    );
+    if (play.mode !== 'gps' || !geo.fix) return;
+    play.setCellFromFix(geo.fix.lat, geo.fix.lon);
     // `play` is stable enough for this; the fix is the trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [play.mode, geo.position]);
+  }, [play.mode, geo.fix]);
 
   /**
    * THE RULES PRIMER, AND THE CHARACTER RECORD AS ITS VISIT MEMORY.
@@ -306,7 +307,7 @@ export default function CharacterPlay({
                     // plays either way, and that is the part a player needs
                     // in the same breath as the bad news.
                     `${getGeolocationErrorMessage(geo.error)} Pick a zone or use grid movement instead. The game plays either way.`
-                  : geo.position
+                  : geo.fix
                     ? 'Location rounded to a 100-metre cell. The precise fix was discarded.'
                     : 'Waiting for a location…'}
               </p>
@@ -324,7 +325,7 @@ export default function CharacterPlay({
               <LocationButton
                 onClick={geo.getCurrentPosition}
                 loading={geo.loading}
-                hasLocation={Boolean(geo.position)}
+                hasLocation={Boolean(geo.fix)}
                 permissionState={geo.permission}
                 variant="secondary"
                 size="sm"
@@ -335,14 +336,19 @@ export default function CharacterPlay({
               The accuracy figure was captured by `useGeolocation` and never
               read. Above half a cell the fix cannot say which cell you are in,
               and saying so is better than quietly showing the wrong one.
+
+              `geo.accuracy` is a scalar radius, and it is the ONE thing kept from
+              the reading (#39) — it says how uncertain the fix was without saying
+              where it was. Measured: at a 100 m radius the assigned cell is the
+              true cell about one time in seven, so this warning is load-bearing
+              rather than decorative.
             */}
             {play.mode === 'gps' &&
-              geo.position &&
-              geo.position.coords.accuracy > CELL_METRES / 2 && (
+              geo.accuracy !== null &&
+              geo.accuracy > CELL_METRES / 2 && (
                 <p className="text-base-content text-sm">
-                  Your location is accurate to about ±
-                  {Math.round(geo.position.coords.accuracy)} m, so this may not
-                  be your cell.
+                  Your location is accurate to about ±{Math.round(geo.accuracy)}{' '}
+                  m, so this may not be your cell.
                 </p>
               )}
           </div>

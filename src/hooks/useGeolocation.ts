@@ -1,17 +1,41 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { calculateDistance } from '@/utils/map-utils';
-import type { LatLngTuple } from 'leaflet';
+import {
+  clearCoarseWatch,
+  getCoarseFix,
+  isGeolocationSupported,
+  watchCoarseFix,
+  type CoarseFix,
+} from '@/lib/geolarp/coarseFix';
 
 export interface GeolocationState {
-  position: GeolocationPosition | null;
+  /**
+   * The cell the device is in, and its centre. NEVER the reading (#39).
+   *
+   * RENAMED FROM `position`, deliberately, rather than retyped in place. This hook
+   * used to hold the raw `GeolocationPosition` here and hand it to every consumer,
+   * which is what made the published sentence "rounded to 100 metres before
+   * anything is done with it" false. A same-named field with a new type produces
+   * vague errors at each call site; a new name produces one clear error per
+   * consumer, so the compiler walks them all.
+   */
+  fix: CoarseFix | null;
   permission: PermissionState;
   loading: boolean;
   error: GeolocationPositionError | null;
   lastUpdated: Date | null;
+  /** The device's error radius in metres — a scalar, carrying no position. */
   accuracy: number | null;
 }
 
-export interface UseGeolocationOptions extends PositionOptions {
+/**
+ * NO LONGER `extends PositionOptions` (#39).
+ *
+ * The ask is stated once, in `GRID_POSITION_OPTIONS`, and nothing may restate it.
+ * While a caller could pass `enableHighAccuracy`, the product had three different
+ * answers to "what does this app request of a device" living in three files, and no
+ * way to read the real one. `watch` is a caller's business; the ask is not.
+ */
+export interface UseGeolocationOptions {
   watch?: boolean;
 }
 
@@ -19,7 +43,6 @@ export interface UseGeolocationReturn extends GeolocationState {
   getCurrentPosition: () => void;
   clearWatch: () => void;
   isSupported: boolean;
-  distanceFrom: (target: LatLngTuple) => number | null;
 }
 
 /**
@@ -29,7 +52,7 @@ export function useGeolocation(
   options?: UseGeolocationOptions
 ): UseGeolocationReturn {
   const [state, setState] = useState<GeolocationState>({
-    position: null,
+    fix: null,
     permission: 'prompt',
     loading: false,
     error: null,
@@ -38,8 +61,7 @@ export function useGeolocation(
   });
 
   const watchId = useRef<number | null>(null);
-  const isSupported =
-    typeof navigator !== 'undefined' && 'geolocation' in navigator;
+  const isSupported = isGeolocationSupported();
 
   // Check permission status
   useEffect(() => {
@@ -96,14 +118,17 @@ export function useGeolocation(
   }, [isSupported]);
 
   // Handle success
-  const handleSuccess = useCallback((position: GeolocationPosition) => {
+  // Takes a CoarseFix, not a GeolocationPosition: the rounding already happened,
+  // inside the socket, in the callback the platform invoked. Nothing raw reaches
+  // this function, so nothing raw can reach state (#39).
+  const handleSuccess = useCallback((fix: CoarseFix) => {
     setState({
-      position,
+      fix,
       permission: 'granted',
       loading: false,
       error: null,
       lastUpdated: new Date(),
-      accuracy: position.coords.accuracy,
+      accuracy: fix.accuracy,
     });
   }, []);
 
@@ -138,60 +163,45 @@ export function useGeolocation(
 
     setState((prev) => ({ ...prev, loading: true }));
 
-    const geoOptions: PositionOptions = {
-      enableHighAccuracy: options?.enableHighAccuracy ?? true,
-      timeout: options?.timeout ?? 5000,
-      maximumAge: options?.maximumAge ?? 0,
-    };
-
+    // No options object is built here any more. The ask lives in
+    // GRID_POSITION_OPTIONS, inside the socket, and cannot be varied per caller.
     if (options?.watch) {
       // Clear existing watch if any
       if (watchId.current !== null) {
-        navigator.geolocation.clearWatch(watchId.current);
+        clearCoarseWatch(watchId.current);
       }
-
-      watchId.current = navigator.geolocation.watchPosition(
-        handleSuccess,
-        handleError,
-        geoOptions
-      );
+      watchId.current = watchCoarseFix(handleSuccess, handleError);
     } else {
-      navigator.geolocation.getCurrentPosition(
-        handleSuccess,
-        handleError,
-        geoOptions
-      );
+      getCoarseFix(handleSuccess, handleError);
     }
   }, [isSupported, options, handleSuccess, handleError]);
 
   // Clear watch
   const clearWatch = useCallback(() => {
     if (watchId.current !== null && isSupported) {
-      navigator.geolocation.clearWatch(watchId.current);
+      clearCoarseWatch(watchId.current);
       watchId.current = null;
     }
   }, [isSupported]);
 
-  // Calculate distance from a target point
-  const distanceFrom = useCallback(
-    (target: LatLngTuple): number | null => {
-      if (!state.position) return null;
-
-      const currentPos: LatLngTuple = [
-        state.position.coords.latitude,
-        state.position.coords.longitude,
-      ];
-
-      return calculateDistance(currentPos, target);
-    },
-    [state.position]
-  );
+  /*
+   * `distanceFrom` IS GONE (#39), not quantised.
+   *
+   * It computed haversine metres between the raw fix and a target — which required
+   * holding the raw pair, and is the one thing cell.ts explicitly refuses to do:
+   * "a metre figure derived from cell centres would imply a precision the grid does
+   * not carry". Quantising it would have produced a number that looks precise and
+   * is not. It had no production consumer — only this hook, one test, and two test
+   * mocks — so deleting is cheaper than inventing an honest replacement nobody
+   * asked for. `offsetMetres` in cell.ts is the grid-aware answer if one is ever
+   * wanted.
+   */
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (watchId.current !== null && isSupported) {
-        navigator.geolocation.clearWatch(watchId.current);
+        clearCoarseWatch(watchId.current);
       }
     };
   }, [isSupported]);
@@ -201,6 +211,5 @@ export function useGeolocation(
     getCurrentPosition,
     clearWatch,
     isSupported,
-    distanceFrom,
   };
 }

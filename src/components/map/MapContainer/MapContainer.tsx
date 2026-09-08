@@ -6,6 +6,7 @@ import type { Map as LeafletMap, LatLngTuple } from 'leaflet';
 import { fixLeafletIconPaths, DEFAULT_MAP_CONFIG } from '@/utils/map-utils';
 import { LocationButton } from '@/components/map/LocationButton';
 import 'leaflet/dist/leaflet.css';
+import { getCoarseFix, type CoarseFix } from '@/lib/geolarp/coarseFix';
 
 export interface MapContainerProps {
   center?: LatLngTuple;
@@ -18,7 +19,15 @@ export interface MapContainerProps {
     popup?: string;
     id: string;
   }>;
-  onLocationFound?: (position: GeolocationPosition) => void;
+  /**
+   * BREAKING: emits a `CoarseFix`, not a `GeolocationPosition` (#39).
+   *
+   * A deliberate change to a published template API. A fork that genuinely wants
+   * raw coordinates must now write its own `navigator.geolocation` call, which is
+   * the loud failure rather than the quiet one — the previous signature let a
+   * consumer receive a full-precision reading and look correct doing it.
+   */
+  onLocationFound?: (fix: CoarseFix) => void;
   onLocationError?: (error: GeolocationPositionError) => void;
   onMapReady?: (map: LeafletMap) => void;
   className?: string;
@@ -106,18 +115,22 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
+    // Through the socket (#39). This component had its OWN `navigator.geolocation`
+    // call with a hardcoded `enableHighAccuracy: true`, so quantising inside
+    // `useGeolocation` — which is what the ticket proposed — would have left it
+    // untouched. Both sinks below now receive a cell centre: the callback the
+    // consumer sees, and the `setView` that drives position-derived tile requests
+    // to a third-party CDN.
+    getCoarseFix(
+      (fix) => {
         setLocationLoading(false);
         if (onLocationFound) {
-          onLocationFound(position);
+          onLocationFound(fix);
         }
-        // Pan map to user location
+        // Pan map to the cell, not the reader. At z=16 a cell centre is off by at
+        // most ~48px on a 600px map; the marker icon alone is 25x41.
         if (mapRef.current) {
-          mapRef.current.setView(
-            [position.coords.latitude, position.coords.longitude],
-            16
-          );
+          mapRef.current.setView([fix.lat, fix.lon], 16);
         }
       },
       (error) => {
@@ -125,11 +138,6 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         if (onLocationError) {
           onLocationError(error);
         }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
       }
     );
   }, [onLocationFound, onLocationError]);
@@ -145,10 +153,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       <MapContainerInner
         center={config?.center || center}
         zoom={config?.zoom || zoom}
-        showUserLocation={config?.showUserLocation || showUserLocation}
         markers={markers}
-        onLocationFound={onLocationFound}
-        onLocationError={onLocationError}
         onMapReady={handleMapReady}
         tileUrl={config?.tileUrl}
         attribution={config?.attribution}

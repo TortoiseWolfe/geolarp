@@ -36,19 +36,17 @@ export default function MapPage() {
   const [userLocation, setUserLocation] = useState<LatLngTuple | null>(null);
   const [mapCenter, setMapCenter] = useState<LatLngTuple>([51.505, -0.09]); // Default to London
 
+  // No options (#39): the ask is stated once in GRID_POSITION_OPTIONS and callers
+  // cannot restate it. `fix` is a cell centre, never a device reading.
   const {
-    position,
+    fix,
     permission,
     loading,
     error,
     accuracy,
     getCurrentPosition,
     isSupported,
-  } = useGeolocation({
-    enableHighAccuracy: true,
-    timeout: 10000,
-    maximumAge: 30000,
-  });
+  } = useGeolocation();
 
   // Check localStorage after mount
   useEffect(() => {
@@ -108,17 +106,19 @@ export default function MapPage() {
     setShowConsentModal(false);
   }, []);
 
-  // Update location when position changes
+  // Update location when the cell changes.
+  //
+  // `userLocation` is the CELL CENTRE, so everything downstream of it is too: the
+  // marker, the popup, the map centre, and — the reason this matters most — the
+  // z/x/y tile requests those drive to a third-party CDN. Before #39 that centred
+  // OpenStreetMap's view of the visitor on their actual position.
   React.useEffect(() => {
-    if (position) {
-      const newLocation: LatLngTuple = [
-        position.coords.latitude,
-        position.coords.longitude,
-      ];
+    if (fix) {
+      const newLocation: LatLngTuple = [fix.lat, fix.lon];
       setUserLocation(newLocation);
       setMapCenter(newLocation);
     }
-  }, [position]);
+  }, [fix]);
 
   // Example markers for demo purposes
   const demoMarkers = [
@@ -174,13 +174,21 @@ export default function MapPage() {
             {userLocation && (
               <div className="stats">
                 <div className="stat">
-                  <div className="stat-title">Your Location</div>
+                  <div className="stat-title">Your 100-metre cell</div>
+                  {/*
+                    `toFixed(4)` is unchanged and was never the problem — what
+                    changed is what is fed to it. These are cell-centre
+                    coordinates, so the four decimals describe the cell, not the
+                    reader. EncounterCard already prints the identical formatter
+                    on a cell centre.
+                  */}
                   <div className="stat-value text-lg">
                     {userLocation[0].toFixed(4)}, {userLocation[1].toFixed(4)}
                   </div>
                   {accuracy && (
                     <div className="stat-desc">
-                      Accuracy: ±{accuracy.toFixed(0)}m
+                      ±{accuracy.toFixed(0)}m device fix, rounded to a 100 m
+                      cell before display
                     </div>
                   )}
                 </div>
@@ -203,7 +211,7 @@ export default function MapPage() {
                       {
                         id: 'user-location',
                         position: userLocation,
-                        popup: `You are here (Accuracy: ±${accuracy?.toFixed(0) || 0}m)`,
+                        popup: `Your 100-metre cell (device fix was ±${accuracy?.toFixed(0) || 0}m)`,
                       },
                     ]
                   : []),
@@ -214,13 +222,24 @@ export default function MapPage() {
         </div>
       </section>
 
+      {/*
+        ASK FOR WHAT YOU DO, AND NOTHING ELSE (#39).
+        The modal's default purpose list is all four of the enum, including
+        LOCATION_ANALYTICS and PERSONALIZATION. This product does neither — there
+        are no geo columns anywhere in the schema, and the published post says so —
+        so the live page was asking a visitor to consent to processing that does not
+        exist. Over-asking is the same defect as the rounding it sits next to: a
+        statement about location that is not true. "explore nearby places" goes for
+        the same reason; nothing here searches anything.
+      */}
       <GeolocationConsent
         isOpen={showConsentModal}
         onAccept={handleConsentAccept}
         onDecline={handleConsentDecline}
         onClose={() => setShowConsentModal(false)}
+        purposes={[GeolocationPurpose.USER_LOCATION_DISPLAY]}
         title="Enable Location Services"
-        description="We'd like to use your location to show you on the map and help you explore nearby places."
+        description="We'd like to show which 100-metre cell you are in. Your precise location is rounded before anything is done with it, and never leaves your device."
         privacyPolicyUrl="/privacy"
       />
     </main>

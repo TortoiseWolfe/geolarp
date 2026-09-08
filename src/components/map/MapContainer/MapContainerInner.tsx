@@ -14,14 +14,11 @@ import { useMapTheme } from '@/hooks/useMapTheme';
 interface MapContainerInnerProps {
   center: LatLngTuple;
   zoom: number;
-  showUserLocation?: boolean;
   markers?: Array<{
     position: LatLngTuple;
     popup?: string;
     id: string;
   }>;
-  onLocationFound?: (position: GeolocationPosition) => void;
-  onLocationError?: (error: GeolocationPositionError) => void;
   onMapReady?: (map: LeafletMap) => void;
   tileUrl?: string;
   attribution?: string;
@@ -42,86 +39,35 @@ const MapCenterUpdater: React.FC<{ center: LatLngTuple }> = ({ center }) => {
   return null;
 };
 
+/*
+ * THIS USED TO BE A DEVICE-LOCATION ENTRY POINT, AND NOTHING KNEW (#39).
+ *
+ * It called `map.locate({ setView: true, maxZoom: 16 })` — Leaflet's own
+ * geolocation, not `navigator.geolocation` — from a `useEffect` on mount. So it
+ * asked for the device position with no user gesture, bypassed /map's own consent
+ * modal, moved the viewport onto the real fix, and then rebuilt a synthetic
+ * `GeolocationPosition` out of `e.latlng` and handed it back into the app.
+ *
+ * The ticket listed three entry points, all found by grepping `enableHighAccuracy`.
+ * This one never matched that grep, and would have survived a fix to all three
+ * while still centring the map correctly — so it would have looked fixed.
+ *
+ * Deleted rather than quantised: the legitimate trigger is the LocationButton in
+ * MapContainer, which is a user gesture and now routes through the socket in
+ * lib/geolarp/coarseFix.ts. Removing an entry point is worth more than rounding one.
+ * `<MapContainer showUserLocation>` therefore no longer auto-centres on mount; it
+ * still renders the button that does.
+ */
 const MapEventHandler: React.FC<{
   onMapReady?: (map: LeafletMap) => void;
-  showUserLocation?: boolean;
-  onLocationFound?: (position: GeolocationPosition) => void;
-  onLocationError?: (error: GeolocationPositionError) => void;
-}> = ({ onMapReady, showUserLocation, onLocationFound, onLocationError }) => {
+}> = ({ onMapReady }) => {
   const map = useMap();
 
   useEffect(() => {
     if (onMapReady) {
       onMapReady(map);
     }
-
-    if (showUserLocation && navigator.geolocation) {
-      map.locate({ setView: true, maxZoom: 16 });
-    }
-
-    const handleLocationFound = (e: L.LocationEvent) => {
-      if (onLocationFound) {
-        const position: GeolocationPosition = {
-          coords: {
-            latitude: e.latlng.lat,
-            longitude: e.latlng.lng,
-            accuracy: e.accuracy,
-            altitude: null,
-            altitudeAccuracy: null,
-            heading: null,
-            speed: null,
-            toJSON: () => ({
-              latitude: e.latlng.lat,
-              longitude: e.latlng.lng,
-              accuracy: e.accuracy,
-            }),
-          } as GeolocationCoordinates,
-          timestamp: Date.now(),
-          toJSON: () => ({
-            coords: {
-              latitude: e.latlng.lat,
-              longitude: e.latlng.lng,
-              accuracy: e.accuracy,
-            },
-            timestamp: Date.now(),
-          }),
-        };
-        onLocationFound(position);
-      }
-    };
-
-    const handleLocationError = (e: L.ErrorEvent) => {
-      if (onLocationError) {
-        let code = 0;
-        const message = e.message;
-
-        if (message.includes('denied')) {
-          code = 1; // PERMISSION_DENIED
-        } else if (message.includes('unavailable')) {
-          code = 2; // POSITION_UNAVAILABLE
-        } else if (message.includes('timeout')) {
-          code = 3; // TIMEOUT
-        }
-
-        const error: GeolocationPositionError = {
-          code,
-          message,
-          PERMISSION_DENIED: 1,
-          POSITION_UNAVAILABLE: 2,
-          TIMEOUT: 3,
-        };
-        onLocationError(error);
-      }
-    };
-
-    map.on('locationfound', handleLocationFound);
-    map.on('locationerror', handleLocationError);
-
-    return () => {
-      map.off('locationfound', handleLocationFound);
-      map.off('locationerror', handleLocationError);
-    };
-  }, [map, onMapReady, showUserLocation, onLocationFound, onLocationError]);
+  }, [map, onMapReady]);
 
   return null;
 };
@@ -129,10 +75,7 @@ const MapEventHandler: React.FC<{
 const MapContainerInner: React.FC<MapContainerInnerProps> = ({
   center,
   zoom,
-  showUserLocation = false,
   markers = [],
-  onLocationFound,
-  onLocationError,
   onMapReady,
   tileUrl: tileUrlProp,
   attribution: attributionProp,
@@ -158,12 +101,7 @@ const MapContainerInner: React.FC<MapContainerInnerProps> = ({
     >
       <TileLayer key={tileUrl} attribution={attribution} url={tileUrl} />
 
-      <MapEventHandler
-        onMapReady={onMapReady}
-        showUserLocation={showUserLocation}
-        onLocationFound={onLocationFound}
-        onLocationError={onLocationError}
-      />
+      <MapEventHandler onMapReady={onMapReady} />
 
       <MapCenterUpdater center={center} />
 
