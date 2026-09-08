@@ -956,6 +956,29 @@ USING (bucket_id = 'avatars');
 -- ============================================================================
 
 -- Enable RLS on all tables
+--
+-- `edge_idempotency_keys` WAS MISSING FROM THIS LIST, and its own definition at
+-- the top of this file says "Written/read only by service-role (the Edge
+-- Functions); not client-facing." The intent was always no client access; it was
+-- simply never enforced, so the table shipped with RLS off while `anon` held
+-- SELECT, INSERT, UPDATE, DELETE and TRUNCATE.
+--
+-- Confirmed reachable in production with the PUBLIC anon key — the one in the
+-- client bundle — returning HTTP 200. It was empty, so nothing leaked, but the
+-- table caches the RESULT of outbound PAYMENT Edge Functions. Three live risks,
+-- in ascending order of nastiness: every cached payment result would have been
+-- world-readable; TRUNCATE would destroy idempotency and re-enable replay; and
+-- an INSERT of a forged key lets an attacker choose what a payment function
+-- returns, because the function replays the stored `result` rather than calling
+-- the provider.
+--
+-- RLS with no policies denies everyone; `service_role` bypasses RLS, so the Edge
+-- Functions are unaffected. The REVOKE below is defence in depth — it makes the
+-- absence of access true at the grant layer too, so re-enabling a policy by
+-- accident cannot silently re-open it.
+ALTER TABLE edge_idempotency_keys ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON edge_idempotency_keys FROM anon, authenticated;
+
 ALTER TABLE payment_intents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
