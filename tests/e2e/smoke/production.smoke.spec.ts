@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { projectConfig } from '@/config/project.config';
 import { readFile, readdir } from 'fs/promises';
 import { join } from 'path';
 import { assertValidOAuthClientId } from '../utils/oauth-validity';
@@ -94,10 +95,36 @@ test.describe('@smoke production deploy (#288)', () => {
   test('the origin resolves: github.io redirects to the custom domain and it serves the app', async ({
     request,
   }) => {
-    // GitHub Pages guarantee: the project github.io URL 301s to the custom domain.
-    const gh = await request.get('https://tortoisewolfe.github.io/geoLARP/', {
-      maxRedirects: 0,
-    });
+    /*
+     * THE SLUG, NOT THE DISPLAY NAME (#115).
+     *
+     * This asked for `/geoLARP/` and got a 404 on every run — GitHub Pages serves
+     * the repo slug, which is lowercase. Measured:
+     *
+     *     …github.io/geolarp/   ->  301  location: http://geolarp.com/
+     *     …github.io/geoLARP/   ->  404
+     *
+     * So the redirect was working and this test called it broken, for three of the
+     * five failures in the first production run the suite was allowed to complete.
+     * That is the #97 defect class — one field doing two jobs, display name versus
+     * slug — reappearing inside a test. Derived from config rather than retyped, so
+     * a rename cannot reintroduce it.
+     */
+    const gh = await request.get(
+      `https://${projectConfig.projectOwner}.github.io/${projectConfig.projectSlug}/`,
+      { maxRedirects: 0 }
+    );
+    /*
+     * 3xx SPECIFICALLY. This was `toBeGreaterThanOrEqual(300)`, which accepts 404
+     * and 500 — so the assertion whose message is "github.io should redirect"
+     * passed on the 404 above, and the failure surfaced one line later with a
+     * misleading message about the custom domain. An assertion that cannot
+     * distinguish a redirect from an error is not checking what it says.
+     */
+    expect(
+      gh.status(),
+      `github.io should redirect, got ${gh.status()}`
+    ).toBeLessThan(400);
     expect(
       gh.status(),
       `github.io should redirect, got ${gh.status()}`
