@@ -88,7 +88,13 @@ esac
   fs.writeFileSync(path.join(dir, 'chunk.js'), bundle);
   fs.writeFileSync(path.join(dir, 'guard.sh'), SCRIPT);
 
-  const r = spawnSync('bash', [path.join(dir, 'guard.sh')], {
+  // `bash -e`, BECAUSE THAT IS WHAT GITHUB USES (#110). Run without it, this
+  // harness was more forgiving than production: the no-key case — the only one
+  // that matters for `none` — passed here and died silently live, because an
+  // empty `grep` exits 1 and `pipefail` + errexit kill the step before its first
+  // echo. A harness that cannot reproduce the runner's shell is a harness that
+  // cannot fail the way production does.
+  const r = spawnSync('bash', ['-e', path.join(dir, 'guard.sh')], {
     env: {
       ...process.env,
       PATH: `${bin}:${process.env.PATH}`,
@@ -117,6 +123,27 @@ describe('PAYMENT_MODE_EXPECTED guard', () => {
    * "payments are deferred" would mean "stop looking", and a key shipping by
    * accident would be the one thing nobody noticed.
    */
+  /**
+   * THE CASE THAT WAS PASSING HERE AND FAILING LIVE (#110).
+   *
+   * With no key deployed, `found` is empty and the script's tidy-up pipeline
+   * (`grep -v '^$'`) exits 1. Under the runner's `bash -e` + `pipefail` that
+   * killed the step before any output — so the `none` branch this very test
+   * asserts was unreachable in production while green here. The assertion on
+   * OUTPUT, not just exit code, is what makes that visible: a silent death
+   * still exits non-zero, but it says nothing.
+   */
+  it('none + no key prints its verdict rather than dying silently', () => {
+    const { code, out } = runGuard({ expected: 'none', bundle: NO_KEY });
+    assert.strictEqual(code, 0, out);
+    assert.match(out, /expected mode : none/);
+    assert.ok(
+      out.trim().length > 0,
+      'the step produced no output at all — it died before its first echo, which ' +
+        'is exactly how this failed in production while passing here'
+    );
+  });
+
   it('none + a key present FAILS — nobody declared that key', () => {
     const { code, out } = runGuard({ expected: 'none', bundle: TEST_KEY });
     assert.strictEqual(code, 1, out);
