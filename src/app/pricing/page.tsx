@@ -2,6 +2,7 @@ import React from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import styles from './pricing.module.css';
+import { featureFlags } from '@/config/payment';
 
 // FONT FACES ARE VENDORED (#730). These were fetched from Google at BUILD time, which
 // killed the production deploy of an unrelated hotfix. The @font-face rules now live in
@@ -263,11 +264,40 @@ const DEVELOPERS: Product[] = [
   },
 ];
 
+/**
+ * NO PROVIDER CONFIGURED MEANS NO BUY BUTTON (#102).
+ *
+ * `/checkout` has always refused to charge without a provider — it renders
+ * "Payment is not configured" and stops. But /pricing went on advertising every
+ * package with a working-looking button, and /pricing is IN THE GLOBAL NAV
+ * (GlobalNav.tsx:332). So the dead end was two clicks from every page on the
+ * site, not behind a direct URL as #102 originally assumed.
+ *
+ * This is the same defect the `comingSoon` flag was added for — a button that
+ * looks buyable and is not — arriving through a different door, so it gets the
+ * same treatment rather than a second mechanism. The difference is only what
+ * makes a package unbuyable: `comingSoon` is per-SKU and set by hand, this is
+ * global and derived from the build's environment.
+ *
+ * Derived, NOT another hand-maintained flag, deliberately: a boolean somebody has
+ * to remember to flip is how a page ends up advertising what it cannot sell.
+ * Configure a key and the buttons come back with no code change.
+ *
+ * Note the E2E lanes inject `pk_test_e2e_dummy_not_a_real_key`, so this path is
+ * false in CI and `pricing-links.spec.ts` still measures its 5+ real links. The
+ * gated direction is covered by the unit test instead.
+ */
+const noPaymentProviders =
+  !featureFlags.stripeEnabled && !featureFlags.paypalEnabled;
+
 function Card({ p }: { p: Product }) {
   // An empty href means "this is a buy action" — derive the checkout URL from the
   // SKU so the data cannot drift out of step with the route.
   const href = p.href || checkoutHref(p.sku);
   const external = href.startsWith('http');
+  // Only BUY actions are gated. An external href is a booking page or similar and
+  // takes no money, so it keeps working when payments are off.
+  const unbuyable = p.comingSoon || (!p.href && noPaymentProviders);
   const btn = `${styles.btn} ${p.primary ? styles.btnPrimary : ''} ${mono.className}`;
   // Never gets .btnPrimary — a copper-filled slab reads as the primary action of
   // the card, which is the opposite of what this says.
@@ -309,7 +339,7 @@ function Card({ p }: { p: Product }) {
       {/* .feats carries flex:1, which is what pins every CTA to the same baseline
           across cards with different bullet counts. */}
       <div>
-        {p.comingSoon ? (
+        {unbuyable ? (
           // No <a> and no <button> — see Product.comingSoon. Emitting a disabled
           // control would still invite the click that discovers the dead end, and
           // emitting a link is the bug this replaces.

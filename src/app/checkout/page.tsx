@@ -4,7 +4,11 @@ import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
-import { featureFlags } from '@/config/payment';
+import {
+  featureFlags,
+  paymentUnavailableCopy,
+  showPaymentSetupHint,
+} from '@/config/payment';
 import { getInternalUrl } from '@/config/project.config';
 import {
   createCheckoutSession,
@@ -306,11 +310,12 @@ function CheckoutContent() {
   if (stage.kind === 'not-configured') {
     return shell(
       <div role="alert" className="alert alert-warning">
-        <div>
-          <p className="font-semibold">Payment is not configured</p>
-          <p className="text-sm">
-            Set <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> and/or{' '}
-            <code>NEXT_PUBLIC_PAYPAL_CLIENT_ID</code>.
+        <div className="min-w-0 justify-self-stretch">
+          <p className="font-semibold">{paymentUnavailableCopy.heading}</p>
+          <p className="text-sm break-words">
+            {showPaymentSetupHint
+              ? paymentUnavailableCopy.setupHint
+              : paymentUnavailableCopy.body}
           </p>
         </div>
       </div>

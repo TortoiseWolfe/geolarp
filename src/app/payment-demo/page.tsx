@@ -14,7 +14,11 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import EmailVerificationNotice from '@/components/auth/EmailVerificationNotice';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePaymentConsent } from '@/hooks/usePaymentConsent';
-import { featureFlags } from '@/config/payment';
+import {
+  featureFlags,
+  paymentUnavailableCopy,
+  showPaymentSetupHint,
+} from '@/config/payment';
 
 function PaymentDemoContent() {
   const { user } = useAuth();
@@ -101,15 +105,12 @@ function PaymentDemoContent() {
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
             />
           </svg>
-          <div>
-            <p className="font-semibold">Payment providers not configured</p>
-            <p className="text-sm">
-              This demo requires Stripe or PayPal API keys. Set{' '}
-              <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> and/or{' '}
-              <code>NEXT_PUBLIC_PAYPAL_CLIENT_ID</code> in <code>.env</code>,
-              plus their server secrets in Supabase Vault. See{' '}
-              <code>docs/PAYMENT-DEPLOYMENT.md</code> for the full setup
-              walkthrough (~30-60 min including account signup).
+          <div className="min-w-0 justify-self-stretch">
+            <p className="font-semibold">{paymentUnavailableCopy.heading}</p>
+            <p className="text-sm break-words">
+              {showPaymentSetupHint
+                ? paymentUnavailableCopy.setupHint
+                : paymentUnavailableCopy.body}
             </p>
           </div>
         </div>
