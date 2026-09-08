@@ -41,6 +41,21 @@ const NEXT_MINOR = pkg.dependencies.next.replace(/^\^?(\d+\.\d+).*$/, '$1');
 // design was a mockup, technical specs are still first priority over an
 // artist renderings." A landing page whose most prominent element fails when
 // pasted is worse than one that looks plainer.
+/**
+ * Highlight text ON THE TERMINAL SCREEN, which is a FIXED near-black.
+ *
+ * NOT `var(--color-secondary)` (#43). The screen deliberately hard-codes
+ * `oklch(18% 0.03 282)` and does not repaint with the theme — the comment on it
+ * says so, and says the muted text below it clears 7:1 precisely *because* the
+ * background is fixed. A theme token breaks that invariant from the other side:
+ * in geolarp-light `--color-secondary` resolves to #7e3403, and #7e3403 on
+ * #0f101e measures **2.13:1** against a 7:1 requirement. It fails even AA.
+ *
+ * Six elements shipped that way and nothing caught it, because the AAA gate was
+ * inert until #43. A fixed surface needs a fixed foreground.
+ */
+const SCREEN_ACCENT = 'oklch(84% 0.13 62)';
+
 const TERMINAL_LINES: readonly {
   prompt: boolean;
   done?: boolean;
@@ -351,11 +366,7 @@ export default function Home() {
                       <span className="text-accent select-none">$ </span>
                     )}
                     <span
-                      style={
-                        line.done
-                          ? { color: 'var(--color-secondary)' }
-                          : undefined
-                      }
+                      style={line.done ? { color: SCREEN_ACCENT } : undefined}
                     >
                       {line.text}
                     </span>
@@ -382,10 +393,7 @@ export default function Home() {
                 <dl className="space-y-3 font-mono text-xs leading-[1.6]">
                   {COMMAND_DID.map(([key, what]) => (
                     <div key={key} className="flex flex-wrap gap-x-2">
-                      <dt
-                        className="shrink-0"
-                        style={{ color: 'var(--color-secondary)' }}
-                      >
+                      <dt className="shrink-0" style={{ color: SCREEN_ACCENT }}>
                         {key}
                       </dt>
                       <dd className="flex-1">— {what}</dd>

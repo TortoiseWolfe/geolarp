@@ -13,6 +13,7 @@ import {
   UNRESOLVABLE_ALLOWLIST,
   VENDOR_EXCLUDED,
 } from './utils/contrast-fallback';
+import { aaaFailures, isMeasuredRatio } from './utils/aaa-contrast';
 
 // Pa11y's axe runner reports axe `incomplete` results as errors, which
 // produces 14–61 false positives per page on DaisyUI — .btn gradients
@@ -20,15 +21,31 @@ import {
 // lands in the needs-review bucket. That's why config/pa11yci.json keeps
 // color-contrast (and color-contrast-enhanced) in its ignore list.
 //
-// This spec is the real contrast gate. It runs the AAA enhanced-contrast
-// rule (7:1 normal text / 4.5:1 large text) against the same pages but
-// asserts only on `violations` — cases where axe measured the ratio and
-// confirmed it's under the WCAG AAA threshold.
+// This spec is the real contrast gate. It enforces WCAG AAA — 7:1 normal text,
+// 4.5:1 large — but it does NOT use axe's AAA rule to do it.
 //
-// Bumped from `color-contrast` (AA, 4.5:1 / 3:1) to `color-contrast-enhanced`
-// (AAA, 7:1 / 4.5:1) per #21 Phase 0 closure. The features/foundation/
-// 001-wcag-aa-compliance/spec.md was originally written for AAA; the code
-// had drifted to AA. Aligning code to the spec rather than the inverse.
+// WHY NOT (#43). `color-contrast-enhanced` is INERT in axe-core 4.10.2: it
+// measures a ratio and never compares it to a threshold. Measured on a bare <p>
+// at #9a9a9a on #bcbcbc, 13px normal — 1.48:1 against a 7:1 requirement:
+//
+//     color-contrast (AA)      -> 1 violation, expectedContrastRatio "4.5:1"
+//     color-contrast-enhanced  -> 0 violations, 1 PASS,
+//                                 "Element has sufficient color contrast of 1.4817"
+//
+// This spec asserted on that rule's `violations` for months. It was asserting on
+// a path that cannot produce one, while reporting hundreds of passes that read
+// as coverage. A gate that cannot fail is worse than no gate, because it is
+// counted as protection.
+//
+// So the AA rule does the measuring — it is correct, and unlike the AAA rule it
+// returns fgColor/bgColor/fontSize on PASSES as well as violations — and the AAA
+// thresholds are applied to its numbers in utils/aaa-contrast.ts. A node that
+// clears AA but not AAA is an axe PASS, and that is exactly the population this
+// gate exists for, so passes are read, not just violations.
+//
+// The AAA target itself is unchanged and comes from #21 Phase 0:
+// features/foundation/001-wcag-aa-compliance/spec.md was written for AAA while
+// the code had drifted to AA. What changed is only HOW it is measured.
 
 // axe-core is a transitive dep under pnpm's strict node_modules; resolve it
 // through jest-axe (direct dep) so the path survives lockfile bumps.
@@ -226,7 +243,62 @@ console.log(
       .join('\n')
 );
 
-test.describe('WCAG AAA color-contrast-enhanced (violations only)', () => {
+/**
+ * THE contrast measurement, in one place (#43).
+ *
+ * Extracted so `the AAA gate can fail` below runs byte-identically to the
+ * sweep. A can-fail proof against a different axe configuration proves nothing
+ * about the configuration that actually gates merges.
+ */
+async function runAxeContrast(
+  page: import('@playwright/test').Page
+): Promise<AxeResults> {
+  await page.evaluate(axeSource);
+  return page.evaluate<AxeResults>(async () => {
+    // Playwright RETRIES an evaluate whose execution context is destroyed
+    // mid-call — which is what a client-side redirect or a late hydration
+    // does. A bare axe.run() then starts a second time while the first is
+    // still in flight and throws "Axe is already running".
+    //
+    // Measured: 13 of the 40 routes hit this — /sign-in, /sign-up,
+    // /account, /chatt, /wireframes and friends, i.e. exactly the ones
+    // that navigate or mount late. Caching the promise on `window` makes
+    // the retry return the original run instead of starting a rival one.
+    const w = window as unknown as {
+      __shAxeRun?: Promise<AxeResults>;
+      axe: { run: (d: Document, o: unknown) => Promise<AxeResults> };
+    };
+    w.__shAxeRun ??= w.axe.run(document, {
+      // 'color-contrast', NOT 'color-contrast-enhanced' (#43). The AAA
+      // rule is INERT in axe-core 4.10.2: it measures a ratio and never
+      // compares it to a threshold. On a 1.48:1 element it returns zero
+      // violations and one PASS reading "Element has sufficient color
+      // contrast of 1.4817". This suite asserted on its violations for
+      // months — a path that cannot produce one — and reported hundreds of
+      // passes that read as coverage.
+      //
+      // The AA rule measures correctly and, unlike the AAA rule, returns
+      // fgColor/bgColor/fontSize/expectedContrastRatio on PASSES too. AAA
+      // is therefore derived from its numbers in utils/aaa-contrast.ts.
+      runOnly: { type: 'rule', values: ['color-contrast'] },
+      // 'passes' IS LOAD-BEARING, NOT COMPLETENESS (#459). axe returns a
+      // PASS for elements whose ratio it could not compute, with
+      // `contrastRatio: null` — 120 of 608 across eight routes, one in
+      // five. Those are unmeasured, not verified.
+      //
+      // And `resultTypes` does not merely filter the report: any group
+      // NOT listed is TRUNCATED TO ONE NODE. Measured on /pricing —
+      // without 'passes' axe returns 1 pass node, with it 96, of which 8
+      // have a null ratio. So an audit of `passes` that forgets to ask
+      // for them inspects a single element and calls the page clean,
+      // which is #459 reproduced inside the fix for #459.
+      resultTypes: ['violations', 'incomplete', 'passes'],
+    });
+    return w.__shAxeRun;
+  });
+}
+
+test.describe('WCAG AAA, derived from color-contrast (#43)', () => {
   // Match pa11yci.json viewport.
   test.use({ viewport: { width: 1280, height: 1024 } });
 
@@ -307,56 +379,37 @@ test.describe('WCAG AAA color-contrast-enhanced (violations only)', () => {
           ).toBeVisible();
         }
 
-        await page.evaluate(axeSource);
-        const results = await page.evaluate<AxeResults>(async () => {
-          // Playwright RETRIES an evaluate whose execution context is destroyed
-          // mid-call — which is what a client-side redirect or a late hydration
-          // does. A bare axe.run() then starts a second time while the first is
-          // still in flight and throws "Axe is already running".
-          //
-          // Measured: 13 of the 40 routes hit this — /sign-in, /sign-up,
-          // /account, /chatt, /wireframes and friends, i.e. exactly the ones
-          // that navigate or mount late. Caching the promise on `window` makes
-          // the retry return the original run instead of starting a rival one.
-          const w = window as unknown as {
-            __shAxeRun?: Promise<AxeResults>;
-            axe: { run: (d: Document, o: unknown) => Promise<AxeResults> };
-          };
-          w.__shAxeRun ??= w.axe.run(document, {
-            runOnly: { type: 'rule', values: ['color-contrast-enhanced'] },
-            // 'passes' IS LOAD-BEARING, NOT COMPLETENESS (#459). axe returns a
-            // PASS for elements whose ratio it could not compute, with
-            // `contrastRatio: null` — 120 of 608 across eight routes, one in
-            // five. Those are unmeasured, not verified.
-            //
-            // And `resultTypes` does not merely filter the report: any group
-            // NOT listed is TRUNCATED TO ONE NODE. Measured on /pricing —
-            // without 'passes' axe returns 1 pass node, with it 96, of which 8
-            // have a null ratio. So an audit of `passes` that forgets to ask
-            // for them inspects a single element and calls the page clean,
-            // which is #459 reproduced inside the fix for #459.
-            resultTypes: ['violations', 'incomplete', 'passes'],
-          });
-          return w.__shAxeRun;
-        });
+        const results = await runAxeContrast(page);
 
-        // On failure, dump the fg/bg/ratio triple so the fix is obvious
-        // without having to re-run the probe script.
-        const details = results.violations.flatMap((v) =>
-          v.nodes.map((n) => {
-            const d = n.any?.[0]?.data ?? {};
-            return {
-              target: n.target?.[0],
-              html: n.html?.slice(0, 100),
-              fg: d.fgColor,
-              bg: d.bgColor,
-              ratio: d.contrastRatio,
-              expected: d.expectedContrastRatio,
-              fontSize: d.fontSize,
-              fontWeight: d.fontWeight,
-            };
-          })
-        );
+        // EVERY node axe measured, from all three groups — because with the
+        // AA rule the interesting population is the PASSES. 4.6:1 clears AA
+        // and fails AAA, so a node that fails this gate is, by construction,
+        // one axe called a pass.
+        const allNodes = [
+          ...results.violations,
+          ...(results.passes ?? []),
+          ...results.incomplete,
+        ].flatMap((r) => r.nodes);
+
+        // THE INERT-RULE SENTINEL (#43). `expectedContrastRatio` is the field
+        // 'color-contrast-enhanced' omits entirely — its data carries only
+        // `contrastRatio`. If someone swaps the rule id back, this fails on
+        // the first route instead of the suite quietly going all-green again.
+        expect(
+          allNodes.some(
+            (n) => n.any?.[0]?.data?.expectedContrastRatio !== undefined
+          ),
+          `${path} [${theme}]: axe measured ${allNodes.length} node(s) and not ` +
+            `one carried expectedContrastRatio. That is the signature of ` +
+            `'color-contrast-enhanced', which is inert in axe-core 4.10.2 ` +
+            `(#43) — this suite must run 'color-contrast' and derive AAA from ` +
+            `its numbers.`
+        ).toBe(true);
+
+        // AAA judged HERE, against the measured ratio, rather than taken from
+        // a rule verdict. Carries the fg/bg/ratio triple so a failure is
+        // actionable without re-running a probe script.
+        const details = aaaFailures(allNodes);
 
         const incompleteCount = results.incomplete.reduce(
           (n, v) => n + v.nodes.length,
@@ -367,18 +420,38 @@ test.describe('WCAG AAA color-contrast-enhanced (violations only)', () => {
         // axe could not compute one — most often a background it cannot resolve
         // (an image, a gradient, a transparent stack). It is not a pass; it is a
         // question that was never answered, and it was being counted as covered.
-        const unmeasured: string[] = (results.passes ?? []).flatMap((rule) =>
-          rule.nodes
-            .filter((n) => (n.any?.[0]?.data?.contrastRatio ?? null) === null)
-            .map((n) => n.target?.[0])
-            // A node axe cannot give a selector for cannot be re-resolved in the
-            // page either, so it would only become a phantom "unresolvable".
-            .filter((t): t is string => typeof t === 'string')
-        );
+        //
+        // Drawn from ALL THREE groups, not just passes (#43). The inert AAA
+        // rule filed everything as a pass, so `passes` was the whole world;
+        // the AA rule puts a background it cannot resolve into `incomplete`
+        // instead. Reading passes alone after the rule swap would have emptied
+        // this bucket and retired the #459 coverage without a single test
+        // going red.
+        const unmeasured: string[] = allNodes
+          // `!isMeasuredRatio`, not `=== null`. Axe reports an unresolvable
+          // background as ratio 0 as well as null, and 0 is not a real ratio —
+          // 1:1 is the floor. Testing only for null left 2,959 zeros to be
+          // judged as contrast failures instead of routed here (#43).
+          .filter((n) => !isMeasuredRatio(n.any?.[0]?.data?.contrastRatio))
+          .map((n) => n.target?.[0])
+          // A node axe cannot give a selector for cannot be re-resolved in the
+          // page either, so it would only become a phantom "unresolvable".
+          .filter((t): t is string => typeof t === 'string');
         const passCount = (results.passes ?? []).reduce(
           (n, v) => n + v.nodes.length,
           0
         );
+        // Every node is measured or null-ratio; nothing may fall between the
+        // two buckets unread.
+        const measuredCount = allNodes.filter((n) =>
+          isMeasuredRatio(n.any?.[0]?.data?.contrastRatio)
+        ).length;
+        const nullRatioCount = allNodes.length - measuredCount;
+        expect(
+          measuredCount + nullRatioCount,
+          `${path} [${theme}]: ${allNodes.length} node(s) reported, ` +
+            `${measuredCount} measured + ${nullRatioCount} null-ratio`
+        ).toBe(allNodes.length);
         // MEASURE THEM OURSELVES (#459). Reporting the count was the previous
         // behaviour and it closed nothing — a printed number can grow for
         // months without anyone reading the log. Every one of these is text on
@@ -471,7 +544,7 @@ test.describe('WCAG AAA color-contrast-enhanced (violations only)', () => {
         const allFailures = [...details, ...fallbackFailures];
         expect(
           allFailures,
-          `color-contrast-enhanced (AAA) violations on ${path} [${theme}] ` +
+          `WCAG AAA contrast failures on ${path} [${theme}] ` +
             `(${incompleteCount} incomplete/needs-review — expected, not a failure; ` +
             `${fallbackFailures.length} of these were measured by the #459 fallback ` +
             `after axe passed them with a null ratio):\n` +
@@ -480,4 +553,235 @@ test.describe('WCAG AAA color-contrast-enhanced (violations only)', () => {
       });
     }
   }
+});
+
+// PROOF THE GATE CAN FAIL (#43).
+//
+// The defect this ticket names is not "a wrong threshold" — it is a suite that
+// was structurally incapable of reporting a failure while printing hundreds of
+// passes. A rule id is one token; nothing above would go red if it were swapped
+// back tomorrow and every route would report clean. So the sweep's own
+// measurement path is run here against two elements whose ratios are known, one
+// on each side of the line, and the answer is asserted in both directions.
+//
+// Deliberately NOT a unit test of aaaFailures(). That would pass just as
+// happily while the sweep ran the inert rule.
+test.describe('the AAA gate can fail (#43)', () => {
+  test.use({ viewport: { width: 1280, height: 1024 } });
+
+  // #9a9a9a on #bcbcbc at 13px normal is 1.48:1 against a 7:1 requirement —
+  // the exact element measured in the ticket, where color-contrast-enhanced
+  // returned "Element has sufficient color contrast of 1.4817".
+  const FAIL_ID = 'aaa-canfail-fixture';
+  // Black on white is 21:1: the control. Without it, a gate that flagged
+  // everything would look identical to a gate that works.
+  const PASS_ID = 'aaa-control-fixture';
+  // ~5.1:1 at 24px (18pt) — LARGE text, so AAA wants 4.5:1 and this clears it.
+  //
+  // THIS IS THE FIXTURE THAT DETECTS THE INERT RULE, and the two above are not.
+  // `color-contrast-enhanced` returns `contrastRatio` but omits `fontSize`, so
+  // `parsePt(undefined)` falls back to 12pt, "large" is never true, and the
+  // threshold silently becomes 7:1 for everything. 5.1 < 7, so the inert path
+  // flags this element and the correct path clears it. Measured: swapping the
+  // sweep's `runOnly` back to the AAA rule turns this assertion red, which is
+  // exactly what the two original fixtures failed to do — both are normal-size
+  // text, where the 12pt fallback lands on the same 7:1 answer by coincidence.
+  const LARGE_OK_ID = 'aaa-large-ok-fixture';
+
+  test("flags 1.48:1 and clears 21:1, through the sweep's own path", async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await waitForLoadStateOrGiveUp(page, 'load');
+
+    await page.evaluate(
+      ([failId, passId, largeOkId]) => {
+        const add = (id: string, fg: string, bg: string) => {
+          const el = document.createElement('p');
+          el.id = id;
+          el.textContent = 'contrast fixture';
+          // Inline, explicit, opaque: axe must resolve a background here, or
+          // the fixture lands in the null-ratio bucket and proves nothing.
+          el.setAttribute(
+            'style',
+            `color:${fg};background-color:${bg};font-size:13px;` +
+              `font-weight:400;padding:8px;position:static;opacity:1`
+          );
+          document.body.appendChild(el);
+        };
+        add(failId, '#9a9a9a', '#bcbcbc');
+        add(passId, '#000000', '#ffffff');
+        // Large text needs its own size, so it does not reuse `add`.
+        const large = document.createElement('p');
+        large.id = largeOkId;
+        large.textContent = 'large contrast fixture';
+        large.setAttribute(
+          'style',
+          'color:#6e6e6e;background-color:#ffffff;font-size:24px;' +
+            'font-weight:400;padding:8px;position:static;opacity:1'
+        );
+        document.body.appendChild(large);
+      },
+      [FAIL_ID, PASS_ID, LARGE_OK_ID] as const
+    );
+
+    const results = await runAxeContrast(page);
+    const allNodes = [
+      ...results.violations,
+      ...(results.passes ?? []),
+      ...results.incomplete,
+    ].flatMap((r) => r.nodes);
+
+    const idOf = (n: { target?: string[]; html?: string }) =>
+      `${n.target?.join(' ') ?? ''} ${n.html ?? ''}`;
+
+    // The fixtures must be MEASURED, not merely present. A fixture axe skipped
+    // would make both assertions below vacuous in the passing direction.
+    const failNode = allNodes.find((n) => idOf(n).includes(FAIL_ID));
+    const passNode = allNodes.find((n) => idOf(n).includes(PASS_ID));
+    expect(failNode, `${FAIL_ID} was not measured by axe at all`).toBeTruthy();
+    expect(passNode, `${PASS_ID} was not measured by axe at all`).toBeTruthy();
+    expect(
+      failNode!.any?.[0]?.data?.contrastRatio,
+      'the failing fixture should measure ~1.48:1'
+    ).toBeCloseTo(1.48, 1);
+
+    const failures = aaaFailures(allNodes);
+
+    expect(
+      failures.map((f) => `${f.target} ${f.ratio}:1 < ${f.expected}:1`),
+      `the 1.48:1 fixture must be flagged. If this is empty, the gate is inert ` +
+        `again and every green run above means nothing.`
+    ).toEqual(expect.arrayContaining([expect.stringContaining(FAIL_ID)]));
+
+    expect(
+      failures.filter((f) => `${f.target}`.includes(PASS_ID)),
+      `the 21:1 control must NOT be flagged; a gate that fails everything is ` +
+        `as useless as one that fails nothing`
+    ).toEqual([]);
+
+    // THE ASSERTIONS THAT ACTUALLY DETECT THE INERT RULE.
+    //
+    // Everything above passes whether the sweep runs `color-contrast` or
+    // `color-contrast-enhanced` — measured, not assumed. The AAA rule returns a
+    // `contrastRatio`, so the 1.48:1 fixture is still flagged and the 21:1
+    // control still is not. What the AAA rule does NOT return is the rest of the
+    // data, and that is what is checked here.
+    expect(
+      {
+        fontSize: failNode!.any?.[0]?.data?.fontSize ?? null,
+        fgColor: failNode!.any?.[0]?.data?.fgColor ?? null,
+        bgColor: failNode!.any?.[0]?.data?.bgColor ?? null,
+      },
+      `axe returned no fontSize/fgColor/bgColor, which means the sweep is running ` +
+        `'color-contrast-enhanced' again. That rule is inert in 4.10.2 and every ` +
+        `green run above means nothing (#43).`
+    ).toEqual({
+      fontSize: expect.stringContaining('pt'),
+      fgColor: expect.any(String),
+      bgColor: expect.any(String),
+    });
+
+    // And the consequence of losing fontSize, stated as a behaviour rather than
+    // a field: without it every element is judged at the 7:1 normal-text bar,
+    // so legitimate large text gets flagged.
+    expect(
+      failures.filter((f) => `${f.target}`.includes(LARGE_OK_ID)),
+      `5.1:1 at 24px clears AAA for large text (4.5:1) and must NOT be flagged. ` +
+        `If it is, the sweep lost fontSize and is judging everything at 7:1.`
+    ).toEqual([]);
+  });
+
+  /**
+   * THE FALLBACK MUST NOT REPORT BLACK AS UNPARSEABLE (#43).
+   *
+   * `rgbOf` detects an invalid colour by assigning it to `ctx.fillStyle` and
+   * checking the value did not move — an invalid assignment is silently ignored.
+   * Seeded once with `#000000`, that test cannot tell "rejected" from "parsed to
+   * exactly the seed", so it carved out `#000` and `black` by regex and missed
+   * `rgb(0, 0, 0)` — the ONLY form `getComputedStyle` returns. Every element with
+   * pure black text came back `no-foreground` and left the measurement entirely.
+   *
+   * Found on /map: Leaflet's zoom controls are `rgb(0, 0, 0)` on `rgb(255, 255, 255)`,
+   * 21:1, and were being filed as unmeasurable. The failure mode is the one this
+   * whole file exists to prevent — "could not measure" silently standing in for
+   * "verified" — so it is pinned here rather than left to the route sweep, which
+   * only sees it when a page happens to use black.
+   *
+   * The second fixture is the negative control. Without it, a fallback that
+   * called everything 'measured' would pass the first assertion, and the whole
+   * point of this file — that "could not measure" is never rounded to "fine" —
+   * would be gone. It uses `background-clip: text` with no gradient behind it,
+   * which is the documented `no-foreground` case: the text colour is supposed to
+   * come from gradient stops and there are none.
+   *
+   * NOT a `url()` background, which was tried first and does not work: with a
+   * transparent own background the fallback falls through to the ancestor's
+   * colour and measures, which is existing behaviour and not this ticket's.
+   */
+  const BLACK_ID = 'aaa-fallback-black-fixture';
+  const UNRESOLVABLE_ID = 'aaa-fallback-noresolve-fixture';
+
+  test('the fallback resolves rgb(0, 0, 0) and still rejects what it cannot read', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await waitForLoadStateOrGiveUp(page, 'load');
+
+    await page.evaluate(
+      ([blackId, urlId]) => {
+        // Black text on a GRADIENT, because the fallback only ever runs on
+        // nodes axe declined to measure, and a gradient is why axe declines.
+        // A flat background would be measured by axe and never reach here.
+        const black = document.createElement('p');
+        black.id = blackId;
+        black.textContent = 'black on a gradient';
+        black.setAttribute(
+          'style',
+          'color:rgb(0, 0, 0);font-size:13px;padding:8px;' +
+            'background-image:linear-gradient(90deg, #ffffff, #fdfdfd)'
+        );
+        document.body.appendChild(black);
+
+        // Clipped to text with nothing to clip: the glyphs take their colour
+        // from gradient stops, and there is no gradient. Genuinely unreadable.
+        const noResolve = document.createElement('p');
+        noResolve.id = urlId;
+        noResolve.textContent = 'clipped to a gradient that is not there';
+        noResolve.setAttribute(
+          'style',
+          'font-size:13px;padding:8px;background-image:none;' +
+            '-webkit-background-clip:text;background-clip:text;' +
+            '-webkit-text-fill-color:transparent'
+        );
+        document.body.appendChild(noResolve);
+      },
+      [BLACK_ID, UNRESOLVABLE_ID] as const
+    );
+
+    const rows = await page.evaluate(measureNullRatioNodes, [
+      `#${BLACK_ID}`,
+      `#${UNRESOLVABLE_ID}`,
+    ]);
+
+    const black = rows.find((r) => r.selector === `#${BLACK_ID}`);
+    const noResolve = rows.find((r) => r.selector === `#${UNRESOLVABLE_ID}`);
+
+    expect(black, 'the black fixture was not returned at all').toBeTruthy();
+    expect(
+      { kind: black!.kind, reason: black!.reason ?? null },
+      `black text must be MEASURED. 'no-foreground' here means rgbOf cannot parse ` +
+        `rgb(0, 0, 0) again, and every black element on every route is silently ` +
+        `dropped from the sweep (#43).`
+    ).toEqual({ kind: 'measured', reason: null });
+    expect(black!.ratio, 'black on near-white is 21:1').toBeGreaterThan(19);
+
+    // The control: this one genuinely cannot be reduced to a colour, and saying
+    // so is the behaviour that makes the assertion above mean something.
+    expect(
+      { kind: noResolve!.kind, reason: noResolve!.reason ?? null },
+      `the fallback must still refuse what it cannot read. If this is 'measured', ` +
+        `it resolves a colour for everything and the assertion above is vacuous.`
+    ).toEqual({ kind: 'unresolvable', reason: 'no-foreground' });
+  });
 });

@@ -67,19 +67,35 @@ export function measureNullRatioNodes(targets: string[]): FallbackRow[] {
     willReadFrequently: true,
   }) as CanvasRenderingContext2D;
 
-  /** Any CSS colour → rgb, via the browser. The only thing that handles oklch(). */
+  /**
+   * Any CSS colour → rgb, via the browser. The only thing that handles oklch().
+   *
+   * TWO SENTINELS, BECAUSE ONE CANNOT TELL "REJECTED" FROM "PARSED TO THE SENTINEL".
+   *
+   * An invalid assignment to `fillStyle` is silently ignored, leaving the previous
+   * value in place — so a single seed detects failure only by the value not moving,
+   * which is indistinguishable from a colour that legitimately equals the seed.
+   * This seeded with `#000000` and carved out an exception for `#000`/`black` by
+   * regex. It missed `rgb(0, 0, 0)`, which is the ONLY form `getComputedStyle` ever
+   * returns — so every element with pure black text was reported `no-foreground`
+   * and dropped from the measurement as unresolvable. Found on /map, where Leaflet's
+   * zoom controls are black on white: 21:1, the highest ratio obtainable, filed as
+   * unmeasurable (#43).
+   *
+   * Seeding twice removes the guesswork rather than lengthening the exception list.
+   * If both assignments land on the same value, the browser parsed the input — it
+   * cannot agree by accident, because the seeds disagree. If they differ, both were
+   * rejected and each still holds its own seed. No colour needs naming.
+   */
   const rgbOf = (css: string): [number, number, number] | null => {
     if (!css) return null;
-    ctx.clearRect(0, 0, 1, 1);
-    // Seed with a known value: an INVALID assignment leaves fillStyle unchanged,
-    // so without this an unparseable colour would silently inherit the last one.
     ctx.fillStyle = '#000000';
-    const before = ctx.fillStyle;
     ctx.fillStyle = css;
-    if (ctx.fillStyle === before && !/^#0{3,8}$|black/i.test(css.trim())) {
-      // Could not be parsed — genuinely unknown, not black.
-      return null;
-    }
+    const asBlackSeed = ctx.fillStyle;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = css;
+    if (ctx.fillStyle !== asBlackSeed) return null; // rejected twice — unparseable
+    ctx.clearRect(0, 0, 1, 1);
     ctx.fillRect(0, 0, 1, 1);
     const d = ctx.getImageData(0, 0, 1, 1).data;
     return [d[0], d[1], d[2]];
