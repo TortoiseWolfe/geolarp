@@ -198,7 +198,18 @@ jobs:
                   | grep -oE 'https://[a-z0-9]+\.supabase\.co' | sort -u || true)
             [ -n "$hit" ] && found="$found $hit"
           done
-          found=$(printf '%s' "$found" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')
+          # `|| true` IS LOAD-BEARING (#110). When `$found` is empty, `grep -v '^$'`
+          # selects nothing and exits 1; `pipefail` propagates it and GitHub's
+          # `bash -e {0}` kills the step THERE — before the first echo, and before the
+          # branch below that exists for exactly the empty case. The check dies blank
+          # in the one situation it was written to report.
+          #
+          # THIS ONE IS THE MONITOR FOR THE #822 INCIDENT: production served a bundle
+          # pointing at a DELETED Supabase project for hours behind green checks. Had
+          # the URL ever gone missing entirely, this step would have exited 1 with no
+          # output rather than saying so. It has never fired only because the URL has
+          # always been there.
+          found=$(printf '%s' "$found" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ' || true)
           echo "intended: $WANT"
           echo "in bundle:$found"
           if [ -z "$found" ]; then
@@ -259,7 +270,18 @@ jobs:
                   | grep -oE 'pk_(test|live)_' | sort -u || true)
             [ -n "$hit" ] && found="$found $hit"
           done
-          found=$(printf '%s' "$found" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')
+          # `|| true` IS LOAD-BEARING (#110). When `$found` is empty, `grep -v '^$'`
+          # selects nothing and exits 1; `pipefail` propagates it and GitHub's
+          # `bash -e {0}` kills the step THERE — before the first echo, and before the
+          # branch below that exists for exactly the empty case. The check dies blank
+          # in the one situation it was written to report.
+          #
+          # Measured live 2026-09-08 on the Stripe step: `EXPECTED: none`, then
+          # `##[error]Process completed with exit code 1` and not one line of its own
+          # output. Which also means the message below — "no Stripe publishable key
+          # found in any deployed chunk" — had never once been printed: the only way
+          # to have no key was the way that killed the script first.
+          found=$(printf '%s' "$found" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ' || true)
           echo "expected mode : $EXPECTED"
           echo "in bundle     :$found"
 
@@ -328,4 +350,4 @@ jobs:
             echo "Every other monitor in this job still ran; scroll up for their results."
             exit 1
           fi
-          echo "mail policy matches the declared intent.""
+          echo "mail policy matches the declared intent."
