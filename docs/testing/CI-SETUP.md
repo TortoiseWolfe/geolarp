@@ -39,7 +39,11 @@ Required environment variables (in `.env.local`, gitignored):
 
 - `SUPABASE_ACCESS_TOKEN` — generate at
   https://supabase.com/dashboard/account/tokens
-- `NEXT_PUBLIC_SUPABASE_PROJECT_REF` — short project ref (e.g. `abcd1234`)
+- `NEXT_PUBLIC_SUPABASE_PROJECT_REF` — short project ref (e.g. `abcd1234`). **This is the
+  LOCAL name.** CI reads the same value from a GitHub Actions **Variable** called
+  `SUPABASE_PROJECT_REF`, without the prefix (`auth-config-drift.yml:96`).
+  `scripts/supabase/set-auth-config.ts:305-309` accepts either name, so a local run succeeds
+  while CI fails — the two names are why that failure could not be reproduced locally (#36).
 
 The current `auth-config.json` raises `jwt_exp` from the default 3600s (1 h)
 to 7200s (2 h) so the access token outlasts the ~1 h E2E pipeline (chromium
