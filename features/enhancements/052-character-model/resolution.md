@@ -173,6 +173,42 @@ one day of the best possible luck refills what you began with. A normal session 
 approaches it. What it bounds is grid movement, where stepping is free and unbounded —
 without a cap that is an infinite faucet from an armchair.
 
+### The suggested skill is ADVICE, and holds no claim on the payout (#63)
+
+`PROFILES` (`src/lib/geolarp/encounter.ts:43-85`) names three plausible skills per encounter
+kind. **It is advice.** The player may resolve a cell with any of the twenty skills, and the
+reward table above has no skill term — it never did.
+
+This is written down because the code used to say otherwise without meaning to. A cell pays
+its FIRST resolution only, and the sheet opened the suggested skill on arrival, so the
+suggestion did not advise — it collected. Whatever the player chose instead could only be the
+second roll, which pays nothing.
+
+The cost was not spread evenly. The union of all fifteen `PROFILES` slots is **nine distinct
+skills**; the other eleven are suggested 0.00% of the time, measured over 200,000 cell-days
+and asserted in `tests/unit/geolarp-reward.test.ts`:
+
+| suggested                                                                                      | share of encounters |
+| ---------------------------------------------------------------------------------------------- | ------------------: |
+| Persuade, Search, Dodge, Lore, Willpower, Scavenge                                             |         ~13.4% each |
+| Climb, Stealth, Brawl                                                                          |          ~6.6% each |
+| Lift, Stamina, Throw, Sprint, Repair, Navigate, Command, Intimidate, Gamble, Haggle, Improvise |   **0.00% — never** |
+
+`Navigate`, `Sprint` and `Stamina` are in that second group, in a game whose whole verb is
+walking. So eleven of twenty skills were fully rollable and structurally non-economic.
+
+**The fix is that nothing is selected on arrival.** The player picks; `Go to {skill}` on the
+encounter card takes the advice in one tap when they want it. Nine-of-twenty is then a
+survivable spread rather than an economy, because a suggestion no longer carries money.
+
+**The first-roll-only payout STAYS, and that is a deliberate departure** from #63's framing,
+which paired the two. Payment is keyed on the CELL (`encounter.seed`), never on the skill, so
+it never favoured the suggestion — the bias lived entirely in the pre-selection. What pay-once
+actually does is the paragraph above: `DAILY_EARN_CAP` bounds a day to five points, and
+pay-once is what makes _walking_ the only way to reach five. Without it a player rolls twenty
+skills from one cell in an armchair and caps out having gone nowhere, which is the same
+infinite-faucet failure the cap exists to close, one level down.
+
 **Rejected: a daily stipend.** It runs on the same clock as the reseed and in the opposite
 direction — save five days for a Heroic cell and that cell is five days gone — and it makes
 waiting a strategy, against `spec.md:107` ("only works if you move"). The correct half of

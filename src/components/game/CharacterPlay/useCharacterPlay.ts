@@ -165,21 +165,51 @@ export function useCharacterPlay(
   // comes BACK rather than being wiped. Stepping away and returning used to
   // blank the result, which is what made the loop feel like it had no memory.
   //
-  // The selection RESETS TO THE ENCOUNTER'S OWN SUGGESTION rather than to null.
-  // The skill is already computed (`encounter.skill`) and already shown as
-  // advice; opening it means the common path — roll what the cell asks for —
-  // costs no taps at all, while every other row stays one tap away.
+  // THE SELECTION RESETS TO NULL, NOT TO THE ENCOUNTER'S SUGGESTION (#63).
+  //
+  // It used to open the suggested skill, on the reasoning that the common path
+  // should cost no taps. That reasoning was sound and the consequence was not: a
+  // cell pays ONCE (`firstResolution` below, keyed on the cell), so whichever
+  // skill is open when the player arrives collects the only reward the cell will
+  // ever give. Pre-opening one therefore handed it the payout by default.
+  //
+  // That mattered more than it looks. Measured over 200,000 encounters, NINE of
+  // the twenty skills carry every suggestion `PROFILES` makes and the other eleven
+  // are suggested 0.00% of the time — `Navigate`, `Sprint` and `Stamina` among
+  // them, in a game about walking to places. So the pre-selection was quietly
+  // making eleven skills non-economic: fully rollable, never the default claim.
+  //
+  // The owner's ruling is that the suggestion is ADVICE. The shipped copy already
+  // said so — "A cell suggests a skill, but anything you can argue for is fair"
+  // — and the code disagreed with it. Now the player picks, every skill starts
+  // equal, and the suggestion persuades rather than pre-empts. The `Go to {skill}`
+  // control on the encounter card stays: acting on advice should be one tap, and
+  // taking it is now a choice the player makes rather than one already made.
   useEffect(() => {
-    const skill = encounter?.skill ?? null;
-    // Keyed by cell AND skill: an outcome belongs to the skill that produced
-    // it, so returning to a cell must not show one skill's dice under another
-    // skill's name.
-    setResult(
-      encounter
-        ? (resolved.current.get(keyFor(encounter.seed, skill)) ?? null)
-        : null
+    if (!encounter) {
+      setResult(null);
+      setSelectedSkill(null);
+      return;
+    }
+    // WHAT THE PLAYER ROLLED HERE, not what the cell suggested.
+    //
+    // This lookup used to key on `encounter.skill`, which was harmless only
+    // because the selection was the suggestion — the two could not disagree.
+    // With the selection gone they can: roll `Lore` on a cell that suggests
+    // `Scavenge`, walk away, walk back, and a suggestion-keyed lookup finds
+    // nothing and silently forgets the outcome. Payment is per CELL; memory is
+    // per cell AND skill, so the cell's own entry is what has to be found.
+    const prior = [...resolved.current.entries()].find(([k]) =>
+      k.startsWith(`${encounter.seed}|`)
     );
-    setSelectedSkill(skill);
+    setResult(prior?.[1] ?? null);
+    // Reopening the resolved row is NOT a pre-selection (#63): the cell has
+    // already paid, so nothing is being claimed — it is the record of a choice
+    // the player made. An UNRESOLVED cell opens nothing, which is the case the
+    // payout actually turns on.
+    setSelectedSkill(
+      prior ? ((prior[0].split('|')[1] || null) as SkillName | null) : null
+    );
     // `encounter` itself, not its fields: it is memoised on [cell, dayKey],
     // so its identity is already stable and the linter can verify the
     // dependency instead of being told to trust a hand-picked subset.
