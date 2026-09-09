@@ -463,3 +463,235 @@ describe('RETAIN_DAYS is sized for a returning visitor', () => {
     );
   });
 });
+
+/**
+ * THE PER-ASSET PROMISE, ASSERTED AT DEPLOY TIME (#82).
+ *
+ * The promise is per-file: everything the previous deploy published stays served for
+ * `RETAIN_DAYS` after it stops being published. Nothing checked it, and the post-deploy
+ * probe structurally cannot — a file lost during retention never reaches the new
+ * manifest, and that manifest is the list the probe walks, so losing one makes the
+ * probe's input SMALLER and it reports green by construction.
+ *
+ * These drive the real script over a real socket, the same as the suite above.
+ */
+describe('per-asset retention assertion (#82)', () => {
+  const GHOST = '_next/static/css/ghost.css';
+
+  /** A live dir whose LEDGER promises `GHOST`, dated now, so it is inside the window. */
+  function liveWithPromise(dir, { serveGhost }) {
+    makeGeneration(dir, 'prev');
+    const staticDir = path.join(dir, '_next/static');
+    fs.mkdirSync(staticDir, { recursive: true });
+    const promised = [GHOST, '_next/static/css/prev.css'];
+    fs.writeFileSync(
+      path.join(staticDir, 'ASSET_MANIFEST.txt'),
+      promised.join('\n') + '\n'
+    );
+    fs.writeFileSync(
+      path.join(staticDir, 'ASSET_AGES.txt'),
+      promised.map((rel) => `1 ${new Date().toISOString()} ${rel}`).join('\n') +
+        '\n'
+    );
+    if (serveGhost) {
+      fs.writeFileSync(path.join(dir, GHOST), '/* ghost */ body{color:blue}');
+    }
+    return dir;
+  }
+
+  /** Like `retain()`, but returns the failure instead of throwing on it. */
+  async function retainAllowingFailure(outDir, liveDir) {
+    try {
+      return { code: 0, stdout: await retain(outDir, liveDir) };
+    } catch (err) {
+      return {
+        code: err.code ?? 1,
+        stdout: String(err.stdout ?? ''),
+        stderr: String(err.stderr ?? ''),
+      };
+    }
+  }
+
+  /**
+   * THE CASE THE WHOLE TICKET IS ABOUT. A promised, in-window asset that 404s during
+   * retention used to be counted into `failed` and forgotten — no bytes, no ledger
+   * entry, and the next deploy never sees it again. One transient blip evicts it
+   * permanently.
+   */
+  it('fails, and NAMES the file, when a promised in-window asset cannot be fetched', async () => {
+    const live = liveWithPromise(path.join(WORK, 'p82-lost-live'), {
+      serveGhost: false,
+    });
+    const out = makeGeneration(path.join(WORK, 'p82-lost-out'), 'next');
+
+    const result = await retainAllowingFailure(out, live);
+    const all = result.stdout + (result.stderr ?? '');
+
+    assert.equal(result.code, 1, `expected a non-zero exit.\n${all}`);
+    assert.match(all, /::error::/);
+    assert.ok(
+      all.includes(GHOST),
+      `the failure must NAME the lost asset — a count nobody can act on is barely ` +
+        `better than silence.\n${all}`
+    );
+    assert.match(all, /unreachable on the live host/);
+  });
+
+  /**
+   * THE LEDGER MUST STILL BE PUBLISHED. Failing before `publishManifest()` would leave
+   * the next deploy nothing to carry forward — strictly worse than the defect being
+   * reported. The assertion is the exit code, never a reason to skip the write.
+   */
+  it('still publishes the ledger on the failing path', async () => {
+    const live = liveWithPromise(path.join(WORK, 'p82-ledger-live'), {
+      serveGhost: false,
+    });
+    const out = makeGeneration(path.join(WORK, 'p82-ledger-out'), 'next');
+
+    const result = await retainAllowingFailure(out, live);
+    assert.equal(result.code, 1);
+
+    const manifest = path.join(out, '_next/static/ASSET_MANIFEST.txt');
+    assert.ok(
+      fs.existsSync(manifest),
+      'the ledger was not published on the failing path, so the NEXT deploy would ' +
+        'carry nothing forward — worse than the failure being reported'
+    );
+    assert.ok(fs.readFileSync(manifest, 'utf8').trim().length > 0);
+  });
+
+  /**
+   * THE POSITIVE CONTROL. Without it, an assertion that failed unconditionally would
+   * satisfy both cases above and this file would certify nothing.
+   */
+  it('passes when the promised asset IS carried forward', async () => {
+    const live = liveWithPromise(path.join(WORK, 'p82-ok-live'), {
+      serveGhost: true,
+    });
+    const out = makeGeneration(path.join(WORK, 'p82-ok-out'), 'next');
+
+    const result = await retainAllowingFailure(out, live);
+    assert.equal(result.code, 0, result.stdout + (result.stderr ?? ''));
+    assert.match(result.stdout, /per-asset retention holds/);
+    assert.ok(
+      fs.existsSync(path.join(out, GHOST)),
+      'the asset was not retained'
+    );
+  });
+
+  /**
+   * THE GATE MUST NOT FIRE ON A CRAWLED LIST. With no previous manifest the file list
+   * comes from crawling live HTML — measured in the script at 33 of 106 static files.
+   * Asserting over that set asserts a far weaker promise while printing the same
+   * confident line, which is the exact shape of gate this repo keeps unpicking.
+   */
+  it('does not assert when there is no previous manifest to assert against', async () => {
+    // No ledger written: makeGeneration alone leaves the script to crawl HTML.
+    const live = makeGeneration(path.join(WORK, 'p82-crawl-live'), 'prev');
+    const out = makeGeneration(path.join(WORK, 'p82-crawl-out'), 'next');
+
+    const result = await retainAllowingFailure(out, live);
+    const all = result.stdout + (result.stderr ?? '');
+    assert.equal(result.code, 0, all);
+    assert.match(all, /per-asset retention not asserted/);
+  });
+});
+
+/**
+ * THE ASSERTION NEEDS SOMEWHERE TO LAND (#82).
+ *
+ * `retain-previous-assets.mjs` now exits non-zero when the per-asset promise breaks.
+ * The step that runs it is `continue-on-error: true`, and until #82 NOTHING read its
+ * outcome — so the assertion would have exited into a green job. "A warning inside a
+ * green check" is the exact thing the comment above that step says continue-on-error
+ * was chosen to avoid, and it would have made the whole assertion decorative.
+ *
+ * THE SHAPE MATTERS AS MUCH AS ITS PRESENCE. The report lives in a SEPARATE job,
+ * because `deploy` needs `build-and-deploy` — failing the build job would block
+ * shipping over a transient network problem, which is the outcome continue-on-error
+ * exists to prevent. Both halves are asserted: that it reports, and that it cannot
+ * block.
+ *
+ * Parsed as text, following e2e-local-triggers.test.js, with a guard proving the
+ * parser found the file before anything below is trusted.
+ */
+describe('the retention assertion is wired to be visible (#82)', () => {
+  const wf = fs.readFileSync(
+    path.join(REPO, '.github/workflows/deploy.yml'),
+    'utf8'
+  );
+
+  it('found the workflow and its jobs — a silent miss is not a pass', () => {
+    assert.ok(wf.length > 2000, 'deploy.yml did not read');
+    assert.match(wf, /^ {2}build-and-deploy:$/m);
+    assert.match(wf, /^ {2}deploy:$/m);
+  });
+
+  it('gives the retain step an id, or nothing can reference its outcome', () => {
+    assert.match(
+      wf,
+      /- name: Retain previous builds' assets[^\n]*\n\s+id: retain\n/,
+      'the retain step lost `id: retain`, so `steps.retain.outcome` is empty and the ' +
+        'assertion exits into a green job'
+    );
+  });
+
+  it('surfaces the OUTCOME, not the conclusion', () => {
+    // `continue-on-error: true` rewrites `conclusion` to success. Reading conclusion
+    // would make this report green forever — a check that cannot fail.
+    assert.match(
+      wf,
+      /retention:\s*\$\{\{\s*steps\.retain\.outcome\s*\}\}/,
+      'the job output must read steps.retain.OUTCOME; conclusion is rewritten to ' +
+        'success by continue-on-error and would never report a failure'
+    );
+  });
+
+  it('reports through a job that runs even when the build fails', () => {
+    assert.match(
+      wf,
+      /^ {2}retention-result:$/m,
+      'the retention-result job is gone'
+    );
+    const job = wf.slice(wf.indexOf('  retention-result:'));
+    assert.match(job, /needs: build-and-deploy/);
+    assert.match(
+      job,
+      /if: always\(\)/,
+      'without if: always() the report cannot run after a failed build, and a check ' +
+        'that never reports is pending forever rather than skipped'
+    );
+    assert.match(job, /needs\.build-and-deploy\.outputs\.retention/);
+  });
+
+  /**
+   * THE HALF THAT PROTECTS SHIPPING. If `deploy` ever came to depend on the report,
+   * a transient fetch failure during retention would stop the site deploying — worse
+   * than the defect the report exists to surface.
+   */
+  it('cannot block the deploy', () => {
+    const deployJob = wf.slice(wf.indexOf('\n  deploy:'));
+    const needs = (deployJob.match(/needs:[^\n]*/) || [''])[0];
+    assert.ok(
+      needs.includes('build-and-deploy'),
+      `unexpected deploy needs: ${needs}`
+    );
+    assert.ok(
+      !needs.includes('retention-result'),
+      'the deploy job now depends on the retention report, so a network blip during ' +
+        'retention would block shipping (#82)'
+    );
+  });
+
+  /**
+   * The stale claim this ticket removed. deploy.yml told readers the post-deploy probe
+   * FAILS on a narrow window; that stopped being true at d2b2aa25 and stood for weeks.
+   */
+  it('no longer claims the post-deploy probe asserts the window', () => {
+    assert.ok(
+      !/in smoke\.yml FAILS if the live window is/.test(wf),
+      'deploy.yml has gone back to claiming check-retained-assets.mjs gates on the ' +
+        'window. It reports the figure and does not assert it (#82).'
+    );
+  });
+});

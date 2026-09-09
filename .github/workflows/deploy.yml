@@ -17,6 +17,11 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Surfaced so `retention-result` below can fail the WORKFLOW without failing
+    # THIS job — which would block `deploy` and stop shipping over a network blip.
+    # `outcome`, not `conclusion`: continue-on-error rewrites conclusion to success.
+    outputs:
+      retention: ${{ steps.retain.outcome }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -216,6 +221,7 @@ jobs:
       # unnoticed — it collected 0 assets because the host could not resolve the
       # domain, and exited 0 anyway.
       - name: Retain previous builds' assets and write the manifest (#476, #548)
+        id: retain
         continue-on-error: true
         run: |
           node scripts/retain-previous-assets.mjs merged-output \
@@ -240,9 +246,20 @@ jobs:
           # ~300-500 small files against a 131-page export (17 files bought the old
           # 5 generations, ~100 bought 30). RETAIN_MAX_FILES backstops a runaway.
           #
-          # `check-retained-assets.mjs` in smoke.yml FAILS if the live window is
-          # narrower than this. That assertion is the part that was missing — nothing
-          # ever compared the promise against its intended width.
+          # WHAT ASSERTS THIS, AND WHAT DOES NOT. This block used to tell readers the
+          # post-deploy probe gated on the window width. That stopped being true at
+          # d2b2aa25 and was left standing for weeks (#82) — the wording is not
+          # reproduced here, because a test now fails on the literal phrase and a
+          # quotation would keep it alive. The probe REPORTS its window figure,
+          # because the span it computes tracks deploy cadence rather than coverage —
+          # a healthy chain deploying every 3 days measures 12.
+          #
+          # The real assertion is per-asset and lives at DEPLOY time, at the end of
+          # `retain-previous-assets.mjs`, where the previous ledger and the new output
+          # are both in hand. A file lost here never reaches the new manifest, and that
+          # manifest is what the post-deploy probe walks — so losing one makes the
+          # probe's input smaller and it reports green by construction. It is not a
+          # question a post-deploy check can be asked.
           #
           # This is a MITIGATION. The recovery that does not depend on any number is
           # the self-heal in src/app/layout.tsx; the actual fix is #635 — a CDN
@@ -264,3 +281,33 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  # RETENTION REPORTS RED WITHOUT BLOCKING THE DEPLOY (#82).
+  #
+  # `retain-previous-assets.mjs` now asserts the per-asset promise and exits non-zero
+  # when a promised, in-window asset was not carried forward. That needed somewhere to
+  # land: the step is `continue-on-error: true`, and nothing read its outcome, so the
+  # assertion would have exited into a green job — "a warning inside a green check",
+  # which is precisely what the comment above the step says continue-on-error was
+  # chosen to avoid.
+  #
+  # A SEPARATE JOB, not a step in `build-and-deploy`. `deploy` needs that job, so
+  # failing it would block shipping over a transient network problem — the exact
+  # outcome continue-on-error exists to prevent. This job is downstream of the build
+  # and nothing depends on it, so it can go red on its own.
+  #
+  # `if: always()` for the reason smoke.yml gives: a step that never runs cannot
+  # report, and a check that never reports is pending forever rather than skipped.
+  retention-result:
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+    if: always()
+    steps:
+      - name: Retention result
+        run: |
+          if [ "${{ needs.build-and-deploy.outputs.retention }}" = "failure" ]; then
+            echo "::error::retention failed — assets the previous deploy promised were not carried forward, or the script could not run. See the 'Retain previous builds' assets' step in the build job."
+            echo "The site still deployed and the ledger was still published; this reports, it does not block."
+            exit 1
+          fi
+          echo "retention held: every promised in-window asset was carried forward."

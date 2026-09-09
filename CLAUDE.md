@@ -514,10 +514,23 @@ landed in half an hour.
   with a negative control that fails if the harness stops simulating a deploy. It also
   proves `StylesheetGuard` fires, stays inert on a healthy page, and re-arms after an hour
   but not immediately (#752).
-- `scripts/ci/check-retained-assets.mjs` (post-deploy `smoke.yml`) reads the live ledger
-  and asserts both that every promised file is served **and that the window is still as
-  wide as `RETAIN_DAYS`**. The second assertion exists because the first was green on the
-  night production went unstyled for the eighth time.
+- `scripts/ci/check-retained-assets.mjs` (post-deploy `smoke.yml`) reads the live ledger —
+  **cache-busted**, because both ledger files sit under the year-cached `/_next/static/`
+  path and reading a stale one made its verdict a function of edge cache state (#128) —
+  and asserts that every promised file is still served.
+  **It does NOT assert the window**, and this passage said it did until #82. The span it
+  prints tracks deploy _cadence_ rather than coverage — a healthy chain deploying every
+  three days measures 12 against a target of 14 — so the figure is reported and not
+  gated. Do not restore the assertion here; it is not a question this probe can answer.
+- **The window promise is asserted per-asset at DEPLOY time**, at the end of
+  `scripts/retain-previous-assets.mjs` (#82): every entry in the previous deploy's ledger
+  must be in the new build, carried forward, or genuinely past `RETAIN_DAYS`. It has to
+  live there because a file lost during retention never reaches the new manifest, and that
+  manifest is exactly what the post-deploy probe walks — losing one makes the probe's input
+  _smaller_, so it reports green by construction. The assertion runs **after** the ledger is
+  published, so a failure still leaves the next deploy something to carry forward, and it
+  reports through the `retention-result` job rather than failing `build-and-deploy`, which
+  would block shipping over a network blip.
 - `scripts/__tests__/*` via `pnpm test:scripts` for the chaining, the window and the unit.
 
 **The client-side backstop**: `StylesheetGuard` (in every page) detects a page whose
