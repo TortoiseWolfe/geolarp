@@ -6,7 +6,10 @@
 # Management API vs the checked-in scripts/supabase/auth-config.json) and FAILS
 # on any drift, so prod config can't diverge from the repo unnoticed again.
 #
-# Secrets already exist in the repo (SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF).
+# Needs SUPABASE_ACCESS_TOKEN (a SECRET) and SUPABASE_PROJECT_REF (a VARIABLE).
+# The two tabs, and this line used to call both of them Secrets (#36) — which puts
+# the ref on the wrong tab, where it arrives as an empty string with no error and
+# this lane fails on every push to main and every daily cron.
 # Read-only — it never PATCHes (that needs --apply, which this does not pass).
 #
 # Runs: on push to main (after a merge), on PRs that touch the auth config or this

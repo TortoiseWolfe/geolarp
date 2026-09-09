@@ -315,7 +315,20 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 NEXT_PUBLIC_SITE_URL=https://your-domain.com
 NEXT_PUBLIC_DEPLOY_URL=https://your-domain.com
+SUPABASE_PROJECT_REF=your-project-ref
 ```
+
+**`SUPABASE_PROJECT_REF` is a VARIABLE, and it is the one this list used to omit (#36).**
+`auth-config-drift.yml:96` reads `${{ vars.SUPABASE_PROJECT_REF }}`, so without it that lane
+fails on every push to `main` and every daily cron. It sat undocumented while the section
+directly above warned that the Secrets/Variables split is load-bearing — and the workflow's own
+header called it a Secret, pointing readers at the wrong tab and the exact silent-empty-string
+failure this section exists to prevent. Plausibly the whole cause of #9.
+
+**Do not confuse it with `NEXT_PUBLIC_SUPABASE_PROJECT_REF`.** That is the LOCAL `.env` name
+(see the migrations section below and `docs/testing/CI-SETUP.md`).
+`scripts/supabase/set-auth-config.ts:305-309` accepts either, which is precisely why local runs
+worked while CI did not — the failure could not be reproduced on a developer's machine.
 
 The two URLs matter even before a custom domain: unset, `sitemap.xml`/`robots.txt` advertise a
 `github.io` origin, and `retain-previous-assets.mjs` falls back to crawling **geolarp.com**
