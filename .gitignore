@@ -285,3 +285,8 @@ docs/talks/*.pdf
 
 # Docker Compose local override (machine-specific; see #22 for the worktree case).
 docker-compose.override.yml
+
+# Scratch output from scripts/__tests__/retain-previous-assets.test.js. The harness
+# builds real generations on disk to drive the real script over a real socket; the
+# directory is rebuilt per run and must never be committed.
+scripts/__tests__/.retain-work/

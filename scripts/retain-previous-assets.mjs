@@ -442,6 +442,18 @@ let alreadyPresent = 0;
 let failed = 0;
 let tooOld = 0;
 let overflowed = 0;
+/**
+ * THE IDENTITIES BEHIND THE TWO FAILING FATES (#82).
+ *
+ * A previous-ledger entry meets one of four ends: the new build reproduces it
+ * (`alreadyPresent`, fine), it aged out (`tooOld`, fine), its fetch failed
+ * (`failed`), or the file-count backstop truncated it (`overflowed`). The last two
+ * are the promise being broken — and every one of the four kept only a COUNTER, so
+ * a report could say "3 assets vanished" and never say which. A number nobody can
+ * act on is barely better than silence.
+ */
+const lostToFetch = [];
+const lostToBackstop = [];
 
 /**
  * SELECT BEFORE DOWNLOADING (#751).
@@ -483,6 +495,11 @@ for (const ref of wanted) {
 candidates.sort((a, b) => b.born - a.born);
 if (candidates.length > RETAIN_MAX_FILES) {
   overflowed = candidates.length - RETAIN_MAX_FILES;
+  // Captured BEFORE the truncation, or the identities are gone. These are by
+  // definition files still inside their window — the backstop sorts newest-first
+  // and drops the oldest survivors, which is exactly "vanished while still inside
+  // its window".
+  lostToBackstop.push(...candidates.slice(RETAIN_MAX_FILES).map((c) => c.rel));
   candidates.length = RETAIN_MAX_FILES;
   console.log(
     `::warning::${overflowed} asset(s) dropped by the ${RETAIN_MAX_FILES}-file backstop ` +
@@ -499,7 +516,13 @@ for (const { rel, dest, born, age } of candidates) {
   // `/ScriptHammer/` and the crawl target served at root.
   const res = await get(`${BASE.replace(/\/$/, '')}/${rel}`);
   if (!res) {
+    // `get()` cannot tell a 404 from a 500, a DNS failure or a socket reset, and
+    // it does not retry. Whatever the cause, the consequence is identical and
+    // permanent: no bytes on disk, so `publishManifest` (which walks the real
+    // directory) omits it from BOTH new ledgers, so the next deploy never sees it
+    // in `wanted` and never retries. One blip evicts an in-window asset forever.
     failed++;
+    lostToFetch.push(rel);
     continue;
   }
   const buf = Buffer.from(await res.arrayBuffer());
@@ -542,3 +565,59 @@ if (retained === 0) {
 }
 
 await publishManifest();
+
+/**
+ * THE PROMISE, ASSERTED PER ASSET, AT THE ONLY PLACE THE EVIDENCE EXISTS (#82).
+ *
+ * The promise is per-file: everything the previous deploy published stays served for
+ * `RETAIN_DAYS` after it stops being published. Until now nothing checked it. The
+ * post-deploy probe cannot: a file lost here never reaches the new manifest, and that
+ * manifest is the list the probe walks — so a lost asset makes the probe's input
+ * SMALLER and it reports green by construction. Verified by running this script
+ * against a host that 404s one promised, in-window stylesheet: exit 0, file silently
+ * absent from the published ledger.
+ *
+ * Deploy time is therefore not the convenient place for this assertion, it is the only
+ * possible one — here both the previous ledger and the new output are in hand.
+ *
+ * AFTER `publishManifest()`, DELIBERATELY. Failing before it would leave the ledger
+ * unpublished, so the NEXT deploy would carry nothing forward — strictly worse than
+ * the defect being reported. The ledger is always written; the exit code is the report.
+ *
+ * ONLY WHEN THE PREVIOUS MANIFEST WAS ACTUALLY READ. If that fetch returned null,
+ * `wanted` was filled by crawling live HTML instead, which this file measures at 33 of
+ * 106 static files. Asserting over that set would assert a far weaker promise while
+ * printing the same confident line — the exact shape of gate this repo keeps having to
+ * unpick.
+ */
+const lost = [...lostToFetch, ...lostToBackstop];
+if (!manifest) {
+  console.log(
+    `\n::notice::per-asset retention not asserted: the previous manifest was ` +
+      `unreadable, so the file list came from crawling HTML and is not the ` +
+      `previous deploy's promise. ${lost.length} asset(s) were lost this run.`
+  );
+} else if (lost.length > 0) {
+  console.log(
+    `\n::error::${lost.length} asset(s) the previous deploy promised to keep serving ` +
+      `were NOT carried forward, and are still inside the ${RETAIN_DAYS}-day window. ` +
+      `Anyone holding HTML that references them is looking at a broken page.`
+  );
+  // Named, not counted. The whole point of instrumenting the loop.
+  for (const rel of lost.slice(0, 25)) {
+    const why = lostToFetch.includes(rel)
+      ? 'unreachable on the live host'
+      : `dropped by the ${RETAIN_MAX_FILES}-file backstop`;
+    console.log(`  lost  ${rel}  (${why})`);
+  }
+  if (lost.length > 25) {
+    console.log(`  ... and ${lost.length - 25} more`);
+  }
+  process.exit(1);
+} else {
+  console.log(
+    `\nper-asset retention holds: every one of the ${wanted.size} reference(s) the ` +
+      `previous deploy promised is either in this build, carried forward, or past ` +
+      `${RETAIN_DAYS} days.`
+  );
+}
