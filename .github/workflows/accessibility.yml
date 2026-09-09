@@ -10,6 +10,24 @@ jobs:
   accessibility:
     runs-on: ubuntu-latest
 
+    # THE FAILURE COMMENT NEEDS THIS, AND ONLY FAILS WHEN IT MATTERS (#25).
+    #
+    # The last step posts a comment when this job fails on a PR. It had no
+    # permissions block, so `GITHUB_TOKEN` carried the repository default — and
+    # `github.rest.issues.createComment` answered `RequestError: Resource not
+    # accessible by integration`.
+    #
+    # It is guarded by `failure()`, so it could only ever misfire on a run that
+    # was ALREADY red: the reader got a second, unrelated failure stacked on top
+    # of the real one. That is the worst moment to add noise, and it is why this
+    # never showed up on a green run.
+    #
+    # `contents: read` is restated because naming any permission drops every
+    # unnamed one to none, and `actions/checkout` needs it.
+    permissions:
+      contents: read
+      pull-requests: write
+
     # Only the public NEXT_PUBLIC_* pair — this job builds the static export and
     # runs pa11y plus three component a11y specs, none of which reach a backend.
     # See the note in ci.yml; same reasoning, same ticket. #574

@@ -291,9 +291,17 @@ const base = `http://127.0.0.1:${PORT}`;
 async function launch() {
   try {
     return await chromium.launch();
-  } catch (err) {
+  } catch {
+    // EXPECTED ON CI, and worded to say so (#25).
+    //
+    // This used to print `bundled chromium unavailable (Error:
+    // browserType.launch: Executable doesn't exist ...)`, which is exactly what a
+    // broken required check looks like — and it prints on every single run,
+    // because the runner never has the bundled browser. #25 was filed reading it
+    // as the failure it resembles. The fallback is the designed path here, not a
+    // degradation, so it should not be dressed as a stack trace.
     console.log(
-      `bundled chromium unavailable (${String(err).slice(0, 80)}) — trying system chrome`
+      'no bundled chromium on this runner (expected on CI) — using the system chrome channel'
     );
     return chromium.launch({ channel: 'chrome' });
   }
