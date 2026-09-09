@@ -90,9 +90,8 @@ coarseness that makes encounters stable is the same coarseness that means the ga
 never knows which building you are in.
 
 So there is no tracking to switch off, and no location history to leak, because
-none is collected. Deny the permission entirely and it still plays: it falls back
-to a coarse network location, a zone you pick by hand, or grid movement with no
-GPS at all.
+none is collected. Deny the permission entirely and it still plays: pick a zone by
+hand, or use grid movement and play the whole game with no GPS at all.
 
 ## 🚶 What playing actually looks like
 

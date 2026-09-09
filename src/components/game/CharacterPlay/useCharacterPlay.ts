@@ -28,10 +28,18 @@ import { RollResult } from '@/lib/geolarp/dice';
 /**
  * How the player's cell is decided.
  *
- * All three are published commitments: "Deny the permission entirely and it
- * still plays: it falls back to a coarse network location, a zone you pick by
- * hand, or grid movement with no GPS at all"
- * (`the-world-is-the-board.md:93-95`).
+ * BOTH NON-GPS MODES ARE PUBLISHED COMMITMENTS: "Deny the permission entirely and
+ * it still plays: pick a zone by hand, or use grid movement and play the whole
+ * game with no GPS at all" (`the-world-is-the-board.md:93-94`).
+ *
+ * The post used to promise a THIRD fallback — "a coarse network location" — and
+ * this comment paraphrased all three while the code shipped two. It was not a
+ * missing feature: the sentence is conditioned on the permission being DENIED, and
+ * after denial no location is obtainable at any accuracy without an IP lookup,
+ * which would send the visitor's address to a third party on the page whose whole
+ * claim is that nothing about their location is collected. Unimplementable as
+ * written rather than unimplemented. The post was amended to describe the two that
+ * exist and work (#112).
  */
 export type LocationMode = 'gps' | 'zone' | 'grid';
 
