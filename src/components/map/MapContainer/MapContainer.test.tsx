@@ -232,9 +232,9 @@ describe('MapContainer', () => {
     // under test cannot mask that code changing.
     await waitFor(() => {
       expect(onLocationFound).toHaveBeenCalledWith({
-        cell: { y: 57335, x: -63 },
-        lat: 51.505120373697444,
-        lon: -0.09019989877336257,
+        cell: { r: 66205, q: -63 },
+        lat: 51.505250512262535,
+        lon: -0.0894785551339524,
         accuracy: 10,
         timestamp: mockPosition.timestamp,
       });

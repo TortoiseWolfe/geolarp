@@ -48,9 +48,9 @@ describe('CharacterPlay', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  async function begin(name = 'Ada Wren') {
+  async function begin(name = 'Ada Wren', day: Date = today) {
     const user = userEvent.setup();
-    render(<CharacterPlay today={today} />);
+    render(<CharacterPlay today={day} />);
     await screen.findByRole('heading', { name: 'Make a character' });
     if (name) await user.type(screen.getByLabelText('Name'), name);
     await user.click(screen.getByRole('button', { name: 'Roll a character' }));
@@ -227,7 +227,9 @@ describe('CharacterPlay', () => {
     // The North/West/East/South cross is now a 3x3 pad, so the tile names the
     // place it moves TO rather than just a compass word — the pad adds
     // diagonals and is narrower at 320px than the cross it replaced.
-    await user.click(screen.getByRole('button', { name: /^Move north to/ }));
+    await user.click(
+      screen.getByRole('button', { name: /^Move north-east to/ })
+    );
     await waitFor(() => expect(seedText()).not.toBe(before));
     expect(mockGeo.getCurrentPosition).not.toHaveBeenCalled();
   });
@@ -243,8 +245,21 @@ describe('CharacterPlay', () => {
       screen.getByRole('button', { name: /^Move north-east to/ })
     );
     const moved = await screen.findByRole('status', { name: 'Grid position' });
+    /*
+     * 76 EAST, NOT 50, AND THAT IS THE SHEAR SHOWING ITS FACE.
+     *
+     * An ideal north-east step is 50 m east and 86.6 m north — exactly 100 m.
+     * This fixture sits at Chattanooga, where rows quantise longitude slightly
+     * differently, so the step measures 76 east and lands at 115 m. Asserting a
+     * clean 100 here would be asserting an unsheared lattice this app does not
+     * have (#87 records the whole envelope: 1.282 max/min at this latitude).
+     *
+     * It is still better than what it replaced. The same one step on the square
+     * grid read "100 m east and 100 m north — 141 m": one step, 41% further
+     * walked for the same reward, everywhere, by construction.
+     */
     expect(moved).toHaveTextContent(
-      /100 m east and 100 m north of where you started — 141 m, north-east\./
+      /76 m east and 87 m north of where you started — 115 m, north-east\./
     );
 
     await user.click(
@@ -262,11 +277,21 @@ describe('CharacterPlay', () => {
     // lie — the whole point is that grid movement walks the map, not you.
     const user = await begin();
     await user.click(screen.getByRole('button', { name: 'Grid movement' }));
-    await user.click(screen.getByRole('button', { name: /^Move north to/ }));
-    await user.click(screen.getByRole('button', { name: /^Move north to/ }));
+    await user.click(
+      screen.getByRole('button', { name: /^Move north-east to/ })
+    );
+    await user.click(
+      screen.getByRole('button', { name: /^Move north-east to/ })
+    );
     expect(
       await screen.findByRole('status', { name: 'Grid position' })
-    ).toHaveTextContent(/200 m north of where you started — 200 m, north\./);
+      // Two north-east steps from the same anchor: the east components accumulate
+      // (76 + 76) and so do the rows (87 + 87). The point of the assertion is that
+      // it measures from the ANCHOR and not from the last step, which is why both
+      // components are doubled rather than reset.
+    ).toHaveTextContent(
+      /15[0-9] m east and 17[0-9] m north of where you started — 2[0-9][0-9] m, north-east\./
+    );
   });
 
   it('asks for a fix only when the player picks GPS, and quantises it', async () => {
@@ -339,7 +364,20 @@ describe('CharacterPlay', () => {
   });
 
   it('deducts spent Character Points and remembers the spend', async () => {
-    const user = await begin();
+    /*
+     * ITS OWN DAY, AND A ZERO-PAY ONE ON PURPOSE.
+     *
+     * This asserts that SPENDING deducts. On the shared fixture day the cell's
+     * encounter now pays 1 on success, so spend-one-earn-one nets to zero and the
+     * test passed 5 where it wanted 4 — measuring nothing while looking green.
+     * (The hex conversion moved every cell key, so which encounter sits here
+     * changed; the trap was always there and #87 merely walked into it.)
+     *
+     * 2026-08-07 puts an `easy` encounter on this cell, and `REWARD_BY_BAND` pays
+     * 0 for very-easy and easy — 35% of the world. So the only movement in the
+     * total is the spend, which is the thing under test.
+     */
+    const user = await begin('Ada Wren', new Date('2026-08-07T12:00:00Z'));
     const sheet = screen
       .getByRole('heading', { name: 'Ada Wren', level: 2 })
       .closest('article') as HTMLElement;
@@ -577,8 +615,15 @@ describe('resolving a cell pays, once', () => {
     await waitFor(() => expect(outcome()).toHaveTextContent(/rolled/));
     const before = outcome().textContent;
 
-    await user.click(screen.getByRole('button', { name: /^Move north to/ }));
-    await user.click(screen.getByRole('button', { name: /^Move south to/ }));
+    // NE then SW, not north then south. A pointy-top hex has no due north (#87),
+    // and these two must be RECIPROCAL or the player does not return to the cell
+    // whose outcome is being remembered — which is the whole subject here.
+    await user.click(
+      screen.getByRole('button', { name: /^Move north-east to/ })
+    );
+    await user.click(
+      screen.getByRole('button', { name: /^Move south-west to/ })
+    );
 
     await waitFor(() => expect(outcome()).toHaveTextContent(/rolled/));
     expect(outcome().textContent).toBe(before);

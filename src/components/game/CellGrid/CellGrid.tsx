@@ -62,7 +62,7 @@ const STEPS: ReadonlyArray<HexDirection | null> = [
 const ROWS: ReadonlyArray<number> = [2, 3, 2];
 
 /**
- * The nine cells around you, and the way to walk between them.
+ * The seven cells around you, and the six ways to walk between them.
  *
  * WHY A GRID AND NOT A MAP. A real map was rejected on privacy, not on cost:
  * every tile fetch sends position-derived z/x/y to a third-party CDN on every
@@ -70,7 +70,7 @@ const ROWS: ReadonlyArray<number> = [2, 3, 2];
  * *cannot* draw a position dot even if it wanted to — the raw fix dies inside
  * `setCellFromFix` and never enters React state.
  *
- * So it draws a highlighted 100-metre square WITH NO DOT IN IT. Every mapping
+ * So it draws a highlighted 100-metre cell WITH NO DOT IN IT. Every mapping
  * UI in the world puts a dot on you; the absence here is the privacy promise
  * made visible, rather than asked for on faith.
  *
@@ -172,6 +172,7 @@ export default function CellGrid({
                       key={cellKey(t.cell)}
                       className={`${shell} flex-1`}
                       aria-label={label}
+                      data-testid="cell-tile"
                     >
                       {body}
                     </div>
@@ -184,6 +185,7 @@ export default function CellGrid({
                     type="button"
                     className={`${shell} hover:border-primary flex-1`}
                     aria-label={label}
+                    data-testid="cell-tile"
                     onClick={() => onStep(direction)}
                   >
                     {body}

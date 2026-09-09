@@ -376,15 +376,23 @@ export default function CharacterPlay({
               role="status"
               aria-label="Grid position"
             >
-              {Math.abs(play.offset.east) > 0 &&
-                `${Math.abs(play.offset.east)} m ${
+              {/*
+                ROUNDED (#87). These were whole multiples of 100 on the square
+                grid, so printing them raw looked fine. On the hex lattice east
+                comes in halves and north in units of 86.60254037844386, and the
+                unrounded value renders as "86.60254037844386 m north" — a number
+                that implies a precision the grid does not carry, on the one
+                screen whose whole point is that it does not.
+              */}
+              {Math.round(Math.abs(play.offset.east)) > 0 &&
+                `${Math.round(Math.abs(play.offset.east))} m ${
                   play.offset.east > 0 ? 'east' : 'west'
                 }`}
-              {Math.abs(play.offset.east) > 0 &&
-                Math.abs(play.offset.north) > 0 &&
+              {Math.round(Math.abs(play.offset.east)) > 0 &&
+                Math.round(Math.abs(play.offset.north)) > 0 &&
                 ' and '}
-              {Math.abs(play.offset.north) > 0 &&
-                `${Math.abs(play.offset.north)} m ${
+              {Math.round(Math.abs(play.offset.north)) > 0 &&
+                `${Math.round(Math.abs(play.offset.north))} m ${
                   play.offset.north > 0 ? 'north' : 'south'
                 }`}
               {` of where you started — ${play.offset.metres} m, ${play.offset.bearing}.`}

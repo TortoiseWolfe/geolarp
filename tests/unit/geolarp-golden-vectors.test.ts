@@ -29,6 +29,14 @@
  * had it appeared among the failures, it would have been reading a seed it has no
  * business reading.
  *
+ * RE-MEASURED AGAIN 2026-09-08 after the hex conversion (#87), which rewrote every cell
+ * key on Earth and regenerated all 264 vectors. Both numbers held EXACTLY: 94 of 279,
+ * and the per-class split above is unchanged to the row. That is the strongest evidence
+ * in this file that the table is wired to the engine rather than to itself — the
+ * geometry moved completely underneath it and the hash-sensitivity fingerprint did not
+ * move at all, because the two are genuinely independent. `adjacency` stayed at zero
+ * through a change that replaced the very operator it pins.
+ *
  * Note `hashSeed` fails 7 of its 8, not 8. The empty-string seed never enters the
  * multiply loop, so its hash is the untouched FNV offset basis and no prime can move it.
  * If a future mutation makes that one fail too, the loop guard changed, not the prime.
