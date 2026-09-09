@@ -53,6 +53,20 @@ function runProbe(baseUrl, env = {}) {
   });
 }
 
+/**
+ * The path, with any query string removed (#128).
+ *
+ * The probe cache-busts both ledger reads — they live under `/_next/static/`, which the edge
+ * caches for a year, and reading a stale ledger made its verdict a function of edge cache
+ * state. So the requests arrive as `...ASSET_MANIFEST.txt?cb=<nonce>` and an exact `===`
+ * match on `request.url` silently stops matching. When that landed, all seven tests in this
+ * file went red at once — which is the harness working: they were asserting real behaviour,
+ * not passing vacuously.
+ */
+function pathOf(request) {
+  return String(request.url || '').split('?')[0];
+}
+
 async function startServer(handler) {
   const server = createServer(handler);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -67,11 +81,11 @@ async function startServer(handler) {
 test('accepts a CDN-style 206 ranged GET when HEAD is unavailable', async (t) => {
   const entries = retainedEntries(['/_next/static/css/app.css']);
   const server = await startServer((request, response) => {
-    if (request.url === '/_next/static/ASSET_MANIFEST.txt') {
+    if (pathOf(request) === '/_next/static/ASSET_MANIFEST.txt') {
       response.end(entries.join('\n'));
       return;
     }
-    if (request.url === '/_next/static/ASSET_AGES.txt') {
+    if (pathOf(request) === '/_next/static/ASSET_AGES.txt') {
       response.end(agesFor(entries, 20));
       return;
     }
@@ -94,15 +108,15 @@ test('fails and names a missing retained stylesheet', async (t) => {
   const missing = '/_next/static/css/removed.css';
   const entries = retainedEntries([missing]);
   const server = await startServer((request, response) => {
-    if (request.url === '/_next/static/ASSET_MANIFEST.txt') {
+    if (pathOf(request) === '/_next/static/ASSET_MANIFEST.txt') {
       response.end(entries.join('\n'));
       return;
     }
-    if (request.url === '/_next/static/ASSET_AGES.txt') {
+    if (pathOf(request) === '/_next/static/ASSET_AGES.txt') {
       response.end(agesFor(entries, 20));
       return;
     }
-    if (request.url === missing) {
+    if (pathOf(request) === missing) {
       response.writeHead(404).end();
       return;
     }
@@ -144,15 +158,15 @@ const PAST_RAMP = {
 const serveLedger =
   (entries, spanDays, { missing = false } = {}) =>
   (request, response) => {
-    if (request.url === '/_next/static/ASSET_MANIFEST.txt') {
+    if (pathOf(request) === '/_next/static/ASSET_MANIFEST.txt') {
       response.end(entries.join('\n'));
       return;
     }
-    if (request.url === '/_next/static/ASSET_AGES.txt') {
+    if (pathOf(request) === '/_next/static/ASSET_AGES.txt') {
       response.end(agesFor(entries, spanDays));
       return;
     }
-    if (missing && request.url.endsWith('.css')) {
+    if (missing && pathOf(request).endsWith('.css')) {
       response.writeHead(404).end();
       return;
     }
@@ -235,11 +249,11 @@ test('stays quiet during the ramp, when a narrow window is correct', async (t) =
 test('fails when the age ledger is missing entirely', async (t) => {
   const entries = retainedEntries(['/_next/static/css/app.css']);
   const server = await startServer((request, response) => {
-    if (request.url === '/_next/static/ASSET_MANIFEST.txt') {
+    if (pathOf(request) === '/_next/static/ASSET_MANIFEST.txt') {
       response.end(entries.join('\n'));
       return;
     }
-    if (request.url === '/_next/static/ASSET_AGES.txt') {
+    if (pathOf(request) === '/_next/static/ASSET_AGES.txt') {
       response.writeHead(404).end();
       return;
     }
@@ -252,4 +266,83 @@ test('fails when the age ledger is missing entirely', async (t) => {
 
   assert.equal(result.code, 1, output);
   assert.match(output, /age ledger/i);
+});
+
+/**
+ * BOTH LEDGER READS MUST BYPASS THE CACHE (#128).
+ *
+ * Both files sit under `/_next/static/`, which the edge caches for a YEAR by design. This
+ * probe read them with a plain `fetch()`, so it asserted a cached PROMISE against the CURRENT
+ * site and its verdict became a function of which edge node answered — production and a
+ * developer's machine disagreed about the same site minutes apart.
+ *
+ * ASSERTED ON THE REQUEST, not on the source. A source scan for `cb=` would pass on a script
+ * that built the URL and then never used it. The harness records what actually arrived.
+ *
+ * The `no-cache` header is asserted too, but the QUERY STRING is the mechanism: `cache:
+ * 'no-store'` is honoured inconsistently by undici, and a header a proxy may ignore is not a
+ * guarantee. If only the header were sent, this test should still fail.
+ */
+test('reads both ledgers with a cache buster, not from the edge cache (#128)', async (t) => {
+  const entries = retainedEntries(['/_next/static/css/app.css']);
+  /** @type {{path: string, url: string, cacheControl: string}[]} */
+  const ledgerRequests = [];
+
+  const server = await startServer((request, response) => {
+    const p = pathOf(request);
+    if (p.endsWith('ASSET_MANIFEST.txt') || p.endsWith('ASSET_AGES.txt')) {
+      ledgerRequests.push({
+        path: p,
+        url: String(request.url || ''),
+        cacheControl: String(request.headers['cache-control'] || ''),
+      });
+    }
+    if (p === '/_next/static/ASSET_MANIFEST.txt') {
+      response.end(entries.join('\n'));
+      return;
+    }
+    if (p === '/_next/static/ASSET_AGES.txt') {
+      response.end(agesFor(entries, 20));
+      return;
+    }
+    response.end('x');
+  });
+  t.after(() => server.close());
+
+  const result = await runProbe(server.baseUrl);
+  assert.equal(result.code, 0, result.stdout + result.stderr);
+
+  const manifest = ledgerRequests.find((r) =>
+    r.path.endsWith('ASSET_MANIFEST.txt')
+  );
+  const ages = ledgerRequests.find((r) => r.path.endsWith('ASSET_AGES.txt'));
+
+  // The probe must have asked for both — a run that fetched neither would satisfy
+  // every `match` below vacuously.
+  assert.ok(manifest, 'the probe never requested ASSET_MANIFEST.txt');
+  assert.ok(ages, 'the probe never requested ASSET_AGES.txt');
+
+  assert.match(
+    manifest.url,
+    /[?&]cb=/,
+    'the manifest was read WITHOUT a cache buster, so a year-cached copy can be ' +
+      'asserted against the live site (#128)'
+  );
+  assert.match(
+    ages.url,
+    /[?&]cb=/,
+    'the age ledger was read without a cache buster'
+  );
+  assert.match(manifest.cacheControl, /no-cache/);
+  assert.match(ages.cacheControl, /no-cache/);
+
+  // ONE nonce per run, so the two ledgers describe the same moment. Two nonces would
+  // let the manifest and the ages come from different edge states, which is the same
+  // class of bug one level down.
+  const nonceOf = (u) => (u.match(/[?&]cb=([^&]+)/) || [])[1];
+  assert.equal(
+    nonceOf(manifest.url),
+    nonceOf(ages.url),
+    'the two ledger reads used different nonces, so they can describe different moments'
+  );
 });

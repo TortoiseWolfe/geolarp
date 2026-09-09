@@ -107,7 +107,48 @@ async function pool(items, worker, size) {
   return out;
 }
 
-const res = await fetch(MANIFEST, { redirect: 'follow' });
+
+/**
+ * Read a ledger file, never from a cache (#128).
+ *
+ * BOTH LEDGERS LIVE UNDER `/_next/static/`, which the edge caches for a YEAR by design —
+ * that year-long rule is the whole point of the content-hashed asset path, and these two
+ * files are the one thing beneath it that must never be stale. This script used a plain
+ * `fetch()`, so it asserted a cached PROMISE against the CURRENT site and its verdict became
+ * a function of which edge node answered.
+ *
+ * `retain-previous-assets.mjs:94` already solved this for the deploy side (#84). The same
+ * two files are read here and were never converted; #84 closed with this half unfixed.
+ *
+ * Reproduced against production: the cached manifest held 175 entries, the fresh one 244
+ * (`cf-cache-status: HIT`, `age: 186632` — 2.2 days). Two entries present only in the cached
+ * copy 404'd, and the script reported them as stranded assets. They were not: the deploy had
+ * legitimately stopped promising them.
+ *
+ * IT FAILS BOTH WAYS, and the silent direction is worse. A cached manifest is an older,
+ * SMALLER list — 175 against 244 — so checking it validates 69 fewer assets than the deploy
+ * actually promised. A genuinely stranded file among those 69 is invisible while the script
+ * prints a confident "all reachable". That is the exact failure this family of checks exists
+ * to prevent, and it produces a green run.
+ *
+ * A query string is enough: the `?cb=` variant measures `cf-cache-status: MISS`, `age: 0`.
+ * `cache: 'no-store'` is sent too but NOT relied on — undici honours it inconsistently, and a
+ * header a proxy may ignore is not a guarantee. The buster is the mechanism.
+ */
+function ledgerUrl(url) {
+  return `${url}${url.includes('?') ? '&' : '?'}cb=${LEDGER_NONCE}`;
+}
+
+/** One nonce per run, so the manifest and the ages ledger are consistent with each other. */
+const LEDGER_NONCE = `${Date.now()}`;
+
+const NO_CACHE = {
+  redirect: 'follow',
+  cache: 'no-store',
+  headers: { 'cache-control': 'no-cache', pragma: 'no-cache' },
+};
+
+const res = await fetch(ledgerUrl(MANIFEST), NO_CACHE);
 if (!res.ok) {
   // A missing manifest is itself the bug: retention has no memory, so the NEXT
   // deploy carries nothing forward and the failure recurs.
@@ -183,7 +224,7 @@ if (missing.length) {
  * day per day. Failing during that would be crying wolf on a correct deploy, so the
  * floor only applies once the ledger is old enough to have reached full width.
  */
-const agesRes = await fetch(AGES, { redirect: 'follow' });
+const agesRes = await fetch(ledgerUrl(AGES), NO_CACHE);
 if (!agesRes.ok) {
   console.error(
     `::error::${AGES} returned ${agesRes.status}. Without the age ledger the next ` +
