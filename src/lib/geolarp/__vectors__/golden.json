@@ -10,48 +10,216 @@
     "xxxxxxxx...x4096": 3759922629
   },
   "rngUints": {
-    "0": [1946957956,3428980365,786779859,774431924,4290866081,2842349281,3683250126,3077768035],
-    "": [2988730470,1666900107,221464154,2801406039,2179645895,3241723815,2159138463,858330540],
-    "geolarp": [3715020867,1321775463,1815458560,62988244,468095890,4144208562,2244018759,2984227675],
-    "1234:-5678@2026-09-07": [2037376055,2602896874,1438814511,1170809624,3829356831,3424304798,4234176039,3764055658],
-    "name:0:0": [2697539948,1606718780,974223868,3845524081,760917230,2967591342,457637762,1771942859],
-    "a🧭b": [3984061781,1107610262,3974348462,2109187623,923438037,3170207198,2860556320,3392318774],
-    "éèê": [2565884534,3922504021,1882552084,1329758323,554111017,3468422224,365623972,2829655753],
-    "xxxxxxxx...x4096": [1051304012,2795842128,927742900,263311502,3033401508,794131720,88088998,1494831005]
+    "0": [
+      1946957956,
+      3428980365,
+      786779859,
+      774431924,
+      4290866081,
+      2842349281,
+      3683250126,
+      3077768035
+    ],
+    "": [
+      2988730470,
+      1666900107,
+      221464154,
+      2801406039,
+      2179645895,
+      3241723815,
+      2159138463,
+      858330540
+    ],
+    "geolarp": [
+      3715020867,
+      1321775463,
+      1815458560,
+      62988244,
+      468095890,
+      4144208562,
+      2244018759,
+      2984227675
+    ],
+    "1234:-5678@2026-09-07": [
+      2037376055,
+      2602896874,
+      1438814511,
+      1170809624,
+      3829356831,
+      3424304798,
+      4234176039,
+      3764055658
+    ],
+    "name:0:0": [
+      2697539948,
+      1606718780,
+      974223868,
+      3845524081,
+      760917230,
+      2967591342,
+      457637762,
+      1771942859
+    ],
+    "a🧭b": [
+      3984061781,
+      1107610262,
+      3974348462,
+      2109187623,
+      923438037,
+      3170207198,
+      2860556320,
+      3392318774
+    ],
+    "éèê": [
+      2565884534,
+      3922504021,
+      1882552084,
+      1329758323,
+      554111017,
+      3468422224,
+      365623972,
+      2829655753
+    ],
+    "xxxxxxxx...x4096": [
+      1051304012,
+      2795842128,
+      927742900,
+      263311502,
+      3033401508,
+      794131720,
+      88088998,
+      1494831005
+    ]
   },
   "cellOf": {
-    "0,0": {"y":0,"x":0},
-    "35.0456,-85.3097": {"y":39012,"x":-77750},
-    "-33.8688,151.2093": {"y":-37703,"x":139764},
-    "51.5074,-0.1278": {"y":57338,"x":-89},
-    "-0.0001,-0.0001": {"y":-1,"x":-1},
-    "64.1466,-21.9426": {"y":71407,"x":-10652},
-    "-54.8019,-68.302": {"y":-61006,"x":-43827},
-    "1e-9,1e-9": {"y":0,"x":0},
-    "0,0.000898310175018642": {"y":0,"x":0},
-    "0,0.000898311175018642": {"y":0,"x":1},
-    "0,0.000898312175018642": {"y":0,"x":1},
-    "35.0456,0.001097243109977048": {"y":39012,"x":0},
-    "35.0456,0.001097244109977048": {"y":39012,"x":1},
-    "35.0456,0.0010972451099770478": {"y":39012,"x":1},
-    "-33.8688,0.001081887053538322": {"y":-37703,"x":0},
-    "-33.8688,0.0010818880535383218": {"y":-37703,"x":1},
-    "-33.8688,0.0010818890535383217": {"y":-37703,"x":1},
-    "51.5074,0.0014432827414214138": {"y":57338,"x":0},
-    "51.5074,0.0014432837414214137": {"y":57338,"x":1},
-    "51.5074,0.0014432847414214136": {"y":57338,"x":1},
-    "-0.0001,0.000898310175018642": {"y":-1,"x":0},
-    "-0.0001,0.000898311175018642": {"y":-1,"x":1},
-    "-0.0001,0.000898312175018642": {"y":-1,"x":1},
-    "64.1466,0.0020599819352106275": {"y":71407,"x":0},
-    "64.1466,0.0020599829352106274": {"y":71407,"x":1},
-    "64.1466,0.0020599839352106273": {"y":71407,"x":1},
-    "-54.8019,0.0015584714843658901": {"y":-61006,"x":0},
-    "-54.8019,0.00155847248436589": {"y":-61006,"x":1},
-    "-54.8019,0.00155847348436589": {"y":-61006,"x":1},
-    "1e-9,0.000898310175018642": {"y":0,"x":0},
-    "1e-9,0.000898311175018642": {"y":0,"x":1},
-    "1e-9,0.000898312175018642": {"y":0,"x":1}
+    "0,0": {
+      "r": 0,
+      "q": 0
+    },
+    "35.0456,-85.3097": {
+      "r": 45048,
+      "q": -77749
+    },
+    "-33.8688,151.2093": {
+      "r": -43536,
+      "q": 139763
+    },
+    "51.5074,-0.1278": {
+      "r": 66208,
+      "q": -89
+    },
+    "-0.0001,-0.0001": {
+      "r": -1,
+      "q": -1
+    },
+    "64.1466,-21.9426": {
+      "r": 82454,
+      "q": -10652
+    },
+    "-54.8019,-68.302": {
+      "r": -70444,
+      "q": -43826
+    },
+    "1e-9,1e-9": {
+      "r": 0,
+      "q": 0
+    },
+    "0,0.0008983101750116974": {
+      "r": 0,
+      "q": 0
+    },
+    "0,0.0008983111750116975": {
+      "r": 0,
+      "q": 1
+    },
+    "0,0.0008983121750116975": {
+      "r": 0,
+      "q": 1
+    },
+    "35.0456,0.0010972508975590437": {
+      "r": 45048,
+      "q": 0
+    },
+    "35.0456,0.0010972518975590436": {
+      "r": 45048,
+      "q": 1
+    },
+    "35.0456,0.0010972528975590435": {
+      "r": 45048,
+      "q": 1
+    },
+    "-33.8688,0.0010818910264615786": {
+      "r": -43536,
+      "q": 0
+    },
+    "-33.8688,0.0010818920264615785": {
+      "r": -43536,
+      "q": 1
+    },
+    "-33.8688,0.0010818930264615784": {
+      "r": -43536,
+      "q": 1
+    },
+    "51.5074,0.0014432754267810438": {
+      "r": 66208,
+      "q": 0
+    },
+    "51.5074,0.0014432764267810437": {
+      "r": 66208,
+      "q": 1
+    },
+    "51.5074,0.0014432774267810436": {
+      "r": 66208,
+      "q": 1
+    },
+    "-0.0001,0.0004491545875058487": {
+      "r": -1,
+      "q": -1
+    },
+    "-0.0001,0.00044915558750584873": {
+      "r": -1,
+      "q": 0
+    },
+    "-0.0001,0.00044915658750584875": {
+      "r": -1,
+      "q": 0
+    },
+    "64.1466,0.0020599947092893502": {
+      "r": 82454,
+      "q": 0
+    },
+    "64.1466,0.00205999570928935": {
+      "r": 82454,
+      "q": 1
+    },
+    "64.1466,0.00205999670928935": {
+      "r": 82454,
+      "q": 1
+    },
+    "-54.8019,0.0015584839735062724": {
+      "r": -70444,
+      "q": 0
+    },
+    "-54.8019,0.0015584849735062723": {
+      "r": -70444,
+      "q": 1
+    },
+    "-54.8019,0.0015584859735062722": {
+      "r": -70444,
+      "q": 1
+    },
+    "1e-9,0.0008983101750116974": {
+      "r": 0,
+      "q": 0
+    },
+    "1e-9,0.0008983111750116975": {
+      "r": 0,
+      "q": 1
+    },
+    "1e-9,0.0008983121750116975": {
+      "r": 0,
+      "q": 1
+    }
   },
   "cellCentreRoundTrip": {
     "0,0": true,
@@ -62,190 +230,1542 @@
     "64.1466,-21.9426": true,
     "-54.8019,-68.302": true,
     "1e-9,1e-9": true,
-    "0,0.000898310175018642": true,
-    "0,0.000898311175018642": true,
-    "0,0.000898312175018642": true,
-    "35.0456,0.001097243109977048": true,
-    "35.0456,0.001097244109977048": true,
-    "35.0456,0.0010972451099770478": true,
-    "-33.8688,0.001081887053538322": true,
-    "-33.8688,0.0010818880535383218": true,
-    "-33.8688,0.0010818890535383217": true,
-    "51.5074,0.0014432827414214138": true,
-    "51.5074,0.0014432837414214137": true,
-    "51.5074,0.0014432847414214136": true,
-    "-0.0001,0.000898310175018642": true,
-    "-0.0001,0.000898311175018642": true,
-    "-0.0001,0.000898312175018642": true,
-    "64.1466,0.0020599819352106275": true,
-    "64.1466,0.0020599829352106274": true,
-    "64.1466,0.0020599839352106273": true,
-    "-54.8019,0.0015584714843658901": true,
-    "-54.8019,0.00155847248436589": true,
-    "-54.8019,0.00155847348436589": true,
-    "1e-9,0.000898310175018642": true,
-    "1e-9,0.000898311175018642": true,
-    "1e-9,0.000898312175018642": true
+    "0,0.0008983101750116974": true,
+    "0,0.0008983111750116975": true,
+    "0,0.0008983121750116975": true,
+    "35.0456,0.0010972508975590437": true,
+    "35.0456,0.0010972518975590436": true,
+    "35.0456,0.0010972528975590435": true,
+    "-33.8688,0.0010818910264615786": true,
+    "-33.8688,0.0010818920264615785": true,
+    "-33.8688,0.0010818930264615784": true,
+    "51.5074,0.0014432754267810438": true,
+    "51.5074,0.0014432764267810437": true,
+    "51.5074,0.0014432774267810436": true,
+    "-0.0001,0.0004491545875058487": true,
+    "-0.0001,0.00044915558750584873": true,
+    "-0.0001,0.00044915658750584875": true,
+    "64.1466,0.0020599947092893502": true,
+    "64.1466,0.00205999570928935": true,
+    "64.1466,0.00205999670928935": true,
+    "-54.8019,0.0015584839735062724": true,
+    "-54.8019,0.0015584849735062723": true,
+    "-54.8019,0.0015584859735062722": true,
+    "1e-9,0.0008983101750116974": true,
+    "1e-9,0.0008983111750116975": true,
+    "1e-9,0.0008983121750116975": true
   },
   "adjacency": {
-    "0,0": { "ring": ["-1:1","0:1","1:1","-1:0","0:0","1:0","-1:-1","0:-1","1:-1"], "northStep": "0,100,north" },
-    "35.0456,-85.3097": { "ring": ["-77750:39013","-77749:39013","-77748:39013","-77751:39012","-77750:39012","-77749:39012","-77752:39011","-77751:39011","-77750:39011"], "northStep": "0,100,north" },
-    "-33.8688,151.2093": { "ring": ["139764:-37702","139765:-37702","139766:-37702","139763:-37703","139764:-37703","139765:-37703","139762:-37704","139763:-37704","139764:-37704"], "northStep": "0,100,north" },
-    "51.5074,-0.1278": { "ring": ["-90:57339","-89:57339","-88:57339","-90:57338","-89:57338","-88:57338","-90:57337","-89:57337","-88:57337"], "northStep": "0,100,north" },
-    "-0.0001,-0.0001": { "ring": ["-2:0","-1:0","0:0","-2:-1","-1:-1","0:-1","-2:-2","-1:-2","0:-2"], "northStep": "0,100,north" },
-    "64.1466,-21.9426": { "ring": ["-10653:71408","-10652:71408","-10651:71408","-10653:71407","-10652:71407","-10651:71407","-10653:71406","-10652:71406","-10651:71406"], "northStep": "0,100,north" },
-    "-54.8019,-68.302": { "ring": ["-43829:-61005","-43828:-61005","-43827:-61005","-43828:-61006","-43827:-61006","-43826:-61006","-43827:-61007","-43826:-61007","-43825:-61007"], "northStep": "0,100,north" },
-    "1e-9,1e-9": { "ring": ["-1:1","0:1","1:1","-1:0","0:0","1:0","-1:-1","0:-1","1:-1"], "northStep": "0,100,north" },
-    "0,0.000898310175018642": { "ring": ["-1:1","0:1","1:1","-1:0","0:0","1:0","-1:-1","0:-1","1:-1"], "northStep": "0,100,north" },
-    "0,0.000898311175018642": { "ring": ["0:1","1:1","2:1","0:0","1:0","2:0","0:-1","1:-1","2:-1"], "northStep": "0,100,north" },
-    "0,0.000898312175018642": { "ring": ["0:1","1:1","2:1","0:0","1:0","2:0","0:-1","1:-1","2:-1"], "northStep": "0,100,north" },
-    "35.0456,0.001097243109977048": { "ring": ["-1:39013","0:39013","1:39013","-1:39012","0:39012","1:39012","-1:39011","0:39011","1:39011"], "northStep": "0,100,north" },
-    "35.0456,0.001097244109977048": { "ring": ["0:39013","1:39013","2:39013","0:39012","1:39012","2:39012","0:39011","1:39011","2:39011"], "northStep": "0,100,north" },
-    "35.0456,0.0010972451099770478": { "ring": ["0:39013","1:39013","2:39013","0:39012","1:39012","2:39012","0:39011","1:39011","2:39011"], "northStep": "0,100,north" },
-    "-33.8688,0.001081887053538322": { "ring": ["-1:-37702","0:-37702","1:-37702","-1:-37703","0:-37703","1:-37703","-1:-37704","0:-37704","1:-37704"], "northStep": "0,100,north" },
-    "-33.8688,0.0010818880535383218": { "ring": ["0:-37702","1:-37702","2:-37702","0:-37703","1:-37703","2:-37703","0:-37704","1:-37704","2:-37704"], "northStep": "0,100,north" },
-    "-33.8688,0.0010818890535383217": { "ring": ["0:-37702","1:-37702","2:-37702","0:-37703","1:-37703","2:-37703","0:-37704","1:-37704","2:-37704"], "northStep": "0,100,north" },
-    "51.5074,0.0014432827414214138": { "ring": ["-1:57339","0:57339","1:57339","-1:57338","0:57338","1:57338","-1:57337","0:57337","1:57337"], "northStep": "0,100,north" },
-    "51.5074,0.0014432837414214137": { "ring": ["0:57339","1:57339","2:57339","0:57338","1:57338","2:57338","0:57337","1:57337","2:57337"], "northStep": "0,100,north" },
-    "51.5074,0.0014432847414214136": { "ring": ["0:57339","1:57339","2:57339","0:57338","1:57338","2:57338","0:57337","1:57337","2:57337"], "northStep": "0,100,north" },
-    "-0.0001,0.000898310175018642": { "ring": ["-1:0","0:0","1:0","-1:-1","0:-1","1:-1","-1:-2","0:-2","1:-2"], "northStep": "0,100,north" },
-    "-0.0001,0.000898311175018642": { "ring": ["0:0","1:0","2:0","0:-1","1:-1","2:-1","0:-2","1:-2","2:-2"], "northStep": "0,100,north" },
-    "-0.0001,0.000898312175018642": { "ring": ["0:0","1:0","2:0","0:-1","1:-1","2:-1","0:-2","1:-2","2:-2"], "northStep": "0,100,north" },
-    "64.1466,0.0020599819352106275": { "ring": ["-1:71408","0:71408","1:71408","-1:71407","0:71407","1:71407","-1:71406","0:71406","1:71406"], "northStep": "0,100,north" },
-    "64.1466,0.0020599829352106274": { "ring": ["0:71408","1:71408","2:71408","0:71407","1:71407","2:71407","0:71406","1:71406","2:71406"], "northStep": "0,100,north" },
-    "64.1466,0.0020599839352106273": { "ring": ["0:71408","1:71408","2:71408","0:71407","1:71407","2:71407","0:71406","1:71406","2:71406"], "northStep": "0,100,north" },
-    "-54.8019,0.0015584714843658901": { "ring": ["-1:-61005","0:-61005","1:-61005","-1:-61006","0:-61006","1:-61006","-1:-61007","0:-61007","1:-61007"], "northStep": "0,100,north" },
-    "-54.8019,0.00155847248436589": { "ring": ["0:-61005","1:-61005","2:-61005","0:-61006","1:-61006","2:-61006","0:-61007","1:-61007","2:-61007"], "northStep": "0,100,north" },
-    "-54.8019,0.00155847348436589": { "ring": ["0:-61005","1:-61005","2:-61005","0:-61006","1:-61006","2:-61006","0:-61007","1:-61007","2:-61007"], "northStep": "0,100,north" },
-    "1e-9,0.000898310175018642": { "ring": ["-1:1","0:1","1:1","-1:0","0:0","1:0","-1:-1","0:-1","1:-1"], "northStep": "0,100,north" },
-    "1e-9,0.000898311175018642": { "ring": ["0:1","1:1","2:1","0:0","1:0","2:0","0:-1","1:-1","2:-1"], "northStep": "0,100,north" },
-    "1e-9,0.000898312175018642": { "ring": ["0:1","1:1","2:1","0:0","1:0","2:0","0:-1","1:-1","2:-1"], "northStep": "0,100,north" }
+    "0,0": {
+      "ring": [
+        "-1:1",
+        "0:1",
+        "-1:0",
+        "0:0",
+        "1:0",
+        "-1:-1",
+        "0:-1"
+      ],
+      "northEastStep": "50.00000000922,86.60254037844386,north-east"
+    },
+    "35.0456,-85.3097": {
+      "ring": [
+        "-77749:45049",
+        "-77748:45049",
+        "-77750:45048",
+        "-77749:45048",
+        "-77748:45048",
+        "-77751:45047",
+        "-77750:45047"
+      ],
+      "northEastStep": "75.95447814965155,86.60254037844386,north-east"
+    },
+    "-33.8688,151.2093": {
+      "ring": [
+        "139763:-43535",
+        "139764:-43535",
+        "139762:-43536",
+        "139763:-43536",
+        "139764:-43536",
+        "139761:-43537",
+        "139762:-43537"
+      ],
+      "northEastStep": "22.63035392097663,86.60254037844386,north"
+    },
+    "51.5074,-0.1278": {
+      "ring": [
+        "-90:66209",
+        "-89:66209",
+        "-90:66208",
+        "-89:66208",
+        "-88:66208",
+        "-90:66207",
+        "-89:66207"
+      ],
+      "northEastStep": "49.84888999316581,86.60254037844386,north-east"
+    },
+    "-0.0001,-0.0001": {
+      "ring": [
+        "-1:0",
+        "0:0",
+        "-2:-1",
+        "-1:-1",
+        "0:-1",
+        "-1:-2",
+        "0:-2"
+      ],
+      "northEastStep": "50,86.60254037844386,north-east"
+    },
+    "64.1466,-21.9426": {
+      "ring": [
+        "-10653:82455",
+        "-10652:82455",
+        "-10653:82454",
+        "-10652:82454",
+        "-10651:82454",
+        "-10653:82453",
+        "-10652:82453"
+      ],
+      "northEastStep": "20.154015091065958,86.60254037844386,north"
+    },
+    "-54.8019,-68.302": {
+      "ring": [
+        "-43828:-70443",
+        "-43827:-70443",
+        "-43827:-70444",
+        "-43826:-70444",
+        "-43825:-70444",
+        "-43826:-70445",
+        "-43825:-70445"
+      ],
+      "northEastStep": "34.36192888984806,86.60254037844386,north"
+    },
+    "1e-9,1e-9": {
+      "ring": [
+        "-1:1",
+        "0:1",
+        "-1:0",
+        "0:0",
+        "1:0",
+        "-1:-1",
+        "0:-1"
+      ],
+      "northEastStep": "50.00000000922,86.60254037844386,north-east"
+    },
+    "0,0.0008983101750116974": {
+      "ring": [
+        "-1:1",
+        "0:1",
+        "-1:0",
+        "0:0",
+        "1:0",
+        "-1:-1",
+        "0:-1"
+      ],
+      "northEastStep": "50.00000000922,86.60254037844386,north-east"
+    },
+    "0,0.0008983111750116975": {
+      "ring": [
+        "0:1",
+        "1:1",
+        "0:0",
+        "1:0",
+        "2:0",
+        "0:-1",
+        "1:-1"
+      ],
+      "northEastStep": "50.00000002766001,86.60254037844386,north-east"
+    },
+    "0,0.0008983121750116975": {
+      "ring": [
+        "0:1",
+        "1:1",
+        "0:0",
+        "1:0",
+        "2:0",
+        "0:-1",
+        "1:-1"
+      ],
+      "northEastStep": "50.00000002766001,86.60254037844386,north-east"
+    },
+    "35.0456,0.0010972508975590437": {
+      "ring": [
+        "-1:45049",
+        "0:45049",
+        "-1:45048",
+        "0:45048",
+        "1:45048",
+        "-1:45047",
+        "0:45047"
+      ],
+      "northEastStep": "50.00047618617627,86.60254037844386,north-east"
+    },
+    "35.0456,0.0010972518975590436": {
+      "ring": [
+        "0:45049",
+        "1:45049",
+        "0:45048",
+        "1:45048",
+        "2:45048",
+        "0:45047",
+        "1:45047"
+      ],
+      "northEastStep": "50.00142855852878,86.60254037844386,north-east"
+    },
+    "35.0456,0.0010972528975590435": {
+      "ring": [
+        "0:45049",
+        "1:45049",
+        "0:45048",
+        "1:45048",
+        "2:45048",
+        "0:45047",
+        "1:45047"
+      ],
+      "northEastStep": "50.00142855852878,86.60254037844386,north-east"
+    },
+    "-33.8688,0.0010818910264615786": {
+      "ring": [
+        "-1:-43535",
+        "0:-43535",
+        "-1:-43536",
+        "0:-43536",
+        "1:-43536",
+        "-1:-43537",
+        "0:-43537"
+      ],
+      "northEastStep": "49.99954433866467,86.60254037844386,north-east"
+    },
+    "-33.8688,0.0010818920264615785": {
+      "ring": [
+        "0:-43535",
+        "1:-43535",
+        "0:-43536",
+        "1:-43536",
+        "2:-43536",
+        "0:-43537",
+        "1:-43537"
+      ],
+      "northEastStep": "49.99863301599403,86.60254037844386,north-east"
+    },
+    "-33.8688,0.0010818930264615784": {
+      "ring": [
+        "0:-43535",
+        "1:-43535",
+        "0:-43536",
+        "1:-43536",
+        "2:-43536",
+        "0:-43537",
+        "1:-43537"
+      ],
+      "northEastStep": "49.99863301599403,86.60254037844386,north-east"
+    },
+    "51.5074,0.0014432754267810438": {
+      "ring": [
+        "-1:66209",
+        "0:66209",
+        "-1:66208",
+        "0:66208",
+        "1:66208",
+        "-1:66207",
+        "0:66207"
+      ],
+      "northEastStep": "50.00085372885217,86.60254037844386,north-east"
+    },
+    "51.5074,0.0014432764267810437": {
+      "ring": [
+        "0:66209",
+        "1:66209",
+        "0:66208",
+        "1:66208",
+        "2:66208",
+        "0:66207",
+        "1:66207"
+      ],
+      "northEastStep": "50.002561186556505,86.60254037844386,north-east"
+    },
+    "51.5074,0.0014432774267810436": {
+      "ring": [
+        "0:66209",
+        "1:66209",
+        "0:66208",
+        "1:66208",
+        "2:66208",
+        "0:66207",
+        "1:66207"
+      ],
+      "northEastStep": "50.002561186556505,86.60254037844386,north-east"
+    },
+    "-0.0001,0.0004491545875058487": {
+      "ring": [
+        "-1:0",
+        "0:0",
+        "-2:-1",
+        "-1:-1",
+        "0:-1",
+        "-1:-2",
+        "0:-2"
+      ],
+      "northEastStep": "50,86.60254037844386,north-east"
+    },
+    "-0.0001,0.00044915558750584873": {
+      "ring": [
+        "0:0",
+        "1:0",
+        "-1:-1",
+        "0:-1",
+        "1:-1",
+        "0:-2",
+        "1:-2"
+      ],
+      "northEastStep": "50,86.60254037844386,north-east"
+    },
+    "-0.0001,0.00044915658750584875": {
+      "ring": [
+        "0:0",
+        "1:0",
+        "-1:-1",
+        "0:-1",
+        "1:-1",
+        "0:-2",
+        "1:-2"
+      ],
+      "northEastStep": "50,86.60254037844386,north-east"
+    },
+    "64.1466,0.0020599947092893502": {
+      "ring": [
+        "-1:82455",
+        "0:82455",
+        "-1:82454",
+        "0:82454",
+        "1:82454",
+        "-1:82453",
+        "0:82453"
+      ],
+      "northEastStep": "50.00140102262165,86.60254037844386,north-east"
+    },
+    "64.1466,0.00205999570928935": {
+      "ring": [
+        "0:82455",
+        "1:82455",
+        "0:82454",
+        "1:82454",
+        "2:82454",
+        "0:82453",
+        "1:82453"
+      ],
+      "northEastStep": "50.00420306786493,86.60254037844386,north-east"
+    },
+    "64.1466,0.00205999670928935": {
+      "ring": [
+        "0:82455",
+        "1:82455",
+        "0:82454",
+        "1:82454",
+        "2:82454",
+        "0:82453",
+        "1:82453"
+      ],
+      "northEastStep": "50.00420306786493,86.60254037844386,north-east"
+    },
+    "-54.8019,0.0015584839735062724": {
+      "ring": [
+        "-1:-70443",
+        "0:-70443",
+        "-1:-70444",
+        "0:-70444",
+        "1:-70444",
+        "-1:-70445",
+        "0:-70445"
+      ],
+      "northEastStep": "49.99903752462733,86.60254037844386,north-east"
+    },
+    "-54.8019,0.0015584849735062723": {
+      "ring": [
+        "0:-70443",
+        "1:-70443",
+        "0:-70444",
+        "1:-70444",
+        "2:-70444",
+        "0:-70445",
+        "1:-70445"
+      ],
+      "northEastStep": "49.997112573882,86.60254037844386,north-east"
+    },
+    "-54.8019,0.0015584859735062722": {
+      "ring": [
+        "0:-70443",
+        "1:-70443",
+        "0:-70444",
+        "1:-70444",
+        "2:-70444",
+        "0:-70445",
+        "1:-70445"
+      ],
+      "northEastStep": "49.997112573882,86.60254037844386,north-east"
+    },
+    "1e-9,0.0008983101750116974": {
+      "ring": [
+        "-1:1",
+        "0:1",
+        "-1:0",
+        "0:0",
+        "1:0",
+        "-1:-1",
+        "0:-1"
+      ],
+      "northEastStep": "50.00000000922,86.60254037844386,north-east"
+    },
+    "1e-9,0.0008983111750116975": {
+      "ring": [
+        "0:1",
+        "1:1",
+        "0:0",
+        "1:0",
+        "2:0",
+        "0:-1",
+        "1:-1"
+      ],
+      "northEastStep": "50.00000002766001,86.60254037844386,north-east"
+    },
+    "1e-9,0.0008983121750116975": {
+      "ring": [
+        "0:1",
+        "1:1",
+        "0:0",
+        "1:0",
+        "2:0",
+        "0:-1",
+        "1:-1"
+      ],
+      "northEastStep": "50.00000002766001,86.60254037844386,north-east"
+    }
   },
   "seedOf": {
     "0,0": "0:0@2026-09-07",
-    "35.0456,-85.3097": "-77750:39012@2026-09-07",
-    "-33.8688,151.2093": "139764:-37703@2026-09-07",
-    "51.5074,-0.1278": "-89:57338@2026-09-07",
+    "35.0456,-85.3097": "-77749:45048@2026-09-07",
+    "-33.8688,151.2093": "139763:-43536@2026-09-07",
+    "51.5074,-0.1278": "-89:66208@2026-09-07",
     "-0.0001,-0.0001": "-1:-1@2026-09-07",
-    "64.1466,-21.9426": "-10652:71407@2026-09-07",
-    "-54.8019,-68.302": "-43827:-61006@2026-09-07",
+    "64.1466,-21.9426": "-10652:82454@2026-09-07",
+    "-54.8019,-68.302": "-43826:-70444@2026-09-07",
     "1e-9,1e-9": "0:0@2026-09-07",
-    "0,0.000898310175018642": "0:0@2026-09-07",
-    "0,0.000898311175018642": "1:0@2026-09-07",
-    "0,0.000898312175018642": "1:0@2026-09-07",
-    "35.0456,0.001097243109977048": "0:39012@2026-09-07",
-    "35.0456,0.001097244109977048": "1:39012@2026-09-07",
-    "35.0456,0.0010972451099770478": "1:39012@2026-09-07",
-    "-33.8688,0.001081887053538322": "0:-37703@2026-09-07",
-    "-33.8688,0.0010818880535383218": "1:-37703@2026-09-07",
-    "-33.8688,0.0010818890535383217": "1:-37703@2026-09-07",
-    "51.5074,0.0014432827414214138": "0:57338@2026-09-07",
-    "51.5074,0.0014432837414214137": "1:57338@2026-09-07",
-    "51.5074,0.0014432847414214136": "1:57338@2026-09-07",
-    "-0.0001,0.000898310175018642": "0:-1@2026-09-07",
-    "-0.0001,0.000898311175018642": "1:-1@2026-09-07",
-    "-0.0001,0.000898312175018642": "1:-1@2026-09-07",
-    "64.1466,0.0020599819352106275": "0:71407@2026-09-07",
-    "64.1466,0.0020599829352106274": "1:71407@2026-09-07",
-    "64.1466,0.0020599839352106273": "1:71407@2026-09-07",
-    "-54.8019,0.0015584714843658901": "0:-61006@2026-09-07",
-    "-54.8019,0.00155847248436589": "1:-61006@2026-09-07",
-    "-54.8019,0.00155847348436589": "1:-61006@2026-09-07",
-    "1e-9,0.000898310175018642": "0:0@2026-09-07",
-    "1e-9,0.000898311175018642": "1:0@2026-09-07",
-    "1e-9,0.000898312175018642": "1:0@2026-09-07"
+    "0,0.0008983101750116974": "0:0@2026-09-07",
+    "0,0.0008983111750116975": "1:0@2026-09-07",
+    "0,0.0008983121750116975": "1:0@2026-09-07",
+    "35.0456,0.0010972508975590437": "0:45048@2026-09-07",
+    "35.0456,0.0010972518975590436": "1:45048@2026-09-07",
+    "35.0456,0.0010972528975590435": "1:45048@2026-09-07",
+    "-33.8688,0.0010818910264615786": "0:-43536@2026-09-07",
+    "-33.8688,0.0010818920264615785": "1:-43536@2026-09-07",
+    "-33.8688,0.0010818930264615784": "1:-43536@2026-09-07",
+    "51.5074,0.0014432754267810438": "0:66208@2026-09-07",
+    "51.5074,0.0014432764267810437": "1:66208@2026-09-07",
+    "51.5074,0.0014432774267810436": "1:66208@2026-09-07",
+    "-0.0001,0.0004491545875058487": "-1:-1@2026-09-07",
+    "-0.0001,0.00044915558750584873": "0:-1@2026-09-07",
+    "-0.0001,0.00044915658750584875": "0:-1@2026-09-07",
+    "64.1466,0.0020599947092893502": "0:82454@2026-09-07",
+    "64.1466,0.00205999570928935": "1:82454@2026-09-07",
+    "64.1466,0.00205999670928935": "1:82454@2026-09-07",
+    "-54.8019,0.0015584839735062724": "0:-70444@2026-09-07",
+    "-54.8019,0.0015584849735062723": "1:-70444@2026-09-07",
+    "-54.8019,0.0015584859735062722": "1:-70444@2026-09-07",
+    "1e-9,0.0008983101750116974": "0:0@2026-09-07",
+    "1e-9,0.0008983111750116975": "1:0@2026-09-07",
+    "1e-9,0.0008983121750116975": "1:0@2026-09-07"
   },
   "placeName": {
     "0,0": "Hungry Slipway",
-    "35.0456,-85.3097": "Cold Rampart",
-    "-33.8688,151.2093": "Flint Slipway",
-    "51.5074,-0.1278": "Greater Causeway",
+    "35.0456,-85.3097": "Reed Gate",
+    "-33.8688,151.2093": "Slate Granary",
+    "51.5074,-0.1278": "First Dyke",
     "-0.0001,-0.0001": "Thistle Wharf",
-    "64.1466,-21.9426": "Leaning Combe",
-    "-54.8019,-68.302": "Nameless Cloister",
+    "64.1466,-21.9426": "Restless Quay",
+    "-54.8019,-68.302": "Iron Forge",
     "1e-9,1e-9": "Hungry Slipway",
-    "0,0.000898310175018642": "Hungry Slipway",
-    "0,0.000898311175018642": "Broken Lazaret",
-    "0,0.000898312175018642": "Broken Lazaret",
-    "35.0456,0.001097243109977048": "Grey Waystone",
-    "35.0456,0.001097244109977048": "Sullen Granary",
-    "35.0456,0.0010972451099770478": "Sullen Granary",
-    "-33.8688,0.001081887053538322": "Nameless Gate",
-    "-33.8688,0.0010818880535383218": "Moss Shrine",
-    "-33.8688,0.0010818890535383217": "Moss Shrine",
-    "51.5074,0.0014432827414214138": "Bright Sluice",
-    "51.5074,0.0014432837414214137": "Bitter Combe",
-    "51.5074,0.0014432847414214136": "Bitter Combe",
-    "-0.0001,0.000898310175018642": "Long Combe",
-    "-0.0001,0.000898311175018642": "Iron Boathouse",
-    "-0.0001,0.000898312175018642": "Iron Boathouse",
-    "64.1466,0.0020599819352106275": "Still Dovecote",
-    "64.1466,0.0020599829352106274": "Broken Kennels",
-    "64.1466,0.0020599839352106273": "Broken Kennels",
-    "-54.8019,0.0015584714843658901": "Broken Cistern",
-    "-54.8019,0.00155847248436589": "Upper Weir",
-    "-54.8019,0.00155847348436589": "Upper Weir",
-    "1e-9,0.000898310175018642": "Hungry Slipway",
-    "1e-9,0.000898311175018642": "Broken Lazaret",
-    "1e-9,0.000898312175018642": "Broken Lazaret"
+    "0,0.0008983101750116974": "Hungry Slipway",
+    "0,0.0008983111750116975": "Broken Lazaret",
+    "0,0.0008983121750116975": "Broken Lazaret",
+    "35.0456,0.0010972508975590437": "Alder Well",
+    "35.0456,0.0010972518975590436": "Alder Kiln",
+    "35.0456,0.0010972528975590435": "Alder Kiln",
+    "-33.8688,0.0010818910264615786": "Forgotten Lazaret",
+    "-33.8688,0.0010818920264615785": "Outer Vault",
+    "-33.8688,0.0010818930264615784": "Outer Vault",
+    "51.5074,0.0014432754267810438": "Weathered Smokehouse",
+    "51.5074,0.0014432764267810437": "Ember Boathouse",
+    "51.5074,0.0014432774267810436": "Ember Boathouse",
+    "-0.0001,0.0004491545875058487": "Thistle Wharf",
+    "-0.0001,0.00044915558750584873": "Long Combe",
+    "-0.0001,0.00044915658750584875": "Long Combe",
+    "64.1466,0.0020599947092893502": "Copper Well",
+    "64.1466,0.00205999570928935": "Restless Jetty",
+    "64.1466,0.00205999670928935": "Restless Jetty",
+    "-54.8019,0.0015584839735062724": "Careful Reliquary",
+    "-54.8019,0.0015584849735062723": "Iron Arch",
+    "-54.8019,0.0015584859735062722": "Iron Arch",
+    "1e-9,0.0008983101750116974": "Hungry Slipway",
+    "1e-9,0.0008983111750116975": "Broken Lazaret",
+    "1e-9,0.0008983121750116975": "Broken Lazaret"
   },
   "encounterFor": {
-    "0": {"seed":"0","kind":"cache","title":"a knot in the fence","description":"A knot in the fence — someone left something here.","skill":"Search","difficulty":"easy"},
-    "": {"seed":"","kind":"shrine","title":"a mark scratched at knee height","description":"A mark scratched at knee height. It was meant to be found.","skill":"Willpower","difficulty":"difficult"},
-    "geolarp": {"seed":"geolarp","kind":"trap","title":"a wire at ankle height","description":"A wire at ankle height. Whoever set it is still counting on it.","skill":"Search","difficulty":"very-easy"},
-    "1234:-5678@2026-09-07": {"seed":"1234:-5678@2026-09-07","kind":"cache","title":"a tin under a step","description":"A tin under a step — someone left something here.","skill":"Scavenge","difficulty":"easy"},
-    "name:0:0": {"seed":"name:0:0","kind":"shrine","title":"a mark scratched at knee height","description":"A mark scratched at knee height. It was meant to be found.","skill":"Willpower","difficulty":"very-difficult"},
-    "a🧭b": {"seed":"a🧭b","kind":"trap","title":"a wire at ankle height","description":"A wire at ankle height. Whoever set it is still counting on it.","skill":"Stealth","difficulty":"moderate"},
-    "éèê": {"seed":"éèê","kind":"cache","title":"a knot in the fence","description":"A knot in the fence — someone left something here.","skill":"Scavenge","difficulty":"easy"},
-    "xxxxxxxx...x4096": {"seed":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","kind":"trader","title":"a pack on a wall","description":"Someone has set up a pack on a wall. They will deal, at their price.","skill":"Persuade","difficulty":"very-easy"}
+    "0": {
+      "seed": "0",
+      "kind": "cache",
+      "title": "a knot in the fence",
+      "description": "A knot in the fence — someone left something here.",
+      "skill": "Search",
+      "difficulty": "easy"
+    },
+    "": {
+      "seed": "",
+      "kind": "shrine",
+      "title": "a mark scratched at knee height",
+      "description": "A mark scratched at knee height. It was meant to be found.",
+      "skill": "Willpower",
+      "difficulty": "difficult"
+    },
+    "geolarp": {
+      "seed": "geolarp",
+      "kind": "trap",
+      "title": "a wire at ankle height",
+      "description": "A wire at ankle height. Whoever set it is still counting on it.",
+      "skill": "Search",
+      "difficulty": "very-easy"
+    },
+    "1234:-5678@2026-09-07": {
+      "seed": "1234:-5678@2026-09-07",
+      "kind": "cache",
+      "title": "a tin under a step",
+      "description": "A tin under a step — someone left something here.",
+      "skill": "Scavenge",
+      "difficulty": "easy"
+    },
+    "name:0:0": {
+      "seed": "name:0:0",
+      "kind": "shrine",
+      "title": "a mark scratched at knee height",
+      "description": "A mark scratched at knee height. It was meant to be found.",
+      "skill": "Willpower",
+      "difficulty": "very-difficult"
+    },
+    "a🧭b": {
+      "seed": "a🧭b",
+      "kind": "trap",
+      "title": "a wire at ankle height",
+      "description": "A wire at ankle height. Whoever set it is still counting on it.",
+      "skill": "Stealth",
+      "difficulty": "moderate"
+    },
+    "éèê": {
+      "seed": "éèê",
+      "kind": "cache",
+      "title": "a knot in the fence",
+      "description": "A knot in the fence — someone left something here.",
+      "skill": "Scavenge",
+      "difficulty": "easy"
+    },
+    "xxxxxxxx...x4096": {
+      "seed": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "kind": "trader",
+      "title": "a pack on a wall",
+      "description": "Someone has set up a pack on a wall. They will deal, at their price.",
+      "skill": "Persuade",
+      "difficulty": "very-easy"
+    }
   },
   "generateCharacter": {
-    "0": {"version":1,"name":"Vector","attributes":{"Strength":{"dice":4,"pips":0},"Agility":{"dice":2,"pips":0},"Intellect":{"dice":3,"pips":0},"Spirit":{"dice":3,"pips":0},"Luck":{"dice":3,"pips":0}},"skills":{"Gamble":{"dice":4,"pips":0},"Willpower":{"dice":4,"pips":0},"Haggle":{"dice":4,"pips":0},"Scavenge":{"dice":4,"pips":0},"Dodge":{"dice":3,"pips":0},"Lift":{"dice":5,"pips":0},"Brawl":{"dice":5,"pips":0}},"characterPoints":5},
-    "": {"version":1,"name":"Vector","attributes":{"Strength":{"dice":3,"pips":0},"Agility":{"dice":3,"pips":0},"Intellect":{"dice":3,"pips":0},"Spirit":{"dice":4,"pips":0},"Luck":{"dice":2,"pips":0}},"skills":{"Repair":{"dice":3,"pips":2},"Stamina":{"dice":4,"pips":0},"Haggle":{"dice":3,"pips":0},"Sprint":{"dice":3,"pips":2},"Dodge":{"dice":3,"pips":2},"Persuade":{"dice":5,"pips":0},"Search":{"dice":4,"pips":0},"Willpower":{"dice":5,"pips":0}},"characterPoints":5},
-    "geolarp": {"version":1,"name":"Vector","attributes":{"Strength":{"dice":4,"pips":0},"Agility":{"dice":3,"pips":0},"Intellect":{"dice":3,"pips":0},"Spirit":{"dice":2,"pips":0},"Luck":{"dice":3,"pips":0}},"skills":{"Repair":{"dice":4,"pips":1},"Command":{"dice":3,"pips":0},"Intimidate":{"dice":3,"pips":0},"Dodge":{"dice":3,"pips":2},"Willpower":{"dice":2,"pips":2},"Improvise":{"dice":4,"pips":0},"Sprint":{"dice":3,"pips":2},"Scavenge":{"dice":3,"pips":2}},"characterPoints":5},
-    "1234:-5678@2026-09-07": {"version":1,"name":"Vector","attributes":{"Strength":{"dice":2,"pips":0},"Agility":{"dice":4,"pips":0},"Intellect":{"dice":3,"pips":0},"Spirit":{"dice":3,"pips":0},"Luck":{"dice":3,"pips":0}},"skills":{"Improvise":{"dice":4,"pips":1},"Scavenge":{"dice":4,"pips":0},"Repair":{"dice":4,"pips":0},"Navigate":{"dice":3,"pips":1},"Search":{"dice":4,"pips":0},"Gamble":{"dice":3,"pips":2},"Throw":{"dice":4,"pips":2},"Intimidate":{"dice":4,"pips":0}},"characterPoints":5},
-    "name:0:0": {"version":1,"name":"Vector","attributes":{"Strength":{"dice":3,"pips":0},"Agility":{"dice":4,"pips":0},"Intellect":{"dice":2,"pips":0},"Spirit":{"dice":3,"pips":0},"Luck":{"dice":3,"pips":0}},"skills":{"Lift":{"dice":4,"pips":1},"Search":{"dice":3,"pips":0},"Stealth":{"dice":5,"pips":0},"Gamble":{"dice":4,"pips":0},"Scavenge":{"dice":3,"pips":1},"Dodge":{"dice":5,"pips":0},"Stamina":{"dice":4,"pips":0},"Intimidate":{"dice":3,"pips":1}},"characterPoints":5},
-    "a🧭b": {"version":1,"name":"Vector","attributes":{"Strength":{"dice":3,"pips":0},"Agility":{"dice":4,"pips":0},"Intellect":{"dice":2,"pips":0},"Spirit":{"dice":2,"pips":0},"Luck":{"dice":4,"pips":0}},"skills":{"Willpower":{"dice":4,"pips":0},"Scavenge":{"dice":5,"pips":0},"Navigate":{"dice":3,"pips":0},"Haggle":{"dice":4,"pips":1},"Throw":{"dice":5,"pips":0},"Stamina":{"dice":4,"pips":0},"Lift":{"dice":3,"pips":2}},"characterPoints":5},
-    "éèê": {"version":1,"name":"Vector","attributes":{"Strength":{"dice":3,"pips":0},"Agility":{"dice":3,"pips":0},"Intellect":{"dice":4,"pips":0},"Spirit":{"dice":2,"pips":0},"Luck":{"dice":3,"pips":0}},"skills":{"Climb":{"dice":4,"pips":0},"Willpower":{"dice":3,"pips":0},"Improvise":{"dice":4,"pips":0},"Dodge":{"dice":3,"pips":2},"Gamble":{"dice":4,"pips":0},"Lift":{"dice":3,"pips":2},"Haggle":{"dice":4,"pips":0},"Throw":{"dice":3,"pips":2}},"characterPoints":5},
-    "xxxxxxxx...x4096": {"version":1,"name":"Vector","attributes":{"Strength":{"dice":3,"pips":0},"Agility":{"dice":4,"pips":0},"Intellect":{"dice":2,"pips":0},"Spirit":{"dice":4,"pips":0},"Luck":{"dice":2,"pips":0}},"skills":{"Brawl":{"dice":5,"pips":0},"Sprint":{"dice":5,"pips":0},"Stealth":{"dice":5,"pips":0},"Intimidate":{"dice":5,"pips":0},"Dodge":{"dice":5,"pips":0},"Throw":{"dice":5,"pips":0}},"characterPoints":5}
+    "0": {
+      "version": 1,
+      "name": "Vector",
+      "attributes": {
+        "Strength": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Agility": {
+          "dice": 2,
+          "pips": 0
+        },
+        "Intellect": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Spirit": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Luck": {
+          "dice": 3,
+          "pips": 0
+        }
+      },
+      "skills": {
+        "Gamble": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Willpower": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Haggle": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Scavenge": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Dodge": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Lift": {
+          "dice": 5,
+          "pips": 0
+        },
+        "Brawl": {
+          "dice": 5,
+          "pips": 0
+        }
+      },
+      "characterPoints": 5
+    },
+    "": {
+      "version": 1,
+      "name": "Vector",
+      "attributes": {
+        "Strength": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Agility": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Intellect": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Spirit": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Luck": {
+          "dice": 2,
+          "pips": 0
+        }
+      },
+      "skills": {
+        "Repair": {
+          "dice": 3,
+          "pips": 2
+        },
+        "Stamina": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Haggle": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Sprint": {
+          "dice": 3,
+          "pips": 2
+        },
+        "Dodge": {
+          "dice": 3,
+          "pips": 2
+        },
+        "Persuade": {
+          "dice": 5,
+          "pips": 0
+        },
+        "Search": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Willpower": {
+          "dice": 5,
+          "pips": 0
+        }
+      },
+      "characterPoints": 5
+    },
+    "geolarp": {
+      "version": 1,
+      "name": "Vector",
+      "attributes": {
+        "Strength": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Agility": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Intellect": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Spirit": {
+          "dice": 2,
+          "pips": 0
+        },
+        "Luck": {
+          "dice": 3,
+          "pips": 0
+        }
+      },
+      "skills": {
+        "Repair": {
+          "dice": 4,
+          "pips": 1
+        },
+        "Command": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Intimidate": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Dodge": {
+          "dice": 3,
+          "pips": 2
+        },
+        "Willpower": {
+          "dice": 2,
+          "pips": 2
+        },
+        "Improvise": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Sprint": {
+          "dice": 3,
+          "pips": 2
+        },
+        "Scavenge": {
+          "dice": 3,
+          "pips": 2
+        }
+      },
+      "characterPoints": 5
+    },
+    "1234:-5678@2026-09-07": {
+      "version": 1,
+      "name": "Vector",
+      "attributes": {
+        "Strength": {
+          "dice": 2,
+          "pips": 0
+        },
+        "Agility": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Intellect": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Spirit": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Luck": {
+          "dice": 3,
+          "pips": 0
+        }
+      },
+      "skills": {
+        "Improvise": {
+          "dice": 4,
+          "pips": 1
+        },
+        "Scavenge": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Repair": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Navigate": {
+          "dice": 3,
+          "pips": 1
+        },
+        "Search": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Gamble": {
+          "dice": 3,
+          "pips": 2
+        },
+        "Throw": {
+          "dice": 4,
+          "pips": 2
+        },
+        "Intimidate": {
+          "dice": 4,
+          "pips": 0
+        }
+      },
+      "characterPoints": 5
+    },
+    "name:0:0": {
+      "version": 1,
+      "name": "Vector",
+      "attributes": {
+        "Strength": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Agility": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Intellect": {
+          "dice": 2,
+          "pips": 0
+        },
+        "Spirit": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Luck": {
+          "dice": 3,
+          "pips": 0
+        }
+      },
+      "skills": {
+        "Lift": {
+          "dice": 4,
+          "pips": 1
+        },
+        "Search": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Stealth": {
+          "dice": 5,
+          "pips": 0
+        },
+        "Gamble": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Scavenge": {
+          "dice": 3,
+          "pips": 1
+        },
+        "Dodge": {
+          "dice": 5,
+          "pips": 0
+        },
+        "Stamina": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Intimidate": {
+          "dice": 3,
+          "pips": 1
+        }
+      },
+      "characterPoints": 5
+    },
+    "a🧭b": {
+      "version": 1,
+      "name": "Vector",
+      "attributes": {
+        "Strength": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Agility": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Intellect": {
+          "dice": 2,
+          "pips": 0
+        },
+        "Spirit": {
+          "dice": 2,
+          "pips": 0
+        },
+        "Luck": {
+          "dice": 4,
+          "pips": 0
+        }
+      },
+      "skills": {
+        "Willpower": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Scavenge": {
+          "dice": 5,
+          "pips": 0
+        },
+        "Navigate": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Haggle": {
+          "dice": 4,
+          "pips": 1
+        },
+        "Throw": {
+          "dice": 5,
+          "pips": 0
+        },
+        "Stamina": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Lift": {
+          "dice": 3,
+          "pips": 2
+        }
+      },
+      "characterPoints": 5
+    },
+    "éèê": {
+      "version": 1,
+      "name": "Vector",
+      "attributes": {
+        "Strength": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Agility": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Intellect": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Spirit": {
+          "dice": 2,
+          "pips": 0
+        },
+        "Luck": {
+          "dice": 3,
+          "pips": 0
+        }
+      },
+      "skills": {
+        "Climb": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Willpower": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Improvise": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Dodge": {
+          "dice": 3,
+          "pips": 2
+        },
+        "Gamble": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Lift": {
+          "dice": 3,
+          "pips": 2
+        },
+        "Haggle": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Throw": {
+          "dice": 3,
+          "pips": 2
+        }
+      },
+      "characterPoints": 5
+    },
+    "xxxxxxxx...x4096": {
+      "version": 1,
+      "name": "Vector",
+      "attributes": {
+        "Strength": {
+          "dice": 3,
+          "pips": 0
+        },
+        "Agility": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Intellect": {
+          "dice": 2,
+          "pips": 0
+        },
+        "Spirit": {
+          "dice": 4,
+          "pips": 0
+        },
+        "Luck": {
+          "dice": 2,
+          "pips": 0
+        }
+      },
+      "skills": {
+        "Brawl": {
+          "dice": 5,
+          "pips": 0
+        },
+        "Sprint": {
+          "dice": 5,
+          "pips": 0
+        },
+        "Stealth": {
+          "dice": 5,
+          "pips": 0
+        },
+        "Intimidate": {
+          "dice": 5,
+          "pips": 0
+        },
+        "Dodge": {
+          "dice": 5,
+          "pips": 0
+        },
+        "Throw": {
+          "dice": 5,
+          "pips": 0
+        }
+      },
+      "characterPoints": 5
+    }
   },
   "roll": {
-    "1d7+0|a|0": {"faces":[5],"total":5,"pips":0,"bonusDice":0,"wild":5,"outcome":"normal","success":false},
-    "1d7+0|a|2": {"faces":[5,5,6],"total":16,"pips":0,"bonusDice":2,"wild":5,"outcome":"normal","success":true},
-    "1d7+0|b|0": {"faces":[4],"total":4,"pips":0,"bonusDice":0,"wild":4,"outcome":"normal","success":false},
-    "1d7+0|b|2": {"faces":[4,7,4],"total":15,"pips":0,"bonusDice":2,"wild":4,"outcome":"normal","success":true},
-    "1d7+0|c|0": {"faces":[4],"total":4,"pips":0,"bonusDice":0,"wild":4,"outcome":"normal","success":false},
-    "1d7+0|c|2": {"faces":[4,3,4],"total":11,"pips":0,"bonusDice":2,"wild":4,"outcome":"normal","success":false},
-    "2d7+0|a|0": {"faces":[5,5],"total":10,"pips":0,"bonusDice":0,"wild":5,"outcome":"normal","success":false},
-    "2d7+0|a|2": {"faces":[5,5,6,4],"total":20,"pips":0,"bonusDice":2,"wild":5,"outcome":"normal","success":true},
-    "2d7+0|b|0": {"faces":[4,7],"total":11,"pips":0,"bonusDice":0,"wild":4,"outcome":"normal","success":false},
-    "2d7+0|b|2": {"faces":[4,7,4,7],"total":22,"pips":0,"bonusDice":2,"wild":4,"outcome":"normal","success":true},
-    "2d7+0|c|0": {"faces":[4,3],"total":7,"pips":0,"bonusDice":0,"wild":4,"outcome":"normal","success":false},
-    "2d7+0|c|2": {"faces":[4,3,4,2],"total":13,"pips":0,"bonusDice":2,"wild":4,"outcome":"normal","success":true},
-    "3d7+0|a|0": {"faces":[5,5,6],"total":16,"pips":0,"bonusDice":0,"wild":5,"outcome":"normal","success":true},
-    "3d7+0|a|2": {"faces":[5,5,6,4,7],"total":27,"pips":0,"bonusDice":2,"wild":5,"outcome":"normal","success":true},
-    "3d7+0|b|0": {"faces":[4,7,4],"total":15,"pips":0,"bonusDice":0,"wild":4,"outcome":"normal","success":true},
-    "3d7+0|b|2": {"faces":[4,7,4,7,7],"total":29,"pips":0,"bonusDice":2,"wild":4,"outcome":"normal","success":true},
-    "3d7+0|c|0": {"faces":[4,3,4],"total":11,"pips":0,"bonusDice":0,"wild":4,"outcome":"normal","success":false},
-    "3d7+0|c|2": {"faces":[4,3,4,2,2],"total":15,"pips":0,"bonusDice":2,"wild":4,"outcome":"normal","success":true},
-    "3d7+1|a|0": {"faces":[5,5,6],"total":17,"pips":1,"bonusDice":0,"wild":5,"outcome":"normal","success":true},
-    "3d7+1|a|2": {"faces":[5,5,6,4,7],"total":28,"pips":1,"bonusDice":2,"wild":5,"outcome":"normal","success":true},
-    "3d7+1|b|0": {"faces":[4,7,4],"total":16,"pips":1,"bonusDice":0,"wild":4,"outcome":"normal","success":true},
-    "3d7+1|b|2": {"faces":[4,7,4,7,7],"total":30,"pips":1,"bonusDice":2,"wild":4,"outcome":"normal","success":true},
-    "3d7+1|c|0": {"faces":[4,3,4],"total":12,"pips":1,"bonusDice":0,"wild":4,"outcome":"normal","success":false},
-    "3d7+1|c|2": {"faces":[4,3,4,2,2],"total":16,"pips":1,"bonusDice":2,"wild":4,"outcome":"normal","success":true},
-    "4d7+2|a|0": {"faces":[5,5,6,4],"total":22,"pips":2,"bonusDice":0,"wild":5,"outcome":"normal","success":true},
-    "4d7+2|a|2": {"faces":[5,5,6,4,7,2],"total":31,"pips":2,"bonusDice":2,"wild":5,"outcome":"normal","success":true},
-    "4d7+2|b|0": {"faces":[4,7,4,7],"total":24,"pips":2,"bonusDice":0,"wild":4,"outcome":"normal","success":true},
-    "4d7+2|b|2": {"faces":[4,7,4,7,7,4],"total":35,"pips":2,"bonusDice":2,"wild":4,"outcome":"normal","success":true},
-    "4d7+2|c|0": {"faces":[4,3,4,2],"total":15,"pips":2,"bonusDice":0,"wild":4,"outcome":"normal","success":true},
-    "4d7+2|c|2": {"faces":[4,3,4,2,2,4],"total":21,"pips":2,"bonusDice":2,"wild":4,"outcome":"normal","success":true},
-    "7d7+0|a|0": {"faces":[5,5,6,4,7,2,7],"total":36,"pips":0,"bonusDice":0,"wild":5,"outcome":"normal","success":true},
-    "7d7+0|a|2": {"faces":[5,5,6,4,7,2,7,6,1],"total":43,"pips":0,"bonusDice":2,"wild":5,"outcome":"normal","success":true},
-    "7d7+0|b|0": {"faces":[4,7,4,7,7,4,1],"total":34,"pips":0,"bonusDice":0,"wild":4,"outcome":"normal","success":true},
-    "7d7+0|b|2": {"faces":[4,7,4,7,7,4,1,3,7],"total":44,"pips":0,"bonusDice":2,"wild":4,"outcome":"normal","success":true},
-    "7d7+0|c|0": {"faces":[4,3,4,2,2,4,4],"total":23,"pips":0,"bonusDice":0,"wild":4,"outcome":"normal","success":true},
-    "7d7+0|c|2": {"faces":[4,3,4,2,2,4,4,2,2],"total":27,"pips":0,"bonusDice":2,"wild":4,"outcome":"normal","success":true}
+    "1d7+0|a|0": {
+      "faces": [
+        5
+      ],
+      "total": 5,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 5,
+      "outcome": "normal",
+      "success": false
+    },
+    "1d7+0|a|2": {
+      "faces": [
+        5,
+        5,
+        6
+      ],
+      "total": 16,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 5,
+      "outcome": "normal",
+      "success": true
+    },
+    "1d7+0|b|0": {
+      "faces": [
+        4
+      ],
+      "total": 4,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": false
+    },
+    "1d7+0|b|2": {
+      "faces": [
+        4,
+        7,
+        4
+      ],
+      "total": 15,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "1d7+0|c|0": {
+      "faces": [
+        4
+      ],
+      "total": 4,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": false
+    },
+    "1d7+0|c|2": {
+      "faces": [
+        4,
+        3,
+        4
+      ],
+      "total": 11,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": false
+    },
+    "2d7+0|a|0": {
+      "faces": [
+        5,
+        5
+      ],
+      "total": 10,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 5,
+      "outcome": "normal",
+      "success": false
+    },
+    "2d7+0|a|2": {
+      "faces": [
+        5,
+        5,
+        6,
+        4
+      ],
+      "total": 20,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 5,
+      "outcome": "normal",
+      "success": true
+    },
+    "2d7+0|b|0": {
+      "faces": [
+        4,
+        7
+      ],
+      "total": 11,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": false
+    },
+    "2d7+0|b|2": {
+      "faces": [
+        4,
+        7,
+        4,
+        7
+      ],
+      "total": 22,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "2d7+0|c|0": {
+      "faces": [
+        4,
+        3
+      ],
+      "total": 7,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": false
+    },
+    "2d7+0|c|2": {
+      "faces": [
+        4,
+        3,
+        4,
+        2
+      ],
+      "total": 13,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "3d7+0|a|0": {
+      "faces": [
+        5,
+        5,
+        6
+      ],
+      "total": 16,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 5,
+      "outcome": "normal",
+      "success": true
+    },
+    "3d7+0|a|2": {
+      "faces": [
+        5,
+        5,
+        6,
+        4,
+        7
+      ],
+      "total": 27,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 5,
+      "outcome": "normal",
+      "success": true
+    },
+    "3d7+0|b|0": {
+      "faces": [
+        4,
+        7,
+        4
+      ],
+      "total": 15,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "3d7+0|b|2": {
+      "faces": [
+        4,
+        7,
+        4,
+        7,
+        7
+      ],
+      "total": 29,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "3d7+0|c|0": {
+      "faces": [
+        4,
+        3,
+        4
+      ],
+      "total": 11,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": false
+    },
+    "3d7+0|c|2": {
+      "faces": [
+        4,
+        3,
+        4,
+        2,
+        2
+      ],
+      "total": 15,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "3d7+1|a|0": {
+      "faces": [
+        5,
+        5,
+        6
+      ],
+      "total": 17,
+      "pips": 1,
+      "bonusDice": 0,
+      "wild": 5,
+      "outcome": "normal",
+      "success": true
+    },
+    "3d7+1|a|2": {
+      "faces": [
+        5,
+        5,
+        6,
+        4,
+        7
+      ],
+      "total": 28,
+      "pips": 1,
+      "bonusDice": 2,
+      "wild": 5,
+      "outcome": "normal",
+      "success": true
+    },
+    "3d7+1|b|0": {
+      "faces": [
+        4,
+        7,
+        4
+      ],
+      "total": 16,
+      "pips": 1,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "3d7+1|b|2": {
+      "faces": [
+        4,
+        7,
+        4,
+        7,
+        7
+      ],
+      "total": 30,
+      "pips": 1,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "3d7+1|c|0": {
+      "faces": [
+        4,
+        3,
+        4
+      ],
+      "total": 12,
+      "pips": 1,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": false
+    },
+    "3d7+1|c|2": {
+      "faces": [
+        4,
+        3,
+        4,
+        2,
+        2
+      ],
+      "total": 16,
+      "pips": 1,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "4d7+2|a|0": {
+      "faces": [
+        5,
+        5,
+        6,
+        4
+      ],
+      "total": 22,
+      "pips": 2,
+      "bonusDice": 0,
+      "wild": 5,
+      "outcome": "normal",
+      "success": true
+    },
+    "4d7+2|a|2": {
+      "faces": [
+        5,
+        5,
+        6,
+        4,
+        7,
+        2
+      ],
+      "total": 31,
+      "pips": 2,
+      "bonusDice": 2,
+      "wild": 5,
+      "outcome": "normal",
+      "success": true
+    },
+    "4d7+2|b|0": {
+      "faces": [
+        4,
+        7,
+        4,
+        7
+      ],
+      "total": 24,
+      "pips": 2,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "4d7+2|b|2": {
+      "faces": [
+        4,
+        7,
+        4,
+        7,
+        7,
+        4
+      ],
+      "total": 35,
+      "pips": 2,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "4d7+2|c|0": {
+      "faces": [
+        4,
+        3,
+        4,
+        2
+      ],
+      "total": 15,
+      "pips": 2,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "4d7+2|c|2": {
+      "faces": [
+        4,
+        3,
+        4,
+        2,
+        2,
+        4
+      ],
+      "total": 21,
+      "pips": 2,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "7d7+0|a|0": {
+      "faces": [
+        5,
+        5,
+        6,
+        4,
+        7,
+        2,
+        7
+      ],
+      "total": 36,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 5,
+      "outcome": "normal",
+      "success": true
+    },
+    "7d7+0|a|2": {
+      "faces": [
+        5,
+        5,
+        6,
+        4,
+        7,
+        2,
+        7,
+        6,
+        1
+      ],
+      "total": 43,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 5,
+      "outcome": "normal",
+      "success": true
+    },
+    "7d7+0|b|0": {
+      "faces": [
+        4,
+        7,
+        4,
+        7,
+        7,
+        4,
+        1
+      ],
+      "total": 34,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "7d7+0|b|2": {
+      "faces": [
+        4,
+        7,
+        4,
+        7,
+        7,
+        4,
+        1,
+        3,
+        7
+      ],
+      "total": 44,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "7d7+0|c|0": {
+      "faces": [
+        4,
+        3,
+        4,
+        2,
+        2,
+        4,
+        4
+      ],
+      "total": 23,
+      "pips": 0,
+      "bonusDice": 0,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    },
+    "7d7+0|c|2": {
+      "faces": [
+        4,
+        3,
+        4,
+        2,
+        2,
+        4,
+        4,
+        2,
+        2
+      ],
+      "total": 27,
+      "pips": 0,
+      "bonusDice": 2,
+      "wild": 4,
+      "outcome": "normal",
+      "success": true
+    }
   },
   "successChance": {
     "1d7+0|2": 0.857143,

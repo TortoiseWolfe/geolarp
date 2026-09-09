@@ -5,7 +5,7 @@ import CellGrid from './CellGrid';
 
 expect.extend(toHaveNoViolations);
 
-const centre = { x: -77750, y: 39012 };
+const centre = { q: -77750, r: 39012 };
 const today = new Date('2026-08-26T12:00:00Z');
 
 describe('CellGrid accessibility', () => {
@@ -32,7 +32,10 @@ describe('CellGrid accessibility', () => {
     // Verifying where the check can see, for the thing the check cannot.
     const { container } = render(<CellGrid centre={centre} today={today} />);
     const pips = container.querySelectorAll('[aria-hidden="true"]');
-    expect(pips).toHaveLength(9);
+    // SEVEN, not nine: the flower is 2-3-2 (#87). Not a lowered floor — the
+    // number of tiles genuinely changed, and `flower` is asserted to return
+    // exactly seven in tests/unit/cell-grid.test.ts.
+    expect(pips).toHaveLength(7);
     pips.forEach((pip) => {
       expect(pip.className).not.toMatch(
         /\btext-(primary|secondary|accent|base|neutral|info|success|warning|error)/
@@ -47,8 +50,14 @@ describe('CellGrid accessibility', () => {
     // The TILES, not the wrapper — which is also `[aria-label]`, is not a
     // touch target, and would have made this assertion fail for a reason that
     // has nothing to do with tile size.
-    const tiles = container.querySelectorAll('.grid > *');
-    expect(tiles).toHaveLength(9);
+    //
+    // `[data-testid]` rather than `.grid > *`. The old selector depended on a
+    // LAYOUT class, so when the 3x3 CSS grid became three flex rows for the
+    // 2-3-2 flower it silently matched zero elements — a coverage floor that
+    // reported "0 of 9" instead of a real failure. A class-name selector has a
+    // silent dependency on that class; a test hook does not.
+    const tiles = container.querySelectorAll('[data-testid="cell-tile"]');
+    expect(tiles).toHaveLength(7);
     tiles.forEach((t) => expect(t.className).toContain('min-h-11'));
   });
 });

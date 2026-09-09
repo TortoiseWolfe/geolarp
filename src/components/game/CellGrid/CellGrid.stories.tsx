@@ -11,7 +11,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const centre = { x: -77750, y: 39012 };
+const centre = { q: -77750, r: 39012 };
 const today = new Date('2026-08-26T12:00:00Z');
 
 export const Default: Story = {

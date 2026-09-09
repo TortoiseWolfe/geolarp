@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { placeName, PLACE_NAME_SPACE } from '@/lib/geolarp/place';
-import { Cell, cellKey, seedOf, grid3x3 } from '@/lib/geolarp/cell';
+import { Cell, cellKey, seedOf, flower } from '@/lib/geolarp/cell';
 import { readFileSync } from 'node:fs';
 
-const CELL: Cell = { x: -77750, y: 39012 };
+const CELL: Cell = { q: -77750, r: 39012 };
 
 describe('placeName', () => {
   it('is stable for a cell', () => {
@@ -45,9 +45,12 @@ describe('placeName', () => {
   it('gives neighbours different names', () => {
     // ">= 8 of 9 distinct" across sampled grids: with 8100 names a collision
     // inside one grid is possible and not a bug, but a systematic one is.
-    for (const origin of [CELL, { x: 0, y: 0 }, { x: 12345, y: -678 }]) {
-      const names = new Set(grid3x3(origin).map(placeName));
-      expect(names.size).toBeGreaterThanOrEqual(8);
+    for (const origin of [CELL, { q: 0, r: 0 }, { q: 12345, r: -678 }]) {
+      const names = new Set(flower(origin).map(placeName));
+      // SEVEN cells now, not nine (#87). The floor keeps its original shape —
+      // one collision tolerated out of the set — so it still fails if the name
+      // generator starts repeating itself, which is what it is for.
+      expect(names.size).toBeGreaterThanOrEqual(6);
     }
   });
 
@@ -58,7 +61,7 @@ describe('placeName', () => {
     const seen = new Set<string>();
     for (let x = -50; x < 50; x += 1) {
       for (let y = -50; y < 50; y += 1) {
-        const name = placeName({ x, y });
+        const name = placeName({ q: x, r: y });
         expect(name).toMatch(/^[A-Z][a-z]+ [A-Z][a-z]+$/);
         seen.add(name);
       }

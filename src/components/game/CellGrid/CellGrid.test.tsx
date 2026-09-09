@@ -2,21 +2,21 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CellGrid from './CellGrid';
-import { Cell, grid3x3, seedOf } from '@/lib/geolarp/cell';
+import { Cell, flower, seedOf } from '@/lib/geolarp/cell';
 import { encounterFor } from '@/lib/geolarp/encounter';
 import { placeName } from '@/lib/geolarp/place';
 import { LADDER } from '@/lib/geolarp/ladder';
 
-const CENTRE: Cell = { x: -77750, y: 39012 };
+const CENTRE: Cell = { q: -77750, r: 39012 };
 const today = new Date('2026-08-26T12:00:00Z');
 
 describe('CellGrid', () => {
-  it('draws nine cells, each NAMED even though the tile has no room to say so', () => {
+  it('draws seven tiles, each NAMED even though the tile has no room to say so', () => {
     // 82px per tile at 320px holds a kind word and a pip row, and not a
     // two-word place name as well. The name is still the thing a player says
     // out loud, so it lives in the accessible name rather than nowhere.
     render(<CellGrid centre={CENTRE} today={today} />);
-    for (const name of grid3x3(CENTRE).map(placeName)) {
+    for (const name of flower(CENTRE).map(placeName)) {
       expect(
         screen.getByLabelText(
           new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
@@ -46,18 +46,26 @@ describe('CellGrid', () => {
     expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
-  it('offers eight moves, and reports the direction it moved', async () => {
+  it('offers SIX moves, named, and reports the direction it moved', async () => {
     const onStep = vi.fn();
     const user = userEvent.setup();
     render(<CellGrid centre={CENTRE} today={today} onStep={onStep} />);
 
     const buttons = screen.getAllByRole('button');
-    expect(buttons).toHaveLength(8); // nine tiles, minus the one you are on
+    // Seven tiles minus the one you are on. Six, not eight: a pointy-top hex has
+    // flat sides east and west, so there is no due north or south to offer (#87).
+    expect(buttons).toHaveLength(6);
 
-    await user.click(screen.getByLabelText(/^Move north to/));
-    expect(onStep).toHaveBeenCalledWith(0, 1);
+    // The handler now takes a DIRECTION, not a delta. A delta only meant
+    // something on a square lattice, where `x + dx` was a cell you could reach.
+    await user.click(screen.getByLabelText(/^Move north-east to/));
+    expect(onStep).toHaveBeenCalledWith('north-east');
     await user.click(screen.getByLabelText(/^Move south-west to/));
-    expect(onStep).toHaveBeenLastCalledWith(-1, -1);
+    expect(onStep).toHaveBeenLastCalledWith('south-west');
+
+    // And the two that no longer exist.
+    expect(screen.queryByLabelText(/^Move north to/)).toBeNull();
+    expect(screen.queryByLabelText(/^Move south to/)).toBeNull();
   });
 
   it('is north-up: the top row is north of the bottom row', () => {
@@ -71,9 +79,13 @@ describe('CellGrid', () => {
     const labels = screen
       .getAllByLabelText(/where you are|^Move (north|south|east|west)/)
       .map((el) => el.getAttribute('aria-label') ?? '');
+    // 2-3-2, north first: the centre is index 3, not 4, because the northern
+    // row holds two tiles rather than three.
+    expect(labels).toHaveLength(7);
     expect(labels[0]).toMatch(/^Move north-west/);
-    expect(labels[4]).toMatch(/where you are/);
-    expect(labels[8]).toMatch(/^Move south-east/);
+    expect(labels[1]).toMatch(/^Move north-east/);
+    expect(labels[3]).toMatch(/where you are/);
+    expect(labels[6]).toMatch(/^Move south-east/);
   });
 
   it('says the difficulty rather than only drawing it', () => {
@@ -99,7 +111,7 @@ describe('CellGrid', () => {
     // screen reader repeats.
     const { rerender } = render(<CellGrid centre={CENTRE} today={today} />);
     expect(
-      screen.getByRole('group', { name: 'The nine cells around you' })
+      screen.getByRole('group', { name: 'The six cells around you' })
     ).toBeInTheDocument();
 
     rerender(<CellGrid centre={CENTRE} today={today} onStep={() => {}} />);

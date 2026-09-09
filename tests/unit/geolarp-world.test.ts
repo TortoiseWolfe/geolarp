@@ -8,6 +8,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   CELL_METRES,
+  ROW_METRES,
   cellCentre,
   cellKey,
   cellOf,
@@ -66,7 +67,7 @@ describe('the 100m grid is the privacy promise', () => {
     }
   });
 
-  it('destroys sub-100m precision — the tile is at most CELL_METRES across', () => {
+  it('destroys sub-100m precision — the tile is CELL_METRES wide and ROW_METRES tall', () => {
     const home = cellOf(lat, lon);
     // Walk north and east until the cell changes; that distance is the tile.
     const step = 0.5; // metres
@@ -84,8 +85,13 @@ describe('the 100m grid is the privacy promise', () => {
       if (east > 500) break;
     }
     // Half a tile in each direction from the centre, within a step of rounding.
-    expect(north).toBeGreaterThan(CELL_METRES / 2 - 2);
-    expect(north).toBeLessThan(CELL_METRES / 2 + 2);
+    //
+    // THE TWO AXES ARE NO LONGER THE SAME (#87). A pointy-top hex lattice has a
+    // row pitch of ROW_METRES = CELL_METRES·√3/2 = 86.60, so the tile is 100 m
+    // across the flats and 86.6 m tall. Asserting CELL_METRES on both axes was
+    // right for squares and overstates the north-south extent by 15.5% here.
+    expect(north).toBeGreaterThan(ROW_METRES / 2 - 2);
+    expect(north).toBeLessThan(ROW_METRES / 2 + 2);
     expect(east).toBeGreaterThan(CELL_METRES / 2 - 2);
     expect(east).toBeLessThan(CELL_METRES / 2 + 2);
   });
@@ -133,9 +139,9 @@ describe('the 100m grid is the privacy promise', () => {
 
   it('yields nothing but two integers', () => {
     const cell = cellOf(lat, lon);
-    expect(Object.keys(cell).sort()).toEqual(['x', 'y']);
-    expect(Number.isInteger(cell.x)).toBe(true);
-    expect(Number.isInteger(cell.y)).toBe(true);
+    expect(Object.keys(cell).sort()).toEqual(['q', 'r']);
+    expect(Number.isInteger(cell.q)).toBe(true);
+    expect(Number.isInteger(cell.r)).toBe(true);
   });
 });
 

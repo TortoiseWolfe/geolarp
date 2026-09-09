@@ -19,6 +19,7 @@ import {
   offsetMetres,
   seedOf,
   utcDay,
+  type HexDirection,
 } from '@/lib/geolarp/cell';
 import { Encounter, encounterFor } from '@/lib/geolarp/encounter';
 import { rewardFor } from '@/lib/geolarp/reward';
@@ -78,7 +79,7 @@ export interface UseCharacterPlayReturn {
   setMode: (mode: LocationMode) => void;
   setZone: (id: string) => void;
   setCellFromFix: (lat: number, lon: number) => void;
-  step: (dx: number, dy: number) => void;
+  step: (direction: HexDirection) => void;
   /** Return to the last anchored cell. A no-op when already there. */
   resetToOrigin: () => void;
   selectSkill: (skill: SkillName) => void;
@@ -232,12 +233,16 @@ export function useCharacterPlay(
    * to show. Anchoring on every step would make `offset` permanently zero and
    * the feedback permanently a lie.
    */
-  const step = useCallback((dx: number, dy: number) => {
-    // `neighbour`, not `{x: c.x + dx, y: c.y + dy}`. `CellGrid` renders the
-    // cells `grid3x3` returns but hands back the DELTA that produced them, so
-    // if this walked the raw indices the tile a player taps and the cell they
-    // arrive in would be different cells (#86).
-    setCell((c) => (c ? neighbour(c, dx, dy) : c));
+  const step = useCallback((direction: HexDirection) => {
+    // `neighbour`, not raw index arithmetic. `CellGrid` renders the cells
+    // `flower` returns but hands back the DIRECTION that produced them, so if
+    // this walked the indices the tile a player taps and the cell they arrive in
+    // would be different cells (#86).
+    //
+    // SIX DIRECTIONS, NOT EIGHT (#87). There is no due north on a pointy-top
+    // lattice — the trade is six steps of one distance against four at 100 m and
+    // four at 141 m.
+    setCell((c) => (c ? neighbour(c, direction) : c));
   }, []);
 
   const resetToOrigin = useCallback(() => {
@@ -246,7 +251,7 @@ export function useCharacterPlay(
 
   const offset = useMemo(
     () =>
-      cell && origin && (cell.x !== origin.x || cell.y !== origin.y)
+      cell && origin && (cell.q !== origin.q || cell.r !== origin.r)
         ? offsetMetres(origin, cell)
         : null,
     [cell, origin]

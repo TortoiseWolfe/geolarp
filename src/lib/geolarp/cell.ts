@@ -13,23 +13,62 @@
 
 /** Metres per degree of latitude. Constant enough at this resolution. */
 const M_PER_DEG_LAT = 111_320;
+/** Flat-to-flat width of a cell. Unchanged from the square grid, on purpose. */
 export const CELL_METRES = 100;
 
+/**
+ * Row pitch of a pointy-top hex lattice: `CELL_METRES * √3 / 2`.
+ *
+ * HARD-CODED, NOT `Math.sqrt(3)`. This sits upstream of `LAT_STEP` and therefore
+ * of every `cellOf` on Earth, and `stableCos` below exists precisely because an
+ * implementation-approximated call in that position can move a `Math.floor` and
+ * put two phones on the same pavement in different cells. `Math.sqrt` is correctly
+ * rounded on every engine anyone ships, but the standard in this file is measured
+ * rather than assumed, and a decimal literal is exactly specified by ECMA-262.
+ *
+ * 86.60254037844386 is `100 * Math.sqrt(3) / 2` to full double precision.
+ */
+export const ROW_METRES = 86.60254037844386;
+
+/**
+ * A cell of the world, in pointy-top hex coordinates.
+ *
+ * `q` is the column WITHIN ITS ROW and `r` the row; odd rows are offset half a
+ * column east. Renamed from `{x, y}` deliberately rather than reinterpreted —
+ * a same-shaped record with new semantics gives vague type errors at each call
+ * site, where a rename gives one clear error per consumer and the compiler walks
+ * them all.
+ */
 export interface Cell {
-  /** Quantised latitude index. */
-  y: number;
-  /** Quantised longitude index, corrected for latitude. */
-  x: number;
+  /** Quantised longitude index within the row, corrected for latitude. */
+  q: number;
+  /** Quantised latitude index. Rows are `ROW_METRES` apart, not `CELL_METRES`. */
+  r: number;
 }
 
-const LAT_STEP = CELL_METRES / M_PER_DEG_LAT;
+const LAT_STEP = ROW_METRES / M_PER_DEG_LAT;
 
 function rowOf(lat: number): number {
   return Math.floor(lat / LAT_STEP);
 }
 
-function rowCentreLat(y: number): number {
-  return (y + 0.5) * LAT_STEP;
+function rowCentreLat(r: number): number {
+  return (r + 0.5) * LAT_STEP;
+}
+
+/**
+ * The half-column stagger that makes this a hex lattice rather than a brick wall.
+ *
+ * Odd rows sit half a column east. Six neighbours then fall at equal distance —
+ * that is the whole reason for the conversion, and it is one line.
+ *
+ * `((r % 2) + 2) % 2` rather than `r % 2`, because JavaScript's remainder keeps
+ * the sign of the dividend: `-3 % 2` is `-1`, so a bare test would stagger the
+ * southern hemisphere the wrong way and every neighbour below the equator would
+ * be half a cell out.
+ */
+function rowOffset(r: number): number {
+  return ((r % 2) + 2) % 2 === 1 ? 0.5 : 0;
 }
 
 /**
@@ -85,8 +124,8 @@ function stableCos(radians: number): number {
   return Math.round(Math.cos(radians) * COS_QUANTUM) / COS_QUANTUM;
 }
 
-function lonStepForRow(y: number): number {
-  const cosLat = stableCos((rowCentreLat(y) * Math.PI) / 180);
+function lonStepForRow(r: number): number {
+  const cosLat = stableCos((rowCentreLat(r) * Math.PI) / 180);
   // Guard the poles, where a longitude step goes to zero.
   return CELL_METRES / (M_PER_DEG_LAT * Math.max(cosLat, 1e-6));
 }
@@ -101,13 +140,32 @@ function lonStepForRow(y: number): number {
  * Split out because `neighbour` needs to ask it about a row the caller is not
  * standing in, which is the whole of the #86 fix.
  */
-function columnAt(lon: number, y: number): number {
-  return Math.floor(lon / lonStepForRow(y));
+/**
+ * Which column of row `r` holds this longitude, accounting for the stagger.
+ *
+ * Split out because `neighbour` needs to ask it about a row the caller is not
+ * standing in — the whole of the #86 fix, carried forward to the hex lattice.
+ */
+function columnAt(lon: number, r: number): number {
+  return Math.floor(lon / lonStepForRow(r) - rowOffset(r));
+}
+
+/**
+ * The fractional column position of a longitude in row `r`.
+ *
+ * `columnAt` is this floored. `neighbour` needs the fraction as well, to know
+ * which SIDE of the containing column the longitude sits on — that is what picks
+ * the second of the two cells in an adjacent row. Exact arithmetic only: a
+ * division and a subtraction, no trigonometry, because this decides a cell index
+ * and therefore a seed.
+ */
+function columnPosition(lon: number, r: number): number {
+  return lon / lonStepForRow(r) - rowOffset(r);
 }
 
 export function cellOf(lat: number, lon: number): Cell {
-  const y = rowOf(lat);
-  return { y, x: columnAt(lon, y) };
+  const r = rowOf(lat);
+  return { r, q: columnAt(lon, r) };
 }
 
 /**
@@ -120,14 +178,14 @@ export function cellOf(lat: number, lon: number): Cell {
  */
 export function cellCentre(cell: Cell): { lat: number; lon: number } {
   return {
-    lat: rowCentreLat(cell.y),
-    lon: (cell.x + 0.5) * lonStepForRow(cell.y),
+    lat: rowCentreLat(cell.r),
+    lon: (cell.q + rowOffset(cell.r) + 0.5) * lonStepForRow(cell.r),
   };
 }
 
 /** Stable string form, for seeding and for display. */
 export function cellKey(cell: Cell): string {
-  return `${cell.x}:${cell.y}`;
+  return `${cell.q}:${cell.r}`;
 }
 
 /**
@@ -205,33 +263,78 @@ export function utcDay(date: Date = new Date()): string {
  * full circle is not an integer at a general latitude, so `x` jumps by ~328k
  * between +179.9999° and -179.9999°. Tracked with the lattice work in #87.
  */
-export function neighbour(cell: Cell, dx: number, dy: number): Cell {
-  const y = cell.y + dy;
-  return { y, x: columnAt(cellCentre(cell).lon, y) + dx };
+export const HEX_DIRECTIONS = [
+  'east',
+  'north-east',
+  'north-west',
+  'west',
+  'south-west',
+  'south-east',
+] as const;
+
+export type HexDirection = (typeof HEX_DIRECTIONS)[number];
+
+/**
+ * The cell one step away, in one of SIX directions.
+ *
+ * THERE IS NO DUE NORTH, and that is forced rather than chosen. A pointy-top hex
+ * has flat sides east and west, so its neighbours are E, NE, NW, W, SW, SE. The
+ * alternative — flat-top — puts a centre's LATITUDE on its column, which makes
+ * `lonStepForRow` depend on longitude and destroys the exact inverse this module
+ * is built on. Six steps of one distance, bought with the compass.
+ *
+ * WITHIN A ROW it is exactly `q ± 1`: same divisor on both sides, so the stagger
+ * cancels and no float drift is introduced.
+ *
+ * ACROSS A ROW it asks the #86 question — "which cell of the TARGET row holds my
+ * longitude" — and then picks the nearer of that column and its neighbour. Adding
+ * a raw delta instead is the mistake #86 was filed for: each row indexes from the
+ * prime meridian with its own quantum, so `q` in row `r + 1` is not above `q` in
+ * row `r`. Measured on the square grid this reached 293.6 m and three cells.
+ *
+ * `frac < 0.5` is the whole of the side test. The longitude sits somewhere inside
+ * column `base` of the target row; if it is in that column's western half the
+ * other neighbour is to the west, otherwise to the east. Exact arithmetic — a
+ * subtraction and a comparison — because this picks a cell index and therefore an
+ * encounter seed.
+ */
+export function neighbour(cell: Cell, direction: HexDirection): Cell {
+  if (direction === 'east') return { r: cell.r, q: cell.q + 1 };
+  if (direction === 'west') return { r: cell.r, q: cell.q - 1 };
+
+  const north = direction === 'north-east' || direction === 'north-west';
+  const east = direction === 'north-east' || direction === 'south-east';
+  const r = cell.r + (north ? 1 : -1);
+
+  const pos = columnPosition(cellCentre(cell).lon, r);
+  const base = Math.floor(pos);
+  const frac = pos - base;
+  // The two cells of row `r` that touch this one, west-first.
+  const west = frac < 0.5 ? base - 1 : base;
+  return { r, q: east ? west + 1 : west };
 }
 
 /**
- * The nine cells around one, north-up and row-major.
+ * A cell and its six neighbours, laid out 2-3-2 for a renderer.
  *
- * Index 0 is north-west and index 8 is south-east, so a renderer can lay the
- * array straight into a 3-column grid and get a map-shaped map. Latitude
- * indices grow northward, which is why the rows count DOWN from `y + 1`: a
- * naive ascending loop draws the world upside down, and it looks fine until
- * someone walks north and the highlight moves the wrong way.
+ * Index 0-1 are the northern pair, 2-4 the middle row WITH THE CENTRE AT 3, and
+ * 5-6 the southern pair. Rows run north-first so a renderer can lay the array
+ * straight down the screen and get a map-shaped map; latitude indices grow
+ * northward, so counting down is what keeps north up.
  *
- * Each cell comes from `neighbour`, so these are the cells a player would
- * actually walk into. They were not before #86, and no test could see it: the
- * only fixture exercising this was `{x: 10, y: 20}`, where λ ≈ 0 and the
- * convergence measures 0.000 m.
+ * Replaces `grid3x3`. The nine-cell square version had four cells at 100 m and
+ * four at 141 m; every cell here is one step, which is the point of the lattice.
  */
-export function grid3x3(centre: Cell): Cell[] {
-  const out: Cell[] = [];
-  for (let dy = 1; dy >= -1; dy -= 1) {
-    for (let dx = -1; dx <= 1; dx += 1) {
-      out.push(neighbour(centre, dx, dy));
-    }
-  }
-  return out;
+export function flower(centre: Cell): Cell[] {
+  return [
+    neighbour(centre, 'north-west'),
+    neighbour(centre, 'north-east'),
+    neighbour(centre, 'west'),
+    centre,
+    neighbour(centre, 'east'),
+    neighbour(centre, 'south-west'),
+    neighbour(centre, 'south-east'),
+  ];
 }
 
 export interface CellOffset {
@@ -259,11 +362,15 @@ const BEARINGS = [
 /**
  * How far one cell is from another, in metres.
  *
- * EXACT INTEGER ARITHMETIC, and deliberately not a Haversine. `lonStepForRow`
- * already scales the longitude step by the row's cosine, so a cell is
- * CELL_METRES across in both axes by construction — the distance between cell
- * indices is therefore a multiple of 100 exactly, and a great-circle formula
- * would only add floating-point noise to a number the grid already knows.
+ * LATTICE ARITHMETIC, and deliberately not a Haversine. `lonStepForRow` already
+ * scales the longitude step by the row's cosine, so a cell is CELL_METRES across
+ * the flats by construction; a great-circle formula would only add floating-point
+ * noise to a number the grid already knows.
+ *
+ * NO LONGER A MULTIPLE OF 100. On the hex lattice east comes in halves (the
+ * stagger) and north in units of ROW_METRES = 86.60254, so a single step measures
+ * (±100, 0) or (±50, ±86.6). That is the conversion working: every one of those
+ * is 100 m long, which is what the square grid could not say of its diagonals.
  *
  * It is also the honest unit. This measures grid movement, which is what the
  * player has actually been doing; a metre figure derived from cell centres
@@ -284,8 +391,14 @@ const BEARINGS = [
  * construction.
  */
 export function offsetMetres(from: Cell, to: Cell): CellOffset {
-  const east = (to.x - columnAt(cellCentre(from).lon, to.y)) * CELL_METRES;
-  const north = (to.y - from.y) * CELL_METRES;
+  // Column UNITS, not column indices. The stagger puts odd rows half a column
+  // east, so a north-east step is +50 m east and +86.6 m north — a half-cell
+  // figure the old integer subtraction could not express. `columnPosition` is
+  // the same quantity `columnAt` floors, so this stays exact where the old form
+  // was exact and gains the halves it needs.
+  const fromLon = cellCentre(from).lon;
+  const east = (to.q + 0.5 - columnPosition(fromLon, to.r)) * CELL_METRES;
+  const north = (to.r - from.r) * ROW_METRES;
   if (east === 0 && north === 0) {
     return { east, north, metres: 0, bearing: null };
   }

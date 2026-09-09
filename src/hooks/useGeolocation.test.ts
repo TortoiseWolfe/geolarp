@@ -93,12 +93,12 @@ describe('useGeolocation', () => {
     await waitFor(() => {
       // THE CELL, NOT THE READING (#39). Hardcoded rather than re-derived from
       // cellOf/cellCentre: an expectation computed by the code under test cannot
-      // detect that code changing. 51.505/-0.09 lands in cell {y:57335, x:-63},
-      // whose centre is 51.505120373697444 / -0.09019989877336257.
+      // detect that code changing. 51.505/-0.09 lands in cell {r:66205, q:-63},
+      // whose centre is 51.505250512262535 / -0.0894785551339524.
       expect(result.current.fix).toEqual({
-        cell: { y: 57335, x: -63 },
-        lat: 51.505120373697444,
-        lon: -0.09019989877336257,
+        cell: { r: 66205, q: -63 },
+        lat: 51.505250512262535,
+        lon: -0.0894785551339524,
         accuracy: 10,
         timestamp: mockPosition.timestamp,
       });

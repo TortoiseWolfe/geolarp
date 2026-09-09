@@ -57,12 +57,12 @@ function flickerPerMinute(accuracyMetres: number, dwell: number): number {
         lat + (dn * accuracyMetres) / M_PER_DEG_LAT,
         lon + (de * accuracyMetres) / mPerDegLon
       );
-      if (observed.x === committed.x && observed.y === committed.y) {
+      if (observed.q === committed.q && observed.r === committed.r) {
         seen = 0;
         candidate = committed;
         continue;
       }
-      if (observed.x === candidate.x && observed.y === candidate.y) seen += 1;
+      if (observed.q === candidate.q && observed.r === candidate.r) seen += 1;
       else {
         candidate = observed;
         seen = 1;
