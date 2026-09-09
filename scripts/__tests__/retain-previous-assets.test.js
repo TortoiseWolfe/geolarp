@@ -825,3 +825,143 @@ describe('the file-count backstop (#82)', () => {
     );
   });
 });
+
+/**
+ * THE TWO LEDGERS MUST DESCRIBE THE SAME DEPLOY (#82).
+ *
+ * `publishManifest()` writes `ASSET_MANIFEST.txt` and `ASSET_AGES.txt` from ONE array
+ * in one pass, so they cannot legitimately disagree. A live disagreement means one was
+ * served stale or truncated — the class #84 and #128 closed on the two readers, caught
+ * here from the other side, as data rather than as a cache header.
+ *
+ * This is #82's "ledger chain continuity" ask, delivered without adding a field to a
+ * format four readers parse and without a skipped-generation tolerance to tune — a
+ * re-run, a rollback or a publish that failed after the build all move the chain
+ * backwards through no fault of retention, and a naive fingerprint check fails those.
+ */
+describe('ledger cross-check (#82)', () => {
+  async function runWith(outDir, liveDir) {
+    try {
+      return { code: 0, stdout: await retain(outDir, liveDir) };
+    } catch (err) {
+      return {
+        code: err.code ?? 1,
+        stdout: String(err.stdout ?? ''),
+        stderr: String(err.stderr ?? ''),
+      };
+    }
+  }
+
+  /** A live dir whose manifest names `extra` but whose age table omits it. */
+  function desyncedLive(dir, { omitFromAges }) {
+    makeGeneration(dir, 'prev');
+    const staticDir = path.join(dir, '_next/static');
+    fs.mkdirSync(path.join(staticDir, 'chunks'), { recursive: true });
+    const both = '_next/static/chunks/described.js';
+    const orphan = '_next/static/chunks/orphan.js';
+    fs.writeFileSync(path.join(dir, both), 'console.log(1)');
+    fs.writeFileSync(path.join(dir, orphan), 'console.log(2)');
+
+    fs.writeFileSync(
+      path.join(staticDir, 'ASSET_MANIFEST.txt'),
+      [both, orphan].join('\n') + '\n'
+    );
+    const described = omitFromAges ? [both] : [both, orphan];
+    fs.writeFileSync(
+      path.join(staticDir, 'ASSET_AGES.txt'),
+      described
+        .map((rel) => `1 ${new Date().toISOString()} ${rel}`)
+        .join('\n') + '\n'
+    );
+    return dir;
+  }
+
+  /**
+   * WHAT THE DESYNC ACTUALLY COSTS, and why it is worth failing over. An entry the age
+   * table does not describe takes `?? NOW`, so it is dated today — and then re-stamped
+   * today in the ledger this run publishes. It never ages out, every deploy resets it,
+   * and the manifest grows until RETAIN_MAX_FILES engages and the per-asset assertion
+   * fails far from the cause, looking like a different bug.
+   */
+  it('fails and names a manifest path the age table does not describe', async () => {
+    const live = desyncedLive(path.join(WORK, 'p82-desync-live'), {
+      omitFromAges: true,
+    });
+    const out = makeGeneration(path.join(WORK, 'p82-desync-out'), 'next');
+
+    const result = await runWith(out, live);
+    const all = result.stdout + (result.stderr ?? '');
+
+    assert.equal(result.code, 1, `expected a non-zero exit.\n${all}`);
+    assert.match(all, /the live ledgers disagree/);
+    assert.match(
+      all,
+      /orphan\.js/,
+      'the failure must NAME the undescribed path'
+    );
+    // The other failure mode must NOT be claimed: nothing was lost here, and a
+    // message that misdescribes the failure sends the next reader to the wrong place.
+    assert.ok(
+      !/asset\(s\) the previous deploy promised to keep serving/.test(all),
+      'reported a lost-asset failure when the failure was a ledger desync'
+    );
+  });
+
+  /**
+   * THE WORK MUST STILL HAPPEN. The check reports at the END, after retention and after
+   * the ledger is published — exiting at the point of detection would skip retention
+   * entirely and publish a ledger holding only this build, stranding every visitor on
+   * older HTML immediately. That is far worse than the inconsistency being reported.
+   */
+  it('still retains and still publishes the ledger on the desync path', async () => {
+    const live = desyncedLive(path.join(WORK, 'p82-desync2-live'), {
+      omitFromAges: true,
+    });
+    const out = makeGeneration(path.join(WORK, 'p82-desync2-out'), 'next');
+
+    const result = await runWith(out, live);
+    assert.equal(result.code, 1);
+
+    const manifest = path.join(out, '_next/static/ASSET_MANIFEST.txt');
+    assert.ok(fs.existsSync(manifest), 'the ledger was not published');
+    assert.ok(
+      fs.existsSync(path.join(out, '_next/static/chunks/orphan.js')),
+      'retention was skipped, so visitors on older HTML lost their assets — the ' +
+        'report must not cost more than the defect it reports'
+    );
+  });
+
+  /** The control: consistent ledgers must not trip it. */
+  it('passes when both ledgers describe the same set', async () => {
+    const live = desyncedLive(path.join(WORK, 'p82-sync-live'), {
+      omitFromAges: false,
+    });
+    const out = makeGeneration(path.join(WORK, 'p82-sync-out'), 'next');
+
+    const result = await runWith(out, live);
+    assert.equal(result.code, 0, result.stdout + (result.stderr ?? ''));
+    assert.ok(!/ledgers disagree/.test(result.stdout));
+  });
+
+  /**
+   * THE RAMP MUST NOT TRIP IT. With no age table at all the check is skipped — that is
+   * the documented one-deploy ramp, not a desync. Without this, introducing the check
+   * would red the very first deploy that runs it.
+   */
+  it('stays silent when there is no age table at all (the ramp)', async () => {
+    const live = path.join(WORK, 'p82-ramp-live');
+    makeGeneration(live, 'prev');
+    const staticDir = path.join(live, '_next/static');
+    fs.mkdirSync(staticDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(staticDir, 'ASSET_MANIFEST.txt'),
+      '_next/static/css/prev.css\n'
+    );
+    const out = makeGeneration(path.join(WORK, 'p82-ramp-out'), 'next');
+
+    const result = await runWith(out, live);
+    const all = result.stdout + (result.stderr ?? '');
+    assert.equal(result.code, 0, all);
+    assert.ok(!/ledgers disagree/.test(all));
+  });
+});
