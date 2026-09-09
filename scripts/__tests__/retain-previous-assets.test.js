@@ -58,7 +58,7 @@ function makeGeneration(dir, tag) {
  * default is deliberately wide so the chaining tests below exercise chaining rather
  * than expiry, which is what they are about.
  */
-async function retain(outDir, liveDir, days = 14) {
+async function retain(outDir, liveDir, days = 14, extraEnv = {}) {
   const server = createServer((req, res) => {
     const rel = decodeURIComponent((req.url ?? '/').split('?')[0]);
     const file = path.join(liveDir, rel === '/' ? 'index.html' : rel);
@@ -93,7 +93,7 @@ async function retain(outDir, liveDir, days = 14) {
       ],
       {
         encoding: 'utf8',
-        env: { ...process.env, RETAIN_DAYS: String(days) },
+        env: { ...process.env, RETAIN_DAYS: String(days), ...extraEnv },
       }
     );
     return stdout;
@@ -692,6 +692,136 @@ describe('the retention assertion is wired to be visible (#82)', () => {
       !/in smoke\.yml FAILS if the live window is/.test(wf),
       'deploy.yml has gone back to claiming check-retained-assets.mjs gates on the ' +
         'window. It reports the figure and does not assert it (#82).'
+    );
+  });
+});
+
+/**
+ * RETAIN_MAX_FILES IS A COUNT CAP SITTING ON A QUANTITY THAT MUST BE A DURATION (#82).
+ *
+ * It sorts newest-first and truncates, so what it drops is BY DEFINITION files still
+ * inside their window — precisely "vanished while still inside its window". It is
+ * `RETAIN_GENERATIONS` wearing a different name, and the #751 guard cannot see it: that
+ * test only greps `deploy.yml` for the literal `RETAIN_GENERATIONS`.
+ *
+ * Until now the truncation branch had NEVER EXECUTED UNDER TEST — repo-wide it appears
+ * only in the script that defines it plus one prose mention in deploy.yml, with no
+ * workflow env and no coverage. The per-asset assertion added in #130 now depends on
+ * it: overflow feeds `lostToBackstop`, which fails the run. An untested branch that a
+ * gate depends on is the gate's blind spot.
+ */
+describe('the file-count backstop (#82)', () => {
+  /** A live ledger promising `count` in-window files, all actually served. */
+  function liveWithMany(dir, count) {
+    makeGeneration(dir, 'prev');
+    const staticDir = path.join(dir, '_next/static');
+    fs.mkdirSync(path.join(staticDir, 'chunks'), { recursive: true });
+    const promised = [];
+    for (let i = 0; i < count; i++) {
+      const rel = `_next/static/chunks/many-${i}.js`;
+      fs.writeFileSync(path.join(dir, rel), `console.log(${i})`);
+      promised.push(rel);
+    }
+    fs.writeFileSync(
+      path.join(staticDir, 'ASSET_MANIFEST.txt'),
+      promised.join('\n') + '\n'
+    );
+    fs.writeFileSync(
+      path.join(staticDir, 'ASSET_AGES.txt'),
+      promised.map((rel) => `1 ${new Date().toISOString()} ${rel}`).join('\n') +
+        '\n'
+    );
+    return dir;
+  }
+
+  async function runWith(outDir, liveDir, env) {
+    try {
+      return { code: 0, stdout: await retain(outDir, liveDir, 14, env) };
+    } catch (err) {
+      return {
+        code: err.code ?? 1,
+        stdout: String(err.stdout ?? ''),
+        stderr: String(err.stderr ?? ''),
+      };
+    }
+  }
+
+  /**
+   * THE BRANCH THAT HAD NEVER RUN. With the cap below the promise count, the backstop
+   * drops in-window files — and since #130 that is a failure rather than a warning
+   * nobody reads.
+   */
+  it('drops in-window assets when it engages, and that now FAILS and names them', async () => {
+    const live = liveWithMany(path.join(WORK, 'p82-cap-live'), 6);
+    const out = makeGeneration(path.join(WORK, 'p82-cap-out'), 'next');
+
+    const result = await runWith(out, live, { RETAIN_MAX_FILES: '2' });
+    const all = result.stdout + (result.stderr ?? '');
+
+    assert.match(all, /backstop/, `the backstop never engaged.\n${all}`);
+    assert.equal(
+      result.code,
+      1,
+      `overflow must fail: what it drops is by definition still inside its window, ` +
+        `which is the whole subject of #82.\n${all}`
+    );
+    assert.match(all, /dropped by the 2-file backstop/);
+    assert.match(
+      all,
+      /_next\/static\/chunks\/many-\d+\.js/,
+      'the failure must NAME a dropped file'
+    );
+  });
+
+  /**
+   * THE CONTROL. Same fixture, cap above the promise count — so a test that failed
+   * because the harness is broken, rather than because the backstop engaged, is
+   * distinguishable from a real result.
+   */
+  it('stays dormant and passes when the cap is above the promise count', async () => {
+    const live = liveWithMany(path.join(WORK, 'p82-nocap-live'), 6);
+    const out = makeGeneration(path.join(WORK, 'p82-nocap-out'), 'next');
+
+    const result = await runWith(out, live, { RETAIN_MAX_FILES: '800' });
+    assert.equal(result.code, 0, result.stdout + (result.stderr ?? ''));
+    assert.ok(
+      !/backstop/.test(result.stdout),
+      'the backstop engaged at a cap far above the promise count'
+    );
+    assert.match(result.stdout, /per-asset retention holds/);
+  });
+
+  /**
+   * THE RATCHET GUARD, and the reason this is filed under #82 rather than as a tidy-up.
+   *
+   * `RETAIN_GENERATIONS` went 5 -> 30 while real coverage silently fell to ~3.5 days.
+   * `RETAIN_MAX_FILES` is the same shape and is currently invisible to the #751 guard,
+   * which greps only `deploy.yml` and only for the literal `RETAIN_GENERATIONS`. Setting
+   * it in a workflow converts a runaway backstop into a coverage cap — the identical
+   * mistake, in a variable nothing watches.
+   *
+   * It is a RUNAWAY GUARD, so no workflow should set it at all. If one ever legitimately
+   * needs to, this test is where the justification goes.
+   */
+  it('is not set by any workflow — a runaway guard is not a tuning knob', () => {
+    const dir = path.join(REPO, '.github/workflows');
+    const files = fs.readdirSync(dir).filter((f) => /\.ya?ml$/.test(f));
+    assert.ok(
+      files.length > 5,
+      'no workflows found; this assertion would be vacuous'
+    );
+
+    const offenders = files.filter((f) =>
+      /^\s*RETAIN_MAX_FILES\s*:/m.test(
+        fs.readFileSync(path.join(dir, f), 'utf8')
+      )
+    );
+    assert.deepEqual(
+      offenders,
+      [],
+      'a workflow sets RETAIN_MAX_FILES, turning the runaway backstop into a coverage ' +
+        'cap. That is exactly how RETAIN_GENERATIONS cut coverage to ~3.5 days while ' +
+        'reading as a safety measure (#751, #82).'
     );
   });
 });
