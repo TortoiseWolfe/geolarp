@@ -52,6 +52,16 @@ export interface FallbackRow {
   bg?: string;
   /** For `background-image-url`: the base colour under the image, for triage only. */
   baseColorRatio?: number;
+  /**
+   * For `background-image-url`: the signature of the element CARRYING the image.
+   *
+   * Often not the element with the text. DaisyUI's noise texture sits on the
+   * `.badge`, and what fails to measure is the `<span>` inside it — whose own
+   * signature is something like `span.text-xs`, far too generic to allowlist
+   * without exempting every small span in the product. Allowlisting the blocker
+   * keeps the exemption as narrow as the actual cause.
+   */
+  blockedBy?: string;
 }
 
 /**
@@ -200,8 +210,26 @@ export function measureNullRatioNodes(targets: string[]): FallbackRow[] {
       .filter(isSurfaceLayer)
       .flatMap((layer) => gradientStops(layer));
 
-  /** Nearest ancestor background that resolves to actual colours. */
-  const ancestorBg = (el: Element): [number, number, number][] => {
+  /**
+   * Nearest ancestor background that resolves to actual colours.
+   *
+   * `urlBlocked` IS NOT THE SAME AS FINDING NOTHING, and conflating the two is
+   * the bug this shape exists to prevent (#105). An empty result used to mean
+   * both "walked to the body and found no colour" and "an image is in the way",
+   * and the caller treated the second as the first — so text over a background
+   * image was measured against whatever sits BEHIND the image.
+   *
+   * A `url()` layer paints over the element's own background-color and over
+   * everything it inherits. Once the walk meets one it must stop and say so:
+   * every colour further down the stack is a colour that image is hiding.
+   */
+  const ancestorBg = (
+    el: Element
+  ): {
+    stops: [number, number, number][];
+    urlBlocked: boolean;
+    blocker: Element | null;
+  } => {
     let p = el.parentElement;
     let depth = 0;
     while (p && depth < 20) {
@@ -210,17 +238,22 @@ export function measureNullRatioNodes(targets: string[]): FallbackRow[] {
         const s = surfaceStops(cs.backgroundImage)
           .map(rgbOf)
           .filter(Boolean) as [number, number, number][];
-        if (s.length) return s;
+        if (s.length) return { stops: s, urlBlocked: false, blocker: null };
+        // No stops AND a url() layer: an image with no readable colour, sitting
+        // on top of everything below. Climbing past it is how a hero photo's
+        // caption got measured against the section colour behind the photo.
+        if (hasUrlLayer(cs.backgroundImage))
+          return { stops: [], urlBlocked: true, blocker: p };
       }
       if (!/rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor)) {
         const c = rgbOf(cs.backgroundColor);
-        if (c) return [c];
+        if (c) return { stops: [c], urlBlocked: false, blocker: null };
       }
       p = p.parentElement;
       depth++;
     }
     const body = rgbOf(getComputedStyle(document.body).backgroundColor);
-    return body ? [body] : [];
+    return { stops: body ? [body] : [], urlBlocked: false, blocker: null };
   };
 
   const rows: FallbackRow[] = [];
@@ -291,6 +324,18 @@ export function measureNullRatioNodes(targets: string[]): FallbackRow[] {
     let fgs: [number, number, number][];
     let bgs: [number, number, number][];
     let mode: FallbackRow['mode'];
+    /**
+     * An image is in the way, so no colour under it is the measurement (#105).
+     *
+     * Tracked separately from `bgs.length` because the two used to be the same
+     * test, and a `url()` background always found SOMETHING to fall back to —
+     * its own background-color, or an ancestor's. So the unresolvable branch
+     * below, whose comment has always described exactly this case, was
+     * unreachable on the one path that needed it.
+     */
+    let urlBlocked = false;
+    /** The element carrying the blocking image — often an ancestor, not `el`. */
+    let blocker: Element | null = null;
 
     if (clipsToText && fillTransparent) {
       // INVERTED: the gradient IS the text. Stops are the foreground; the
@@ -301,7 +346,10 @@ export function measureNullRatioNodes(targets: string[]): FallbackRow[] {
         number,
         number,
       ][];
-      bgs = ancestorBg(el);
+      const a = ancestorBg(el);
+      bgs = a.stops;
+      urlBlocked = a.urlBlocked;
+      blocker = a.blocker;
     } else if (hasBgImage(cs.backgroundImage)) {
       mode = 'own-gradient';
       const fg = rgbOf(cs.color);
@@ -311,36 +359,65 @@ export function measureNullRatioNodes(targets: string[]): FallbackRow[] {
         number,
         number,
       ][];
-      // Every layer was decoration — a chevron, an underline, a texture. The
-      // real surface is then the element's own background-color, or whatever it
-      // sits on when that is transparent.
       if (!bgs.length) {
-        const own = /rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor)
-          ? null
-          : rgbOf(cs.backgroundColor);
-        bgs = own ? [own] : ancestorBg(el);
+        // NO STOPS SPLITS TWO WAYS, and telling them apart is the whole fix.
+        //
+        // Every layer was decoration — a chevron, an underline — and the real
+        // surface is the element's own background-color. That is the recovery
+        // this branch was written for, and it is still right.
+        //
+        // OR one of those layers is a `url()`, which is not decoration we can
+        // see through: it is an opaque unknown painted over that same
+        // background-color. DaisyUI's `.btn` is exactly this — `none,
+        // url(data:…feTurbulence…)` over `--btn-bg` — and it was being scored
+        // against `--btn-bg` on every route, with the texture unaccounted for.
+        if (hasUrlLayer(cs.backgroundImage)) {
+          urlBlocked = true;
+          blocker = el;
+        } else {
+          const own = /rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor)
+            ? null
+            : rgbOf(cs.backgroundColor);
+          if (own) {
+            bgs = [own];
+          } else {
+            const a = ancestorBg(el);
+            bgs = a.stops;
+            urlBlocked = a.urlBlocked;
+            blocker = a.blocker;
+          }
+        }
       }
     } else {
       mode = 'ancestor-gradient';
       const fg = rgbOf(cs.color);
       fgs = fg ? [fg] : [];
-      bgs = ancestorBg(el);
+      const a = ancestorBg(el);
+      bgs = a.stops;
+      urlBlocked = a.urlBlocked;
+      blocker = a.blocker;
     }
 
-    if (!fgs.length || !bgs.length) {
+    if (urlBlocked || !fgs.length || !bgs.length) {
       // A url() layer is the one background this technique genuinely cannot
       // reduce to a colour. Report the base background-color underneath it for
       // triage — but do NOT treat that as the measurement, because the image
       // sits on top of it and is unaccounted for. Rounding it to a pass would
       // be #459 with extra steps.
-      const reason: UnresolvableReason = hasUrlLayer(cs.backgroundImage)
+      const reason: UnresolvableReason = urlBlocked
         ? 'background-image-url'
         : !fgs.length
           ? 'no-foreground'
           : 'no-background';
       let baseColorRatio: number | undefined;
       const fg = rgbOf(cs.color);
-      const base = rgbOf(cs.backgroundColor);
+      // Only the element's OWN opaque colour is worth reporting for triage. A
+      // transparent one parses to black through the canvas and would print a
+      // confident 21:1 that means nothing — a triage number that misleads is
+      // worse than an absent one, which is this file's whole thesis.
+      const base = /rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor)
+        ? null
+        : rgbOf(cs.backgroundColor);
       if (fg && base)
         baseColorRatio = Math.round(ratioOf(fg, base) * 100) / 100;
       rows.push({
@@ -351,6 +428,7 @@ export function measureNullRatioNodes(targets: string[]): FallbackRow[] {
         reason,
         mode,
         baseColorRatio,
+        ...(urlBlocked ? { blockedBy: signatureOf(blocker ?? el) } : {}),
       });
       continue;
     }
@@ -429,23 +507,61 @@ export const VENDOR_EXCLUDED: ReadonlyArray<{
  * unmeasurable element fails even while the total holds steady.
  */
 export const UNRESOLVABLE_ALLOWLIST: ReadonlyArray<{
-  signature: RegExp;
+  /** Matches the element with the text. Omit when only the blocker identifies it. */
+  signature?: RegExp;
+  /**
+   * Matches the element CARRYING the background image (`FallbackRow.blockedBy`).
+   *
+   * This is the narrow way to exempt a whole component. DaisyUI's noise texture
+   * sits on the `.badge`, and what cannot be measured is the `<span>` inside it —
+   * signature `span.text-xs`. Allowlisting THAT would exempt every small span in
+   * the product, which is the gate quietly shrinking, the exact failure this file
+   * exists to prevent. Allowlisting the blocker exempts only what the texture
+   * actually covers.
+   */
+  blockedBy?: RegExp;
   reason: UnresolvableReason;
   why: string;
 }> = [
   {
-    // ANY element carrying DaisyUI's .btn — not just <button>. The first version
-    // of this said /^button\.btn\./ and the gate immediately caught
-    // `a.btn.btn-primary "Go Home"`, which is the allowlist working: a category
-    // written too narrowly fails loudly instead of silently covering less.
-    signature: /^[a-z]+\.btn(\.|$)/,
+    // The element IS the .btn/.badge, or sits inside one. Both come back with
+    // `blockedBy` naming the component that carries the texture.
+    //
+    // THIS ENTRY USED TO BE DEAD (#105). It read `signature: /^[a-z]+\.btn(\.|$)/`
+    // and described exactly the behaviour below — and could never match, because
+    // a `url()` layer yielded no stops, which sent the row down the "every layer
+    // was decoration" recovery, which always found the opaque `--btn-bg`
+    // underneath. Every button on every route was being MEASURED against the
+    // colour beneath its texture, while this entry sat here asserting otherwise.
+    // Verified by fixture before and after: 12.55:1 `measured` -> `unresolvable`.
+    // DERIVED FROM DAISYUI'S SOURCE, not from whichever failures happened to
+    // appear first. `grep -l noise node_modules/daisyui/components/*.css` names
+    // eight files; these are the ones that can block TEXT:
+    //
+    //   .alert .badge .btn .checkbox .file-input .radio   — on the element itself
+    //   .menu-active                                       — menu paints it only
+    //                                                        on the active item
+    //   (.toggle is excluded: its noise is on `::before`, which
+    //    getComputedStyle(el) never reports, so it can block nothing)
+    //
+    // NOT anchored at the start. `class="foo btn"` gives the signature
+    // `a.foo.btn`, and the previous `/^[a-z]+\.btn/` would have missed it — the
+    // old entry's own comment records `a.btn.btn-primary` catching it out once.
+    // `(\.|$)` after each name keeps `badge` from matching `badge-xs`.
+    blockedBy:
+      /(^|\.)(alert|badge|btn|checkbox|file-input|radio|menu-active)(\.|$)/,
     reason: 'background-image-url',
     why:
-      'DaisyUI layers an SVG data-URI texture over .btn variants, so the computed ' +
+      'DaisyUI layers an SVG noise texture (`--fx-noise`, a fractalNoise ' +
+      'feTurbulence at opacity 0.2) over .alert, .badge, .btn and four other ' +
+      'components, so the computed ' +
       'background is `none, url(data:image/svg+xml,...)`. An image cannot be ' +
-      'reduced to a colour by stop inspection. The base background-color IS ' +
-      'reported alongside for triage, but is deliberately not accepted as the ' +
-      'measurement — the image sits on top of it and is unaccounted for. ' +
-      'Resolving this properly needs pixel readback of the rendered element (#459).',
+      'reduced to a colour by stop inspection, and it covers the element AND ' +
+      'everything inside it — so the text within a badge is unmeasurable too. ' +
+      'The base background-color IS reported alongside for triage, but is ' +
+      'deliberately not accepted as the measurement: the texture sits on top of ' +
+      'it and is unaccounted for. Resolving this properly needs pixel readback ' +
+      'of the rendered element (#459), which is now the only route to restoring ' +
+      'AAA coverage on every button and badge in the product.',
   },
 ];

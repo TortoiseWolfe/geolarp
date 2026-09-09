@@ -493,12 +493,24 @@ test.describe('WCAG AAA, derived from color-contrast (#43)', () => {
           .filter(
             (r) =>
               !UNRESOLVABLE_ALLOWLIST.some(
-                (a) => a.signature.test(r.signature) && a.reason === r.reason
+                (a) =>
+                  a.reason === r.reason &&
+                  // Every matcher the entry declares must match, and an entry
+                  // declaring neither matches nothing — an empty entry must not
+                  // become a blanket exemption.
+                  (a.signature !== undefined || a.blockedBy !== undefined) &&
+                  (a.signature === undefined ||
+                    a.signature.test(r.signature)) &&
+                  (a.blockedBy === undefined ||
+                    (r.blockedBy !== undefined &&
+                      a.blockedBy.test(r.blockedBy)))
               )
           )
           .map(
             (r) =>
-              `${r.signature} [${r.reason}] "${r.text}"` +
+              `${r.signature} [${r.reason}]` +
+              (r.blockedBy ? ` blocked by ${r.blockedBy}` : '') +
+              ` "${r.text}"` +
               (r.baseColorRatio
                 ? ` (base background-color alone would be ${r.baseColorRatio}:1)`
                 : '')
@@ -783,5 +795,111 @@ test.describe('the AAA gate can fail (#43)', () => {
       `the fallback must still refuse what it cannot read. If this is 'measured', ` +
         `it resolves a colour for everything and the assertion above is vacuous.`
     ).toEqual({ kind: 'unresolvable', reason: 'no-foreground' });
+  });
+
+  /**
+   * TEXT ON A BACKGROUND IMAGE IS NOT MEASURABLE, AND MUST SAY SO (#105).
+   *
+   * The `background-image-url` branch has always carried a comment describing
+   * exactly this case — "the image sits on top of it and is unaccounted for" —
+   * and was unreachable on the one path that needed it. A `url()` layer yields no
+   * gradient stops, which sent it down the "every layer was decoration" recovery,
+   * which always found SOMETHING: the element's own background-color, or an
+   * ancestor's. So the row came back `measured`, against a surface the image is
+   * covering.
+   *
+   * Both fixtures were observed returning `kind: 'measured'` before the fix —
+   * 12.55:1 and 1.26:1 respectively, both meaningless.
+   *
+   * The first is DaisyUI's `.btn` exactly: `none, url(data:…feTurbulence…)` over
+   * an opaque colour. That mattered more than a hypothetical, because
+   * `UNRESOLVABLE_ALLOWLIST` already asserts every `.btn` is expected to be
+   * unresolvable for this reason — an entry that could never match, quietly
+   * describing behaviour the code did not have.
+   */
+  const BTN_ID = 'aaa-fallback-url-over-colour';
+  const ANCESTOR_ID = 'aaa-fallback-url-on-ancestor';
+
+  test('text over a background image is refused, not measured against what is under it', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await waitForLoadStateOrGiveUp(page, 'load');
+
+    await page.evaluate(
+      ([btnId, ancestorId]) => {
+        // DaisyUI's own noise texture, verbatim from `--fx-noise`. Its only `#`
+        // is URL-encoded as `%23a`, so the stop scanner finds no colour in it —
+        // which is precisely why the recovery path used to swallow it.
+        const NOISE =
+          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='a'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.34' numOctaves='4' stitchTiles='stitch'%3E%3C/feTurbulence%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23a)' opacity='0.2'%3E%3C/rect%3E%3C/svg%3E\")";
+
+        const btn = document.createElement('p');
+        btn.id = btnId;
+        btn.textContent = 'an image over an opaque colour';
+        btn.setAttribute(
+          'style',
+          'color:rgb(0,0,0);font-size:13px;padding:8px;' +
+            `background-color:rgb(200,200,200);background-image:none,${NOISE}`
+        );
+        document.body.appendChild(btn);
+
+        // The ancestor case: the element itself has nothing readable, and the
+        // walk upward meets an image. Climbing past it reaches rgb(30,30,30) —
+        // a colour the image is covering.
+        const outer = document.createElement('div');
+        outer.setAttribute(
+          'style',
+          `background-color:rgb(30,30,30);background-image:${NOISE}`
+        );
+        const inner = document.createElement('p');
+        inner.id = ancestorId;
+        inner.textContent = 'text over an ancestor image';
+        inner.setAttribute(
+          'style',
+          'color:rgb(0,0,0);font-size:13px;padding:8px;' +
+            'background-image:linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,0))'
+        );
+        outer.appendChild(inner);
+        document.body.appendChild(outer);
+      },
+      [BTN_ID, ANCESTOR_ID] as const
+    );
+
+    const rows = await page.evaluate(measureNullRatioNodes, [
+      `#${BTN_ID}`,
+      `#${ANCESTOR_ID}`,
+    ]);
+    const btn = rows.find((r) => r.selector === `#${BTN_ID}`);
+    const ancestor = rows.find((r) => r.selector === `#${ANCESTOR_ID}`);
+
+    expect(
+      { kind: btn?.kind, reason: btn?.reason ?? null },
+      `a url() layer over an opaque background-color must NOT be measured ` +
+        `against that colour. This is DaisyUI's .btn on every route, and ` +
+        `UNRESOLVABLE_ALLOWLIST already claims it behaves this way (#105).`
+    ).toEqual({ kind: 'unresolvable', reason: 'background-image-url' });
+
+    // The base colour still rides along for triage — refusing to measure is not
+    // refusing to help — but it is NOT the measurement.
+    expect(btn!.baseColorRatio, 'triage figure is still reported').toBeCloseTo(
+      12.55,
+      1
+    );
+    expect(btn!.ratio, 'a refused row carries no ratio').toBeUndefined();
+
+    expect(
+      { kind: ancestor?.kind, reason: ancestor?.reason ?? null },
+      `the ancestor walk must stop at an image rather than climbing past it to ` +
+        `the colour behind it (#105).`
+    ).toEqual({ kind: 'unresolvable', reason: 'background-image-url' });
+
+    // NO triage figure here, deliberately: this element's own background is
+    // transparent, which parses to black through the canvas and would print a
+    // confident 21:1 that means nothing. An absent number beats a misleading one.
+    expect(
+      ancestor!.baseColorRatio,
+      'a transparent own-background must not be reported as a triage colour'
+    ).toBeUndefined();
   });
 });
