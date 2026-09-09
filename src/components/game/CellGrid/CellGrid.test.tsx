@@ -11,7 +11,7 @@ const CENTRE: Cell = { q: -77750, r: 39012 };
 const today = new Date('2026-08-26T12:00:00Z');
 
 describe('CellGrid', () => {
-  it('draws seven cells, each NAMED even though the tile has no room to say so', () => {
+  it('draws seven tiles, each NAMED even though the tile has no room to say so', () => {
     // 82px per tile at 320px holds a kind word and a pip row, and not a
     // two-word place name as well. The name is still the thing a player says
     // out loud, so it lives in the accessible name rather than nowhere.
@@ -111,7 +111,7 @@ describe('CellGrid', () => {
     // screen reader repeats.
     const { rerender } = render(<CellGrid centre={CENTRE} today={today} />);
     expect(
-      screen.getByRole('group', { name: 'The seven cells around you' })
+      screen.getByRole('group', { name: 'The six cells around you' })
     ).toBeInTheDocument();
 
     rerender(<CellGrid centre={CENTRE} today={today} onStep={() => {}} />);

@@ -62,7 +62,7 @@ const STEPS: ReadonlyArray<HexDirection | null> = [
 const ROWS: ReadonlyArray<number> = [2, 3, 2];
 
 /**
- * The seven cells around you, and the six ways to walk between them.
+ * The six cells around you, and the six ways to walk between them.
  *
  * WHY A GRID AND NOT A MAP. A real map was rejected on privacy, not on cost:
  * every tile fetch sends position-derived z/x/y to a third-party CDN on every
@@ -117,7 +117,15 @@ export default function CellGrid({
         `character-played.spec.ts` locates the walkable case by the exact
         string below — accessible names are an API in this repo.
       */
-      aria-label={onStep ? 'Move one cell' : 'The seven cells around you'}
+      /*
+        SIX, NOT SEVEN. `flower` returns seven cells, but six are AROUND you and
+        the seventh is the one you are standing in — naming it "seven" counts the
+        ground under your feet as a neighbour. The square version said "nine" and
+        had the same flaw; it survived because eight-around-plus-one is not a
+        shape anyone pictures. On a hex grid it is, and "six" says hexagon out
+        loud where "seven" hides it.
+      */
+      aria-label={onStep ? 'Move one cell' : 'The six cells around you'}
     >
       {/*
         Still true, and now load-bearing in a different way: rows run north to
