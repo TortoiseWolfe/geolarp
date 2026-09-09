@@ -137,6 +137,56 @@ describe('the device-location boundary', () => {
   });
 });
 
+/**
+ * STORYBOOK IS PUBLISHED, AND IT SITS OUTSIDE THE SCAN ABOVE (#113).
+ *
+ * `sourceFiles()` skips `.stories.` on purpose — a story that mocks the platform
+ * is legitimate. But `deploy.yml` publishes Storybook, so anything a story can do
+ * a visitor to the gallery can do, outside the app's own consent gate and outside
+ * every E2E lane.
+ *
+ * `MapContainer.stories.tsx` set `showUserLocation: true`, which renders a
+ * `LocationButton`; pressing it calls the platform through `getCoarseFix`. It did
+ * not fire on mount, so nothing prompted a passing reader — it simply handed any
+ * visitor a button that would. The stories use fixed sample fixes now, which also
+ * demonstrates the component better: what it receives is a cell centre.
+ */
+describe('the published gallery does not ask the visitor where they are', () => {
+  const STORIES = (function walk(dir: string): string[] {
+    const out: string[] = [];
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) out.push(...walk(full));
+      else if (/\.stories\.tsx?$/.test(entry)) out.push(full);
+    }
+    return out;
+  })(SRC);
+
+  it('scans a real number of stories — a silent zero is not a pass', () => {
+    expect(STORIES.length).toBeGreaterThan(20);
+  });
+
+  it('no story turns on the live location control', () => {
+    const offenders = STORIES.filter((f) =>
+      /showUserLocation:\s*true/.test(stripComments(readFileSync(f, 'utf8')))
+    ).map((f) => relative(SRC, f).split('\\').join('/'));
+    expect(
+      offenders,
+      'a published story renders the location button, so any visitor to the ' +
+        'gallery can be prompted for their position outside the consent gate'
+    ).toEqual([]);
+  });
+
+  it('no story reaches the platform directly either', () => {
+    const offenders = STORIES.filter((f) =>
+      /navigator\.geolocation\.(getCurrentPosition|watchPosition)\s*\(|\bmap\.locate\s*\(/.test(
+        stripComments(readFileSync(f, 'utf8'))
+      )
+    ).map((f) => relative(SRC, f).split('\\').join('/'));
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe('coarseFixFrom', () => {
   const raw = (lat: number, lon: number, accuracy = 5): GeolocationPosition =>
     ({

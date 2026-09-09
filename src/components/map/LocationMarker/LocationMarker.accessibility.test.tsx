@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { LocationMarker } from './LocationMarker';
+import { cellOf, cellCentre } from '@/lib/geolarp/cell';
+import type { CoarseFix } from '@/lib/geolarp/coarseFix';
 
 expect.extend(toHaveNoViolations);
 
@@ -45,11 +47,21 @@ vi.mock('leaflet', () => ({
   },
 }));
 
-describe('LocationMarker Accessibility', () => {
-  const defaultProps = {
-    position: [51.505, -0.09] as [number, number],
-    accuracy: 10,
+/** A reading whose coordinate is already gone, built the way the app builds one. */
+function fixAt(lat: number, lon: number, accuracy = 10): CoarseFix {
+  const cell = cellOf(lat, lon);
+  const centre = cellCentre(cell);
+  return {
+    cell,
+    lat: centre.lat,
+    lon: centre.lon,
+    accuracy,
+    timestamp: 1_757_000_000_000,
   };
+}
+
+describe('LocationMarker Accessibility', () => {
+  const defaultProps = { fix: fixAt(51.505, -0.09) };
 
   it('should have no accessibility violations with default props', async () => {
     const { container } = render(<LocationMarker {...defaultProps} />);
