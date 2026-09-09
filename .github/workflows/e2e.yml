@@ -230,6 +230,12 @@ jobs:
       - name: Build application
         run: pnpm build
         env:
+          # Exposes `window.leafletMap` in this build only (#113). `map.spec.ts`
+          # drives the map through it in a dozen places, and the E2E lanes serve a
+          # PRODUCTION export — so gating the handle on NODE_ENV alone would take
+          # it away from precisely the runs that need it. deploy.yml must never
+          # set this; scripts/__tests__/e2e-map-handle.test.js enforces that.
+          NEXT_PUBLIC_E2E: 'true'
           # The E2E suite serves this build from the ROOT (`serve out -l 3000`).
           # DISABLE_BASE_PATH forces a basePath-less build so /_next/*.js assets
           # resolve at /. If the build baked in the GitHub Pages basePath

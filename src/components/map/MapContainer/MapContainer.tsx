@@ -84,8 +84,28 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   const handleMapReady = useCallback(
     (map: LeafletMap) => {
       mapRef.current = map;
-      // Expose map instance to window for testing
-      if (typeof window !== 'undefined') {
+      /*
+        A TEST CONVENIENCE, NOW WITH A DIRECTION (#113).
+
+        This handle is how `tests/e2e/map.spec.ts` drives the map — it reads it in
+        a dozen places. But the guard used to be `typeof window !== 'undefined'`,
+        which is an SSR check, not an environment check: it ran in production too,
+        handing any script on the page the live Leaflet instance, its centre and
+        its zoom. CLAUDE.md's rule is that an environment guard has a direction —
+        a convenience MAY be limited to development, a protection may not — and
+        "for testing" and "always on" should not both be true.
+
+        `NODE_ENV === 'development'` ALONE WOULD BREAK CI, which is why the second
+        clause is here rather than being the obvious one-liner. The E2E lanes build
+        with `pnpm build` and serve the static export (`npx serve out`), so
+        NODE_ENV is `production` in exactly the runs that need this handle. The
+        build sets `NEXT_PUBLIC_E2E` instead; `deploy.yml` does not, and
+        `scripts/__tests__/e2e-map-handle.test.js` fails if that ever changes.
+      */
+      const exposeForTests =
+        process.env.NODE_ENV === 'development' ||
+        process.env.NEXT_PUBLIC_E2E === 'true';
+      if (typeof window !== 'undefined' && exposeForTests) {
         (window as Window & { leafletMap?: LeafletMap }).leafletMap = map;
       }
       if (onMapReady) {

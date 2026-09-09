@@ -331,6 +331,12 @@ jobs:
       - name: Build (root-served, pointed at the local stack)
         run: pnpm build
         env:
+          # Exposes `window.leafletMap` in this build only (#113). `map.spec.ts`
+          # drives the map through it in a dozen places, and the E2E lanes serve a
+          # PRODUCTION export — so gating the handle on NODE_ENV alone would take
+          # it away from precisely the runs that need it. deploy.yml must never
+          # set this; scripts/__tests__/e2e-map-handle.test.js enforces that.
+          NEXT_PUBLIC_E2E: 'true'
           DISABLE_BASE_PATH: 'true'
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_e2e_dummy_not_a_real_key
           NEXT_PUBLIC_PAYPAL_CLIENT_ID: e2e_dummy_paypal_client_id
