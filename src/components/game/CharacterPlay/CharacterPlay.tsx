@@ -454,8 +454,13 @@ export default function CharacterPlay({
         It used to mount inside EncounterCard, which sits two to three phone
         screens above the skill you tapped: the tap changed something the player
         could not see and nothing moved focus there. Now the row you touch opens
-        under your thumb, and the encounter's own suggestion is open on arrival,
-        so the common case costs zero taps.
+        under your thumb.
+
+        NOTHING IS OPEN ON ARRIVAL (#63). This used to add "and the encounter's
+        own suggestion is open on arrival, so the common case costs zero taps" —
+        true, and the reason the suggestion silently collected the payout, since
+        a cell pays only its first resolution. `Go to {skill}` above is the
+        replacement: the same one tap, made by the player.
       */}
       <CharacterSheet
         character={play.character}

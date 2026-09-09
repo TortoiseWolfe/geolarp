@@ -464,21 +464,55 @@ describe('the roll is under the thumb that opened it', () => {
     return user;
   }
 
-  it("opens the encounter's own suggestion, so the common case costs no taps", async () => {
+  /**
+   * THE SUGGESTION IS ADVICE, AND ADVICE DOES NOT CLAIM THE PAYOUT (#63).
+   *
+   * This test used to assert the opposite — "opens the encounter's own
+   * suggestion, so the common case costs no taps" — and it was green the whole
+   * time the product's own copy said "a cell suggests a skill, but anything you
+   * can argue for is fair". A cell pays ONCE, so the row that is open when the
+   * player arrives collects the only reward that cell will ever give.
+   *
+   * The cost was concentrated: `PROFILES` only ever suggests nine of the twenty
+   * skills, so pre-opening one made the other eleven — `Navigate` and `Sprint`
+   * among them, in a walking game — fully rollable and never the default claim.
+   */
+  it('opens nothing on arrival, so the payout is not claimed by default', async () => {
     await begin();
 
-    // Exactly one roll control exists, and exactly one row reports itself open.
-    const rollButtons = screen.getAllByRole('button', { name: /^Roll / });
-    expect(rollButtons).toHaveLength(1);
+    // No roll control at all: there is nothing selected to roll.
+    expect(screen.queryAllByRole('button', { name: /^Roll / })).toHaveLength(0);
+
+    const opened = screen
+      .getAllByRole('button')
+      .filter((b) => b.getAttribute('aria-expanded') === 'true');
+    expect(
+      opened.map((b) => b.textContent),
+      'a row is open before the player chose one, which is the pre-selection ' +
+        "coming back: whichever row that is collects the cell's only payout"
+    ).toEqual([]);
+  });
+
+  /**
+   * Removing the pre-selection must not make TAKING the advice expensive. The
+   * `Go to {skill}` control on the encounter card is the whole compensation: one
+   * tap, on the card the player is already reading, and now a choice they made.
+   */
+  it('takes the advice in one tap, when the player asks for it', async () => {
+    const user = await begin();
+    const goTo = screen.getByRole('button', { name: /^Go to / });
+    const suggested = goTo.textContent!.replace(/^Go to\s+/, '').trim();
+
+    await user.click(goTo);
 
     const opened = screen
       .getAllByRole('button')
       .filter((b) => b.getAttribute('aria-expanded') === 'true');
     expect(opened).toHaveLength(1);
-
-    // They are the same skill: the row that is open is the one being rolled.
-    const skill = rollButtons[0].textContent!.replace(/^Roll\s+/, '').trim();
-    expect(opened[0].textContent).toContain(skill);
+    expect(opened[0].textContent).toContain(suggested);
+    expect(
+      screen.getByRole('button', { name: `Roll ${suggested}` })
+    ).toBeInTheDocument();
   });
 
   it('moves the open row when a different skill is tapped', async () => {
@@ -500,7 +534,8 @@ describe('the roll is under the thumb that opened it', () => {
   });
 
   it('keeps the roll inside the sheet, not above it', async () => {
-    await begin();
+    const user = await begin();
+    await user.click(screen.getByRole('button', { name: /^Go to / }));
     const sheet = screen
       .getByRole('heading', { name: 'Ada Wren', level: 2 })
       .closest('article') as HTMLElement;
@@ -549,6 +584,14 @@ describe('resolving a cell pays, once', () => {
     await user.type(screen.getByLabelText('Name'), 'Ada Wren');
     await user.click(screen.getByRole('button', { name: 'Roll a character' }));
     await screen.findByRole('heading', { name: 'Ada Wren', level: 2 });
+    // TAKE THE ADVICE, deliberately and by hand.
+    //
+    // Nothing is selected on arrival since #63, so there is no roll control
+    // until the player picks — and these cases are about the PAYOUT, which is
+    // per cell and indifferent to the skill. Clicking through the card's own
+    // `Go to` reproduces exactly what the removed pre-selection used to do, so
+    // the dates and rewards documented above still describe what runs here.
+    await user.click(screen.getByRole('button', { name: /^Go to / }));
     return user;
   }
 
@@ -627,5 +670,55 @@ describe('resolving a cell pays, once', () => {
 
     await waitFor(() => expect(outcome()).toHaveTextContent(/rolled/));
     expect(outcome().textContent).toBe(before);
+  });
+
+  /**
+   * THE SAME MEMORY, FOR A SKILL THE CELL DID NOT SUGGEST (#63).
+   *
+   * The test above cannot see this: it rolls the suggestion, so a lookup keyed
+   * on `encounter.skill` and a lookup keyed on what the player rolled give the
+   * same answer. They were the same thing only while the selection WAS the
+   * suggestion. The moment the pre-selection came out they could disagree, and
+   * a suggestion-keyed lookup silently forgot every outcome earned any other
+   * way — which is most of them, since the point of #63 is that all twenty
+   * skills are now live and only nine are ever suggested.
+   *
+   * 2026-08-28 suggests `Scavenge`; this rolls `Lore` on purpose.
+   */
+  it('remembers a skill the cell never suggested', async () => {
+    const user = await beginOn('2026-08-28');
+    const sheet = screen
+      .getByRole('heading', { name: 'Ada Wren', level: 2 })
+      .closest('article') as HTMLElement;
+
+    const suggested = screen
+      .getByRole('button', { name: /^Go to / })
+      .textContent!.replace(/^Go to\s+/, '')
+      .trim();
+    expect(suggested).not.toBe('Lore');
+
+    await user.click(within(sheet).getByRole('button', { name: /^Lore/ }));
+    await user.click(screen.getByRole('button', { name: 'Roll Lore' }));
+    const outcome = () => screen.getByRole('status', { name: 'Roll result' });
+    await waitFor(() => expect(outcome()).toHaveTextContent(/rolled/));
+    const before = outcome().textContent;
+
+    await user.click(screen.getByRole('button', { name: 'Grid movement' }));
+    await user.click(
+      screen.getByRole('button', { name: /^Move north-east to/ })
+    );
+    await user.click(
+      screen.getByRole('button', { name: /^Move south-west to/ })
+    );
+
+    await waitFor(() => expect(outcome()).toHaveTextContent(/rolled/));
+    expect(outcome().textContent).toBe(before);
+    // And the row that comes back open is the one that was rolled, not the one
+    // the cell suggests. Reopening it claims nothing — the cell is already paid.
+    const opened = screen
+      .getAllByRole('button')
+      .filter((b) => b.getAttribute('aria-expanded') === 'true');
+    expect(opened).toHaveLength(1);
+    expect(opened[0].textContent).toContain('Lore');
   });
 });
