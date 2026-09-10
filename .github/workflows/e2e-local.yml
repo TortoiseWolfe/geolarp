@@ -441,6 +441,12 @@ jobs:
               --reporter=line,json,./tests/e2e/reporters/assertion-count-reporter.ts || true
         env:
           CI: 'true'
+          # THIS LANE *IS* THE LOCAL DOCKER SUPABASE (#152). Three admin specs skip
+          # themselves on `!!process.env.CI` with the reason "requires local Docker
+          # Supabase" — which #575 made this lane provide. Keying on CI meant the guard
+          # fired against the one environment that satisfies it, so 29 admin tests ran
+          # in neither lane while `E2E (local) result` stayed a required check.
+          E2E_LOCAL_SUPABASE: 'true'
           SKIP_WEBSERVER: 'true'
           BASE_URL: http://localhost:3000
           PLAYWRIGHT_JSON_OUTPUT_NAME: results.json

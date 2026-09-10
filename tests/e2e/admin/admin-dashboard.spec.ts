@@ -35,7 +35,17 @@ const SUPABASE_ADMIN_URL =
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 test.describe('Admin Dashboard E2E', () => {
-  test.skip(!!process.env.CI, 'Skipped in CI: requires local Docker Supabase');
+  // SKIPPED ONLY WHERE THE STACK IS GENUINELY ABSENT (#152).
+  //
+  // This read `!!process.env.CI`, and the reason below is why that was wrong: #575 made
+  // the local lane "a Supabase per runner, brought up in the job" — exactly what these
+  // need — and that lane sets CI. So the guard fired against the one environment that
+  // satisfies it, and with the hosted lane setting CI too, 29 admin tests ran nowhere
+  // while `E2E (local) result` remained a required check.
+  test.skip(
+    !!process.env.CI && !process.env.E2E_LOCAL_SUPABASE,
+    'Skipped: needs a local Docker Supabase (the e2e-local lane provides one)'
+  );
   test.describe.configure({ mode: 'serial' });
 
   test.beforeEach(async ({ page }) => {
