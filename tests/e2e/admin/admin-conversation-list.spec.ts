@@ -47,7 +47,31 @@ const STALE_LAST_MESSAGE = new Date(
 const STALE_CONV_ID = 'eeeeeeee-eeee-4eee-aeee-000000000e2e';
 
 test.describe('Admin Conversation List E2E', () => {
-  test.skip(!!process.env.CI, 'Skipped in CI: requires local Docker Supabase');
+  // WHY THIS IS `fixme` AND NOT `skip` (#152 -> #159).
+  //
+  // It read `test.skip(!!process.env.CI, 'Skipped in CI: requires local Docker Supabase')`.
+  // That reason was false twice over. #575 made the local lane exactly that — "a Supabase per
+  // runner, brought up in the job" — and `e2e-local.yml` sets `CI: 'true'`, so the guard fired
+  // against the one environment that satisfies it. The hosted lane sets `CI` too, so 29 tests
+  // ran in NEITHER while `E2E (local) result` stayed a required context on `main`.
+  //
+  // Unskipping them (#152) is what revealed the real blocker: these specs sign in as
+  // `test@example.com` and assume admin-ness comes from `app_metadata`. It does not.
+  // `user_profiles.is_admin` is "the single authority since #240" — see
+  // `admin-depth.spec.ts:15-18` — so `AdminGate` redirects, it renders `null` for a non-admin,
+  // and the console container never appears. That fails in EVERY environment; no lane keying
+  // can fix it.
+  //
+  // `fixme` rather than `skip` because the statement has to be true: this is known-broken and
+  // tracked, not unsupported here. `mode: 'serial'` means the first failure skips the rest, so
+  // the honest count of coverage these files deliver today is zero.
+  //
+  // #159 moves them onto `seedIsolatedAdmin` / `openAdminAs`, which is what `admin-depth.spec.ts`
+  // already uses and the only reason that file's tests pass.
+  test.fixme(
+    true,
+    'Asserts admin via app_metadata; user_profiles.is_admin is the authority since #240 — see #159'
+  );
   test.describe.configure({ mode: 'serial' });
 
   let serviceClient: SupabaseClient;
