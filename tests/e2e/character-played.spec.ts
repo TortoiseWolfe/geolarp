@@ -539,3 +539,116 @@ test.describe('/character played — no horizontal overflow', () => {
     });
   }
 });
+
+/**
+ * THE GRID IS THE GAME'S PRIMARY CONTROL, AND NO GATE MEASURED IT (#141).
+ *
+ * `mobile-touch-targets.spec.ts` visits only `/`, and its selector is nav-scoped
+ * (`nav button, nav label, a.btn, …`), so it would not see these tiles even if it came
+ * here. The sweep above visits `/character` at four widths and asserts horizontal
+ * overflow ONLY — not target size, not interactivity.
+ *
+ * So the route with the game's main control had no gate on whether that control is big
+ * enough to hit or able to be hit at all. Both are asserted here, at the narrowest
+ * viewport, where a 44px floor is hardest to meet.
+ */
+test.describe('/character played — the grid is a real control', () => {
+  const AAA_MIN = 44;
+
+  test('every tile meets 44px and the six moves are operable buttons', async ({
+    page,
+  }) => {
+    await page.addInitScript(
+      ([t, c]) => {
+        window.localStorage.setItem('theme', t as string);
+        window.localStorage.setItem('geolarp_character', c as string);
+      },
+      ['geolarp-light', JSON.stringify(CHARACTER)] as const
+    );
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto('/character/', { waitUntil: 'domcontentloaded' });
+    await waitForLoadStateOrGiveUp(page, 'load');
+    await expect(
+      page.getByRole('heading', { name: 'Ada Wren', level: 2 })
+    ).toBeVisible({ timeout: 15000 });
+
+    // THE SWITCH IS BEHIND A CLOSED DISCLOSURE, which is #139's other half and was
+    // confirmed by this very test failing without this line: the grid is rendered
+    // outside "Where you are" while the mode buttons that arm it are inside, so the
+    // control is visible and the thing that enlivens it is not.
+    await openDisclosures(page);
+
+    // Grid movement is not the default mode (#139), so it is switched on explicitly.
+    // That is the state this test is about: when the control IS armed, does it work.
+    await page.getByRole('button', { name: 'Grid movement' }).click();
+
+    const tiles = page.locator('[data-testid="cell-tile"]');
+    await expect(tiles).toHaveCount(7);
+
+    // SIZE. 320px is the narrowest supported width and the hardest place to hold 44px
+    // across a 2-3-2 lattice.
+    const undersized: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const box = await tiles.nth(i).boundingBox();
+      if (!box) {
+        undersized.push(`tile ${i} has no box`);
+        continue;
+      }
+      if (box.height < AAA_MIN - 1) {
+        undersized.push(`tile ${i}: ${Math.round(box.height)}px tall`);
+      }
+    }
+    expect(
+      undersized,
+      `a tile is below the ${AAA_MIN}px touch floor at 320px`
+    ).toEqual([]);
+
+    // OPERABILITY — the assertion that was impossible before #141 gave the two
+    // branches distinguishable hooks. Six, not seven: the centre is where you are.
+    const operable = page.locator(
+      '[data-testid="cell-tile"][data-interactive="true"]'
+    );
+    await expect(
+      operable,
+      'the grid rendered seven tiles and none of them can be moved to. Before #141 ' +
+        'this was unobservable: both branches emitted the same testid, so counting ' +
+        'tiles passed either way.'
+    ).toHaveCount(6);
+
+    // And they are real buttons, not divs wearing a data attribute.
+    const tagNames = await operable.evaluateAll((els) =>
+      els.map((e) => e.tagName)
+    );
+    expect(new Set(tagNames)).toEqual(new Set(['BUTTON']));
+  });
+
+  /**
+   * The negative half, and the reason the attribute exists. In the DEFAULT mode nothing
+   * is operable — that is #139. This records it rather than blessing it: fix #139 and
+   * this goes red, which is the signal to update it.
+   */
+  test('records that the default mode arms nothing (#139)', async ({
+    page,
+  }) => {
+    await page.addInitScript(
+      ([t, c]) => {
+        window.localStorage.setItem('theme', t as string);
+        window.localStorage.setItem('geolarp_character', c as string);
+      },
+      ['geolarp-light', JSON.stringify(CHARACTER)] as const
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/character/', { waitUntil: 'domcontentloaded' });
+    await waitForLoadStateOrGiveUp(page, 'load');
+    await expect(
+      page.getByRole('heading', { name: 'Ada Wren', level: 2 })
+    ).toBeVisible({ timeout: 15000 });
+
+    await expect(page.locator('[data-testid="cell-tile"]')).toHaveCount(7);
+    await expect(
+      page.locator('[data-testid="cell-tile"][data-interactive="true"]'),
+      'the default mode now arms the grid. If #139 was fixed, update this test — it ' +
+        'is a record of the old default, not a requirement.'
+    ).toHaveCount(0);
+  });
+});
