@@ -37,7 +37,24 @@
  *     is collecting; a header can be perfectly delivered and still wrong.
  */
 
-const site = (process.argv[2] || 'https://scripthammer.com').replace(
+// THE FALLBACK USED TO BE THE UPSTREAM DOMAIN (#133), so running this by hand
+// without an argument silently probed a DIFFERENT SITE and reported confident
+// results about it. CI always passes the URL explicitly, so this only ever bit
+// someone running it manually — in the way hardest to notice. Same chain as
+// `scripts/ci/check-cache-headers.mjs:49-55`, which fixed the same defect first.
+//
+// THIS ONE FAILED IN THE WORSE DIRECTION. A bare run exited 0 with
+// "OK — delivered and honoured, in report-only mode" about the upstream domain,
+// while geolarp.com is ENFORCING with 14 directives against that site's 11. A gate
+// reporting success about a thing it is not looking at is the most expensive
+// possible answer (`scripts/__tests__/no-inherited-supabase-ref.test.js`).
+const site = (
+  process.argv[2] ||
+  process.env.BASE ||
+  process.env.NEXT_PUBLIC_DEPLOY_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  'https://geolarp.com'
+).replace(
   /\/+$/,
   ''
 );

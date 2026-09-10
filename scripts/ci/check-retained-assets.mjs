@@ -37,7 +37,7 @@
 const BASE = (
   process.argv[2] ||
   process.env.BASE ||
-  'https://scripthammer.com'
+  'https://geolarp.com'
 ).replace(/\/$/, '');
 const MANIFEST = `${BASE}/_next/static/ASSET_MANIFEST.txt`;
 const AGES = `${BASE}/_next/static/ASSET_AGES.txt`;
