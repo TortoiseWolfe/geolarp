@@ -117,4 +117,4 @@ If you fork this template and encounter issues:
 2. Submit a PR to geoLARP or open an issue
 3. Help future users avoid the same problems!
 
-[geoLARP Issues](https://github.com/TortoiseWolfe/geoLARP/issues)
+[geoLARP Issues](https://github.com/TortoiseWolfe/geolarp/issues)

@@ -36,7 +36,7 @@ You have a notebook — or a Notes app, or a Discord full of half-finished pitch
 
 So here is the bet I am making out loud: **don't build one game. Build the engine that builds all of them.** Solve the boring 20% once, in the open, and every idea after that gets cheaper.
 
-It is real, it is open source ([React Three Fiber](https://r3f.docs.pmnd.rs/) on [Three.js](https://threejs.org/)), and you can [clone it today](https://github.com/TortoiseWolfe/geoLARP). And because a game engine with no game is just a README, I built a whole playable 3D city on it as proof. You can **[walk it right now](https://geolarp.com/chatt/?diorama&walk)** — first person, in a browser tab, nothing to install.
+It is real, it is open source ([React Three Fiber](https://r3f.docs.pmnd.rs/) on [Three.js](https://threejs.org/)), and you can [clone it today](https://github.com/TortoiseWolfe/geolarp). And because a game engine with no game is just a README, I built a whole playable 3D city on it as proof. You can **[walk it right now](https://geolarp.com/chatt/?diorama&walk)** — first person, in a browser tab, nothing to install.
 
 ![Open-source Three.js game engine running a tilt-shift 3D city built from real open data](/blog-images/ride-the-open-source-city/diorama.png)
 
@@ -87,7 +87,7 @@ That's it. A boring, specific report like that is worth more than a hundred "it'
 Here's the ask, concretely:
 
 1. 🎯 **[Play it](https://geolarp.com/chatt/?diorama&walk)** — and yes, you might fall through the world first. Try anyway: press **B** for the bike, **V** to watch yourself go.
-2. 🐛 **File what broke** on the [issues page](https://github.com/TortoiseWolfe/geoLARP/issues), in the shape above. Finding a new one is genuinely helpful.
+2. 🐛 **File what broke** on the [issues page](https://github.com/TortoiseWolfe/geolarp/issues), in the shape above. Finding a new one is genuinely helpful.
 3. 💬 **Not sure it's worth a full report?** File it anyway — a rough note beats staying quiet.
 
 ## 🧠 The skill isn't prompting. It's telling slop from craft.
@@ -107,7 +107,7 @@ None of that is advanced. It is verifying before you ship, reading the code you 
 
 Back to you and your notebook of ideas. Here's the part I care about most: **the price of admission isn't cash.** Learning is free, and the most valuable thing you can bring to an open-source engine isn't a credit card — it's another set of eyes and another game idea stress-testing it.
 
-The cheapest way in is also the best one. [Clone geoLARP](https://github.com/TortoiseWolfe/geoLARP), read the source, and [watch me build it live on Twitch](https://twitch.tv/TurtleWolfe). It is MIT — take it, ship it, keep it. No dollars required, ever.
+The cheapest way in is also the best one. [Clone geoLARP](https://github.com/TortoiseWolfe/geolarp), read the source, and [watch me build it live on Twitch](https://twitch.tv/TurtleWolfe). It is MIT — take it, ship it, keep it. No dollars required, ever.
 
 Short on cash? **Trade instead.** Playtest this and file a good bug. Fork it and prototype your idea. Build one of those missing layers — a save system, a third-person camera, an enemy. Every playtester is another set of eyes, every fork is street cred you earn in public, and more people in the project make the engine better for everyone.
 
@@ -117,7 +117,7 @@ If you'd rather have hands-on help on _your_ game, there's a paid lane too: live
 
 - 🎮 **[Try the engine demo](https://geolarp.com/game/cod-skeleton)** — the bare test level, no city.
 - 🚲 **[Play the city](https://geolarp.com/chatt/?diorama&walk)** — first person, press **B** for the bike.
-- 📦 **[Clone the engine](https://github.com/TortoiseWolfe/geoLARP)** — MIT, asset-free, `@/lib/cod`.
+- 📦 **[Clone the engine](https://github.com/TortoiseWolfe/geolarp)** — MIT, asset-free, `@/lib/cod`.
 - 📺 **[Watch me build it live](https://twitch.tv/TurtleWolfe)** — on Twitch, with the replays on [YouTube](https://youtube.com/@JonathanPohlner).
 - 💳 **[See what help costs](https://geolarp.com/pricing)** — free to Office Hours to done-for-you.
 - 📅 **[Book 15 minutes](https://calendly.com/turtlewolfe/15min-1)** — bring a screenshot of what you have in mind.

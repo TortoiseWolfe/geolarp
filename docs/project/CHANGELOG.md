@@ -120,7 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Links
 
-- [GitHub Repository](https://github.com/TortoiseWolfe/geoLARP)
+- [GitHub Repository](https://github.com/TortoiseWolfe/geolarp)
 - [Live Demo](https://www.geolarp.com/)
 - [Storybook](https://www.geolarp.com/storybook/)
 - [Status Dashboard](https://www.geolarp.com/status)

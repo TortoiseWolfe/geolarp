@@ -337,4 +337,4 @@ Most tests are currently `test.skip()`'d because they require either Phase 0 to 
 - **Browser SDK shims**: `src/lib/payments/stripe.ts`, `src/lib/payments/paypal.ts`
 - **DB-side lifecycle**: `src/lib/payments/payment-service.ts`
 - **Tests**: `tests/e2e/payment/*.spec.ts`
-- **Open issues tracking missing work**: [#3](https://github.com/TortoiseWolfe/geoLARP/issues/3), [#4](https://github.com/TortoiseWolfe/geoLARP/issues/4), [#5](https://github.com/TortoiseWolfe/geoLARP/issues/5), [#43](https://github.com/TortoiseWolfe/geoLARP/issues/43)
+- **Open issues tracking missing work**: [#3](https://github.com/TortoiseWolfe/ScriptHammer/issues/3), [#4](https://github.com/TortoiseWolfe/ScriptHammer/issues/4), [#5](https://github.com/TortoiseWolfe/ScriptHammer/issues/5), [#43](https://github.com/TortoiseWolfe/ScriptHammer/issues/43)
