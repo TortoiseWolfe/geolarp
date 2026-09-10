@@ -437,6 +437,52 @@ if (agesRes) {
   );
 }
 
+/**
+ * THE TWO LEDGERS MUST DESCRIBE THE SAME DEPLOY (#82).
+ *
+ * `publishManifest()` writes both files from ONE array, so they cannot legitimately
+ * disagree: every path in `ASSET_MANIFEST.txt` gets a row in `ASSET_AGES.txt` in the
+ * same pass. A live disagreement therefore means one of them was served stale or
+ * partial — the class of defect #84 and #128 just closed on the two readers, caught
+ * here from the other side, where it shows as data rather than as a cache header.
+ *
+ * WHY THIS AND NOT A CHAIN FINGERPRINT. #82 asks for each deploy to record the
+ * identity of the ledger it read. That needs a new field in a format four readers
+ * parse, and it has to tolerate a legitimately skipped generation — a re-run, a
+ * rollback, or a publish that failed after the build — so a naive version fails
+ * honest deploys. This gets the same signal from data already published, with no
+ * format change and no tolerance to tune.
+ *
+ * WHAT IT PREVENTS, concretely. A manifest entry absent from the age table takes
+ * `?? NOW` below and is treated as first seen today. It is then re-stamped NOW in the
+ * ledger this run publishes — so it never ages out, every deploy resets it, and the
+ * manifest grows without bound until `RETAIN_MAX_FILES` engages and the per-asset
+ * assertion fails, far from the cause and looking like a different bug entirely.
+ *
+ * Skipped when there is no age table at all: that is the documented one-deploy ramp,
+ * not a desync. Legacy undated rows are keys in `liveAges`, so the ramp passes.
+ */
+/** Paths the manifest names that the age table does not describe. Reported at the end. */
+const ledgerDesync = [];
+if (manifest && agesRes) {
+  const undescribed = [];
+  for (const ref of wanted) {
+    const path = ref.startsWith('http') ? new URL(ref).pathname : ref;
+    const idx = path.indexOf('/_next/static/');
+    if (idx === -1) continue;
+    const rel = path.slice(idx + 1);
+    if (!liveAges.has(rel)) undescribed.push(rel);
+  }
+  if (undescribed.length > 0) {
+    // REPORTED AT THE END, NOT HERE. Exiting on the spot would skip retention
+    // entirely and publish a ledger holding only this build — every visitor still
+    // holding older HTML loses their assets immediately, which is far worse than
+    // the inconsistency being reported. Same rule as the per-asset assertion below:
+    // do the work, publish the ledger, then report.
+    ledgerDesync.push(...undescribed);
+  }
+}
+
 let retained = 0;
 let alreadyPresent = 0;
 let failed = 0;
@@ -590,6 +636,22 @@ await publishManifest();
  * printing the same confident line — the exact shape of gate this repo keeps having to
  * unpick.
  */
+if (ledgerDesync.length > 0) {
+  console.log(
+    `\n::error::the live ledgers disagree: ${ledgerDesync.length} path(s) in ` +
+      `ASSET_MANIFEST.txt have no row in ASSET_AGES.txt. One deploy writes both from ` +
+      `the same list, so they cannot differ unless one was served stale or truncated. ` +
+      `Retention dated these as new, so they will never expire and the manifest will ` +
+      `grow until RETAIN_MAX_FILES engages.`
+  );
+  for (const rel of ledgerDesync.slice(0, 10)) {
+    console.log(`  undescribed  ${rel}`);
+  }
+  if (ledgerDesync.length > 10) {
+    console.log(`  ... and ${ledgerDesync.length - 10} more`);
+  }
+}
+
 const lost = [...lostToFetch, ...lostToBackstop];
 if (!manifest) {
   console.log(
@@ -597,21 +659,28 @@ if (!manifest) {
       `unreadable, so the file list came from crawling HTML and is not the ` +
       `previous deploy's promise. ${lost.length} asset(s) were lost this run.`
   );
-} else if (lost.length > 0) {
-  console.log(
-    `\n::error::${lost.length} asset(s) the previous deploy promised to keep serving ` +
-      `were NOT carried forward, and are still inside the ${RETAIN_DAYS}-day window. ` +
-      `Anyone holding HTML that references them is looking at a broken page.`
-  );
-  // Named, not counted. The whole point of instrumenting the loop.
-  for (const rel of lost.slice(0, 25)) {
-    const why = lostToFetch.includes(rel)
-      ? 'unreachable on the live host'
-      : `dropped by the ${RETAIN_MAX_FILES}-file backstop`;
-    console.log(`  lost  ${rel}  (${why})`);
-  }
-  if (lost.length > 25) {
-    console.log(`  ... and ${lost.length - 25} more`);
+} else if (lost.length > 0 || ledgerDesync.length > 0) {
+  // TWO INDEPENDENT FAILURES SHARING ONE EXIT. The desync was already reported
+  // above with its own paths; printing "0 asset(s) were NOT carried forward"
+  // alongside it would be false, and a failure message that misdescribes the
+  // failure sends the next reader to the wrong place.
+  if (lost.length > 0) {
+    console.log(
+      `\n::error::${lost.length} asset(s) the previous deploy promised to keep ` +
+        `serving were NOT carried forward, and are still inside the ` +
+        `${RETAIN_DAYS}-day window. Anyone holding HTML that references them is ` +
+        `looking at a broken page.`
+    );
+    // Named, not counted. The whole point of instrumenting the loop.
+    for (const rel of lost.slice(0, 25)) {
+      const why = lostToFetch.includes(rel)
+        ? 'unreachable on the live host'
+        : `dropped by the ${RETAIN_MAX_FILES}-file backstop`;
+      console.log(`  lost  ${rel}  (${why})`);
+    }
+    if (lost.length > 25) {
+      console.log(`  ... and ${lost.length - 25} more`);
+    }
   }
   process.exit(1);
 } else {
