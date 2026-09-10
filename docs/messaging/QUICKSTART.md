@@ -1621,9 +1621,9 @@ function MessageBubble({ message }) {
 
 ### Community Support
 
-- **GitHub Issues**: https://github.com/TortoiseWolfe/geoLARP/issues
+- **GitHub Issues**: https://github.com/TortoiseWolfe/geolarp/issues
 - **Supabase Discord**: https://discord.supabase.com
-- **geoLARP Discussions**: https://github.com/TortoiseWolfe/geoLARP/discussions
+- **geoLARP Discussions**: https://github.com/TortoiseWolfe/geolarp/discussions
 
 ---
 

@@ -2,10 +2,10 @@
 
 **An accessible web platform with auth, payments, and encrypted messaging. Running live, and free to fork.**
 
-[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/TortoiseWolfe/geoLARP)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/TortoiseWolfe/geolarp)
 [![Live App](https://img.shields.io/badge/Live-geolarp.com-2ea44f)](https://www.geolarp.com/)
 [![WCAG 2.1 AA](https://img.shields.io/badge/WCAG%202.1-AA%20Compliant-success)](https://www.w3.org/WAI/WCAG21/quickref/)
-[![Stars](https://img.shields.io/github/stars/TortoiseWolfe/geoLARP?style=social)](https://github.com/TortoiseWolfe/geoLARP)
+[![Stars](https://img.shields.io/github/stars/TortoiseWolfe/geoLARP?style=social)](https://github.com/TortoiseWolfe/geolarp)
 
 <p align="center">
   <img
@@ -24,8 +24,8 @@ You can also fork it and build your own thing on top. That takes about five minu
 
 ## Try it
 
-|                       |                                                                       |
-| --------------------- | --------------------------------------------------------------------- |
+|                       |                                                             |
+| --------------------- | ----------------------------------------------------------- |
 | **The app**           | [geolarp.com](https://www.geolarp.com/)                     |
 | **Component library** | [geolarp.com/storybook](https://www.geolarp.com/storybook/) |
 | **Status dashboard**  | [geolarp.com/status](https://www.geolarp.com/status)        |
@@ -35,7 +35,7 @@ You can also fork it and build your own thing on top. That takes about five minu
 You need Docker and git. That's it. Local pnpm and npm aren't supported, because everything runs in the container.
 
 ```bash
-git clone https://github.com/TortoiseWolfe/geoLARP.git
+git clone https://github.com/TortoiseWolfe/geolarp.git
 cd geoLARP
 cp .env.example .env      # then set UID and GID: run  id -u && id -g
 docker compose up         # first build takes 5 to 10 minutes
@@ -94,7 +94,7 @@ shipping ours for now.
 To pull upstream changes later:
 
 ```bash
-git remote add upstream https://github.com/TortoiseWolfe/geoLARP.git
+git remote add upstream https://github.com/TortoiseWolfe/geolarp.git
 git fetch upstream
 git merge upstream/main
 ```
@@ -287,7 +287,7 @@ Progress by area is tracked in [PRP-STATUS.md](./docs/prp-docs/PRP-STATUS.md), a
 <details>
 <summary><b>🧾 Backlog and technical debt (maintainers)</b></summary>
 
-The live list is [docs/TECHNICAL-DEBT.md](./docs/TECHNICAL-DEBT.md), and open work is tracked in [GitHub issues](https://github.com/TortoiseWolfe/geoLARP/issues).
+The live list is [docs/TECHNICAL-DEBT.md](./docs/TECHNICAL-DEBT.md), and open work is tracked in [GitHub issues](https://github.com/TortoiseWolfe/geolarp/issues).
 
 The SPEC-041 through SPEC-064 queue that used to sit in this file has moved to those two places. Most of the E2E stabilisation items in it were finished in 2025-12 and the entries had gone stale where they sat.
 

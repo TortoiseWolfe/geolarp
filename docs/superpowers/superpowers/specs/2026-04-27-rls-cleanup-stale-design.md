@@ -1,6 +1,6 @@
 # RLS Test Suite: Cleanup-Stale Hook
 
-**Date**: 2026-04-27 · **Tracks**: [#50](https://github.com/TortoiseWolfe/geoLARP/issues/50) (Family D1 in [`docs/STABILITY-TRACKING.md`](../../STABILITY-TRACKING.md))
+**Date**: 2026-04-27 · **Tracks**: [#50](https://github.com/TortoiseWolfe/ScriptHammer/issues/50) (Family D1 in [`docs/STABILITY-TRACKING.md`](../../STABILITY-TRACKING.md))
 
 ## Context
 

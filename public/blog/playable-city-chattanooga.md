@@ -118,6 +118,6 @@ So: three questions, no answers, and an open door. If any of this snagged on som
 
 - **Leave a comment right here** on this post. The messy first thought is the useful one.
 - **Come find the project at [Chattanooga.Digital](https://chattanooga.digital)**, where this civic-twin work lives and where "join in" is an actual invitation.
-- **Open a discussion or an issue** on the [geoLARP repository](https://github.com/TortoiseWolfe/geoLARP) if you're the kind of person who'd rather file a well-formed thread than write a paragraph.
+- **Open a discussion or an issue** on the [geoLARP repository](https://github.com/TortoiseWolfe/geolarp) if you're the kind of person who'd rather file a well-formed thread than write a paragraph.
 
 Go [explore the twin](https://geolarp.com/chatt/) first if you haven't. It's the shared reference point for all of this. Then tell me what your city should let you do.

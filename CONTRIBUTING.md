@@ -52,7 +52,7 @@ git clone https://github.com/YOUR_USERNAME/geoLARP.git
 cd geoLARP
 
 # 3. Add upstream remote
-git remote add upstream https://github.com/TortoiseWolfe/geoLARP.git
+git remote add upstream https://github.com/TortoiseWolfe/geolarp.git
 
 # 4. Create your .env — REQUIRED, the container will not start correctly without it
 cp .env.example .env
@@ -91,10 +91,10 @@ docker compose exec geolarp pnpm run lint
 
 ### Available Scripts
 
-| Command                                               | Description                      |
-| ----------------------------------------------------- | -------------------------------- |
+| Command                                          | Description                      |
+| ------------------------------------------------ | -------------------------------- |
 | `docker compose exec geolarp pnpm dev`           | Start the Next.js dev server     |
-| `docker compose run --rm builder pnpm build`          | Production build — **see note**  |
+| `docker compose run --rm builder pnpm build`     | Production build — **see note**  |
 | `docker compose exec geolarp pnpm test`          | Run the Vitest suite             |
 | `docker compose exec geolarp pnpm test:coverage` | Generate a coverage report       |
 | `docker compose exec geolarp pnpm lint`          | Run ESLint                       |
@@ -574,8 +574,8 @@ See [docs/FORKING.md](./docs/FORKING.md) for the fork-side view.
 
 ## Getting Help
 
-- **Questions**: Open a [Discussion](https://github.com/TortoiseWolfe/geoLARP/discussions)
-- **Bugs**: Open an [Issue](https://github.com/TortoiseWolfe/geoLARP/issues)
+- **Questions**: Open a [Discussion](https://github.com/TortoiseWolfe/geolarp/discussions)
+- **Bugs**: Open an [Issue](https://github.com/TortoiseWolfe/geolarp/issues)
 - **Security**: See [SECURITY.md](./.github/SECURITY.md) for the reporting process — do not open a public issue
 
 ### Before opening an issue

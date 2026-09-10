@@ -10,7 +10,7 @@
 
 **Spec:** [`docs/superpowers/specs/2026-04-27-rls-cleanup-stale-design.md`](../specs/2026-04-27-rls-cleanup-stale-design.md)
 
-**Tracks:** [#50](https://github.com/TortoiseWolfe/geoLARP/issues/50) (Family D1 in `docs/STABILITY-TRACKING.md`)
+**Tracks:** [#50](https://github.com/TortoiseWolfe/ScriptHammer/issues/50) (Family D1 in `docs/STABILITY-TRACKING.md`)
 
 ---
 

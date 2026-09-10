@@ -62,7 +62,7 @@ This costs nothing — the existing layout supports the longer copy
 Current default (`SetupBanner.tsx:24`):
 
 ```
-https://github.com/TortoiseWolfe/geoLARP#supabase-setup
+https://github.com/TortoiseWolfe/geolarp#supabase-setup
 ```
 
 GitHub returns HTTP 200 for any anchor (the page loads regardless), but

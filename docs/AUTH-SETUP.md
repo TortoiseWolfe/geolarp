@@ -331,7 +331,7 @@ docker compose exec geolarp pnpm run dev
 
 ## Verification via Management API
 
-The fastest way to confirm OAuth is actually wired up correctly — without trial-and-error in the dashboard — is to query the Supabase Management API directly. This is the exact check that would have caught [issue #85](https://github.com/TortoiseWolfe/geoLARP/issues/85): OAuth Client IDs left as the literal strings `placeholder_google_client_id` / `placeholder_github_client_id` for weeks, surfacing only as `Error 401: invalid_client` when a user clicked "Continue with Google."
+The fastest way to confirm OAuth is actually wired up correctly — without trial-and-error in the dashboard — is to query the Supabase Management API directly. This is the exact check that would have caught [issue #85](https://github.com/TortoiseWolfe/ScriptHammer/issues/85): OAuth Client IDs left as the literal strings `placeholder_google_client_id` / `placeholder_github_client_id` for weeks, surfacing only as `Error 401: invalid_client` when a user clicked "Continue with Google."
 
 **Prerequisites:**
 

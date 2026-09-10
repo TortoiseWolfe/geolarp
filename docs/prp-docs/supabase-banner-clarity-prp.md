@@ -5,7 +5,7 @@
 **Date**: 2026-05-02
 **Status**: Proposed
 **Priority**: P2 (Medium — fork-experience polish)
-**Issue**: [#24](https://github.com/TortoiseWolfe/geoLARP/issues/24)
+**Issue**: [#24](https://github.com/TortoiseWolfe/ScriptHammer/issues/24)
 **Audit**: [`docs/interoffice/audits/2026-05-02-supabase-banner-audit.md`](../interoffice/audits/2026-05-02-supabase-banner-audit.md)
 
 ### What's already shipped
@@ -26,7 +26,7 @@ Three small gaps make the banner less useful than it could be:
    _"Supabase is not configured. Some features may be unavailable."_ —
    doesn't tell the user which two `NEXT_PUBLIC_*` vars to set.
 2. **`docsUrl` lands on a missing anchor.** Default points at
-   `https://github.com/TortoiseWolfe/geoLARP#supabase-setup`,
+   `https://github.com/TortoiseWolfe/geolarp#supabase-setup`,
    but no such heading exists on the README. Closest match is
    `### 📝 Optional - Supabase Admin (for migrations)` (line 165),
    which slugifies to `optional---supabase-admin-for-migrations`.
@@ -55,7 +55,7 @@ Update `SetupBanner.tsx:24` default `docsUrl` to point at the actual
 setup guide. Two viable options — pick one:
 
 - **Option A (recommended):** Point at
-  `https://github.com/TortoiseWolfe/geoLARP/blob/main/docs/FORKING.md#supabase-setup`.
+  `https://github.com/TortoiseWolfe/geolarp/blob/main/docs/FORKING.md#supabase-setup`.
   Direct, no README change needed.
 - **Option B:** Add a `## Supabase Setup` heading to README.md with a
   brief "see [FORKING.md](docs/FORKING.md#supabase-setup)" pointer, so

@@ -136,7 +136,7 @@ export const metadata: Metadata = {
 
 After the flip the card is honest: it advertises the atlas, and the atlas is what you land on.
 
-**Copy.** Open-source framing pointing at **https://chattanooga.digital** or **https://github.com/TortoiseWolfe/geoLARP** — both verified live (200) on 2026-07-16; do not ship a dead link. The draft above ships as written and is explicitly cheap to change later; it must never block implementation.
+**Copy.** Open-source framing pointing at **https://chattanooga.digital** or **https://github.com/TortoiseWolfe/geolarp** — both verified live (200) on 2026-07-16; do not ship a dead link. The draft above ships as written and is explicitly cheap to change later; it must never block implementation.
 
 **Length budgets are measured, not estimated.** The helper renders `"<title> | geoLARP"`, so the title costs 14 chars more than it looks:
 

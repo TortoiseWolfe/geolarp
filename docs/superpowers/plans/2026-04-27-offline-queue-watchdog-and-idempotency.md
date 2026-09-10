@@ -10,7 +10,7 @@
 
 **Spec:** [`docs/superpowers/specs/2026-04-27-offline-queue-watchdog-and-idempotency-design.md`](../specs/2026-04-27-offline-queue-watchdog-and-idempotency-design.md)
 
-**Tracks:** [#52](https://github.com/TortoiseWolfe/geoLARP/issues/52) (Family A2 in `docs/STABILITY-TRACKING.md`)
+**Tracks:** [#52](https://github.com/TortoiseWolfe/ScriptHammer/issues/52) (Family A2 in `docs/STABILITY-TRACKING.md`)
 
 ---
 

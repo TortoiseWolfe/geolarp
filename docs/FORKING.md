@@ -428,12 +428,12 @@ Keep your fork updated with improvements from geoLARP:
 
 ```bash
 # Add geoLARP as upstream remote
-git remote add upstream https://github.com/TortoiseWolfe/geoLARP.git
+git remote add upstream https://github.com/TortoiseWolfe/geolarp.git
 
 # Verify remotes
 git remote -v
 # origin    https://github.com/YOU/YOUR-PROJECT.git (fetch)
-# upstream  https://github.com/TortoiseWolfe/geoLARP.git (fetch)
+# upstream  https://github.com/TortoiseWolfe/geolarp.git (fetch)
 ```
 
 ### Pulling Updates
@@ -471,11 +471,11 @@ git cherry-pick <commit-hash>
 ### If Merge Conflicts Are Too Complex
 
 Open an issue with the conflicting paths on
-[geoLARP Issues](https://github.com/TortoiseWolfe/geoLARP/issues). Upstream
+[geoLARP Issues](https://github.com/TortoiseWolfe/geolarp/issues). Upstream
 changes that conflict badly for one fork usually conflict for others, so they are worth
 reporting rather than working around alone.
 
 ## Getting Help
 
-- **GitHub Issues**: [geoLARP Issues](https://github.com/TortoiseWolfe/geoLARP/issues)
+- **GitHub Issues**: [geoLARP Issues](https://github.com/TortoiseWolfe/geolarp/issues)
 - **Documentation**: [CLAUDE.md](../CLAUDE.md) for comprehensive development guide
