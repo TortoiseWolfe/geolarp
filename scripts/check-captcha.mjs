@@ -143,6 +143,87 @@ if (!SECRET) {
   }
 }
 
+// --- 3. the browser is allowed to LOAD the widget --------------------------
+//
+// THE CHECK THAT WOULD HAVE PREVENTED THE OUTAGE (#137). On 2026-09-09 enabling
+// `security_captcha_enabled` took ALL authentication down for ~20 minutes — sign-in,
+// sign-up, recovery and resend, every one returning
+// `captcha_failed: request disallowed (no captcha_token found)`.
+//
+// Nothing above was wrong. This script returned 2/2 immediately beforehand, the site
+// key really was in the bundle, and the secret really was valid. The browser simply
+// refused to fetch Turnstile's script, because the live CSP did not list
+// `challenges.cloudflare.com`. No widget, so no token, so every request refused.
+//
+// The rollout ordering in AUTH-SETUP.md was followed exactly. It was not sufficient:
+// it says nothing about whether the script may LOAD.
+//
+// This does not contradict the scope note above. "Will Cloudflare issue a token to
+// this client" is out of scope and stays so; "may the browser fetch the script at all"
+// is a different question, answered by a header read — cheap, deterministic, and the
+// exact link that broke.
+//
+// THE POLICY IS NOT IN THIS REPOSITORY. It is a Cloudflare Response Header Transform
+// Rule, like the #635 cache headers. Delete the rule, rotate the token or move the zone
+// and it vanishes silently, which is why this is checked against the LIVE origin rather
+// than against anything committed here.
+const CSP_HOST = 'challenges.cloudflare.com';
+const CSP_DIRECTIVES = ['script-src', 'frame-src', 'connect-src'];
+try {
+  const res = await fetch(BASE, { redirect: 'follow' });
+  const header =
+    res.headers.get('content-security-policy') ||
+    res.headers.get('content-security-policy-report-only') ||
+    '';
+
+  if (!header) {
+    // No policy is delivered, so nothing blocks the widget. Reporting this as a
+    // failure would be crying wolf on a site that works.
+    record(
+      'CSP admits the Turnstile widget',
+      true,
+      `${BASE} delivers no Content-Security-Policy, so nothing can block the widget`
+    );
+  } else {
+    const parsed = new Map(
+      header
+        .split(';')
+        .map((d) => d.trim())
+        .filter(Boolean)
+        .map((d) => {
+          const [name, ...values] = d.split(/\s+/);
+          return [name.toLowerCase(), values];
+        })
+    );
+    // `frame-src` and `connect-src` fall back to `default-src` when absent; an absent
+    // default-src is unrestricted. Getting this wrong would fail a policy that works.
+    const admits = (name) => {
+      const values = parsed.get(name) ?? parsed.get('default-src');
+      if (!values) return true; // unrestricted
+      return values.some(
+        (v) => v.includes(CSP_HOST) || v === 'https:' || v === '*'
+      );
+    };
+    const missing = CSP_DIRECTIVES.filter((d) => !admits(d));
+    record(
+      'CSP admits the Turnstile widget',
+      missing.length === 0,
+      missing.length === 0
+        ? `${CSP_HOST} is permitted by ${CSP_DIRECTIVES.join(', ')}`
+        : `${CSP_HOST} is BLOCKED by ${missing.join(', ')} on ${BASE}. The browser ` +
+          `will refuse to load the widget, so no token exists, so EVERY auth request ` +
+          `is refused — sign-in and recovery included, not just sign-up. Add it to ` +
+          `the Cloudflare response-header transform rule before enabling CAPTCHA (#137).`
+    );
+  }
+} catch (err) {
+  record(
+    'CSP admits the Turnstile widget',
+    false,
+    `could not read the CSP from ${BASE}: ${err.message}`
+  );
+}
+
 // --- report ----------------------------------------------------------------
 const failed = results.filter((r) => !r.ok);
 console.log();

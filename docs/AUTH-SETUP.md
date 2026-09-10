@@ -398,9 +398,33 @@ true. If you enable it before a build carrying the site key is live, **every
 sign-up breaks, including yours**. Always:
 
 1. Deploy a build that has `NEXT_PUBLIC_CAPTCHA_SITE_KEY` set, **then**
-2. enable it in Supabase.
+2. make sure your CSP admits `https://challenges.cloudflare.com`, **then**
+3. enable it in Supabase.
 
 To roll back, unset the site key and disable it in Supabase — in that order.
+
+> **⚠ Step 2 was learned the hard way (#137).** On 2026-09-09 this ordering was followed
+> exactly — site key deployed, then the flag flipped — and it still took **all**
+> authentication down for about twenty minutes. Not just sign-up: `security_captcha_enabled`
+> is global, so sign-in, password recovery and resend all returned
+> `captcha_failed — request disallowed (no captcha_token found)`, locking out every existing
+> account.
+>
+> The cause was that the live CSP did not list `challenges.cloudflare.com`, so the browser
+> refused to fetch Turnstile's script. No widget rendered, so no token existed, so every
+> request was refused. The preflight passed 2/2 immediately beforehand and was not wrong — it
+> did not check this. It does now, as a third check.
+>
+> The host must appear in **`script-src`, `frame-src` and `connect-src`**.
+>
+> **The policy is not in this repository.** It is a Cloudflare Response Header Transform Rule,
+> in a dashboard — the same arrangement as the #635 cache headers. Delete the rule, rotate the
+> token or move the zone and it vanishes silently, with nothing in CI to notice. Verify against
+> the live origin:
+>
+> ```bash
+> node scripts/check-captcha.mjs --site-key <your-site-key>
+> ```
 
 ### 6.5.2 Create the Turnstile site
 
