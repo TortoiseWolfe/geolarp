@@ -86,11 +86,17 @@ describe('AccountSettings Accessibility', () => {
     const usernameInput = container.querySelector('#username-input');
     const displayNameInput = container.querySelector('#displayname-input');
     const bioTextarea = container.querySelector('#bio-textarea');
+    // #136: the current-password field is checked here too, or `axe`'s `label` rule is
+    // the only thing standing between a new input and shipping it unlabelled.
+    const currentPasswordInput = container.querySelector(
+      '#current-password-input'
+    );
     const passwordInput = container.querySelector('#new-password-input');
     const confirmPasswordInput = container.querySelector(
       '#confirm-password-input'
     );
 
+    expect(currentPasswordInput).toBeInTheDocument();
     expect(usernameInput).toBeInTheDocument();
     expect(usernameInput).toHaveAttribute(
       'aria-describedby',
