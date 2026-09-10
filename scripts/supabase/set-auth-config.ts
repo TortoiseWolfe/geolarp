@@ -108,6 +108,14 @@ type SecretRule = {
   fields: string[];
   /** what goes wrong if applied without the secret */
   harm: string;
+  /**
+   * For an OAuth provider: the client-id field, and the value this repo INHERITED
+   * from upstream rather than obtained for itself (#134).
+   *
+   * Both are set together or neither. See the ordering trap in the loop below.
+   */
+  clientIdField?: string;
+  inheritedClientId?: string;
 };
 
 const SECRET_RULES: SecretRule[] = [
@@ -170,6 +178,10 @@ const SECRET_RULES: SecretRule[] = [
     wanted: (d) => d.external_github_enabled === true,
     fields: ['external_github_enabled', 'external_github_client_id'],
     harm: 'GitHub OAuth enabled with no client secret — every "Sign in with GitHub" fails at GitHub',
+    clientIdField: 'external_github_client_id',
+    // Byte-identical to ScriptHammer's, and present in geoLARP's `Initial commit`
+    // — inherited by the fork, never obtained for this project.
+    inheritedClientId: 'Ov23liWcN7CJYepF7dFo',
   },
   {
     label: 'Google OAuth',
@@ -178,6 +190,9 @@ const SECRET_RULES: SecretRule[] = [
     wanted: (d) => d.external_google_enabled === true,
     fields: ['external_google_enabled', 'external_google_client_id'],
     harm: 'Google OAuth enabled with no client secret — every "Sign in with Google" fails at Google',
+    clientIdField: 'external_google_client_id',
+    inheritedClientId:
+      '988747852237-pqis9q1dlre6tghg5bnhugfjvk441ica.apps.googleusercontent.com',
   },
 ];
 
@@ -454,6 +469,51 @@ async function main(): Promise<void> {
     if (!rule.fields.some((f) => f in patch)) continue;
 
     const secret = envOrDotenv(rule.envNames);
+
+    /*
+      THE ORDERING TRAP (#134). The withhold above protects the case "secret
+      missing". This is the opposite case, and it only becomes reachable the moment
+      that one stops applying.
+
+      `auth-config.json` pins a DEFAULT client id, deliberately — the drift gate
+      needs a committed expectation or both sides could drift together and it could
+      never fire (#287). But geoLARP's defaults are byte-identical to ScriptHammer's
+      and arrived in the `Initial commit`: they are inherited, not obtained.
+
+      So the first `--apply` after a real secret appears would write THIS project's
+      new secret against ANOTHER project's client id. Google and GitHub both answer
+      `invalid_client`, every sign-in fails, and the config reads as fully
+      configured — the exact "looks configured, nobody can sign in" shape the
+      withhold below exists to prevent, arrived at from the other direction.
+
+      Withheld rather than errored: a fork that has correctly set
+      AUTH_GOOGLE_CLIENT_ID never sees this, and a run that changes unrelated fields
+      should still succeed.
+    */
+    if (
+      secret &&
+      rule.clientIdField &&
+      rule.inheritedClientId &&
+      desired[rule.clientIdField] === rule.inheritedClientId
+    ) {
+      for (const f of rule.fields) {
+        delete patch[f];
+        withheld.add(f);
+      }
+      console.warn(
+        `\n  ⚠ ${rule.label}: WITHHELD — the ${rule.secretField} is set, but ` +
+          `${rule.clientIdField} is still the value inherited from upstream ` +
+          `(${rule.inheritedClientId}).\n` +
+          `    Applying would pair THIS project's secret with ANOTHER project's ` +
+          `client id: every sign-in fails with invalid_client while the config ` +
+          `reads as configured.\n` +
+          `    Create an OAuth client for this project, then set ` +
+          `${rule.clientIdField.replace('external_', 'AUTH_').replace('_client_id', '_CLIENT_ID').toUpperCase()} ` +
+          `— or correct the default in scripts/supabase/auth-config.json.`
+      );
+      continue;
+    }
+
     if (secret) {
       patch[rule.secretField] = secret;
       console.log(

@@ -69,6 +69,18 @@ jobs:
           NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL }}
           NEXT_PUBLIC_CALENDAR_PROVIDER: ${{ vars.NEXT_PUBLIC_CALENDAR_PROVIDER }}
           NEXT_PUBLIC_CALENDAR_URL: ${{ vars.NEXT_PUBLIC_CALENDAR_URL }}
+          # (#134) WHETHER THE OAUTH BUTTONS RENDER AT ALL. `auth-providers.ts:33,36`
+          # reads these, and `OAuthButtons.tsx:70` returns null when neither is on.
+          # They are build-time values in a static export, so with nothing passing
+          # them the buttons were permanently absent in production NO MATTER what
+          # was configured on the Supabase side — and nothing failed to say so.
+          #
+          # Set the repo Variables to `true` only AFTER the matching provider secret
+          # is live on Supabase. That ordering is the whole point of the flags: a
+          # control that cannot succeed must never ship (.env.example:433-438). Unset
+          # is falsy, which is the fork-safe default.
+          NEXT_PUBLIC_AUTH_GITHUB_ENABLED: ${{ vars.NEXT_PUBLIC_AUTH_GITHUB_ENABLED }}
+          NEXT_PUBLIC_AUTH_GOOGLE_ENABLED: ${{ vars.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED }}
           # (#353) Turnstile bot protection. PUBLIC — it ships in the page
           # HTML, so it is a var not a secret. Absent/empty leaves sign-up
           # CAPTCHA inert, which is the fork-safe default.
