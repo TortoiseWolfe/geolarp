@@ -245,9 +245,14 @@ test('a run that genuinely failed tests DOES count — it spent quota', async ()
 test('blocked and real runs in one window are told apart', async () => {
   const { countRuns } = await import(MOD);
   const n = await countRuns(
+    // PASSED now needs a jobs fixture of its own (#158). It used to be counted by
+    // short-circuit; a success is settled by its shards like every other completed
+    // conclusion, so without a shard here it would be counted as spending nothing —
+    // correctly, but for a reason this test is not about.
     fetchFor([BLOCKED, REAL_FAIL, PASSED], {
       1: [{ name: 'E2E (chromium-gen 1/6)', conclusion: 'skipped' }],
       2: [{ name: 'E2E (chromium-gen 1/6)', conclusion: 'failure' }],
+      3: [{ name: 'E2E (chromium-gen 1/6)', conclusion: 'success' }],
     }),
     { repo: 'o/r', token: 't', sinceIso: '2026-08-02' }
   );
@@ -255,13 +260,20 @@ test('blocked and real runs in one window are told apart', async () => {
   assert.strictEqual(n, 2);
 });
 
-test('a success needs no jobs lookup and still counts', async () => {
+// THIS TEST PINNED THE DEFECT (#158). It asserted a success costs no jobs lookup,
+// which is exactly the short-circuit that counted 30 gated-off runs as 30 real ones.
+// It is inverted rather than deleted: the contract it guards — "do not spend an API
+// call on a run whose answer is already known" — is still right, it just applies to
+// one case now instead of two.
+test('a success IS settled by its shards, and costs the lookup (#158)', async () => {
   const { countRuns } = await import(MOD);
   let jobCalls = 0;
   const fetchImpl = async (url) => {
     if (url.includes('/jobs')) {
       jobCalls++;
-      return jobsPage([]);
+      return jobsPage([
+        { name: 'E2E (chromium-gen 1/6)', conclusion: 'success' },
+      ]);
     }
     return runsPage(url.includes('page=1') ? [PASSED] : []);
   };
@@ -270,8 +282,36 @@ test('a success needs no jobs lookup and still counts', async () => {
     token: 't',
     sinceIso: '2026-08-02',
   });
-  assert.strictEqual(n, 1);
-  assert.strictEqual(jobCalls, 0, 'unambiguous runs must not cost an API call');
+  assert.strictEqual(n, 1, 'a success whose shards ran still counts');
+  assert.strictEqual(
+    jobCalls,
+    1,
+    'the lookup is the whole fix — without it a gated-off lane bills like a real run'
+  );
+});
+
+// The one conclusion that still needs no call: nothing has finished, so nothing can be
+// asked. Over-counting here is deliberate — see the docblock on runConsumedQuota.
+test('an in-progress run counts without a jobs lookup', async () => {
+  const { runConsumedQuota } = await import(MOD);
+  let jobCalls = 0;
+  const spent = await runConsumedQuota(
+    async () => {
+      jobCalls++;
+      return jobsPage([]);
+    },
+    {
+      repo: 'o/r',
+      token: 't',
+      run: { id: 10, status: 'in_progress', conclusion: null },
+    }
+  );
+  assert.strictEqual(spent, true);
+  assert.strictEqual(
+    jobCalls,
+    0,
+    'nothing has finished; there is nothing to ask'
+  );
 });
 
 test('counts conservatively when the jobs endpoint fails', async () => {
@@ -582,6 +622,43 @@ test('a cancelled run that DID start shards still counts', async () => {
   assert.strictEqual(spent, true, 'partial spend is still spend');
 });
 
+// ── a SUCCESSFUL run whose shards never started spent nothing (#158).
+//
+// This is the branch that did not exist when the tests above were written, and its
+// absence is why the defect shipped. `runConsumedQuota` short-circuited on
+// `conclusion === 'success'` with the comment "it cannot succeed without its shards
+// running" — true then, falsified by #48, which gated the whole lane at `e2e.yml`'s
+// `build` job (`if: vars.TEST_USER_PRIMARY_EMAIL != ''`). With the hosted credentials
+// unset, only `budget` runs, every shard is skipped, and the run concludes SUCCESS
+// having made zero Supabase requests.
+//
+// Measured over all 87 e2e.yml runs in the 2026-09-02 cycle: counted 30, actually
+// started a shard 0. The breaker hit MONTH_EXCEEDED on entirely false positives.
+test('a successful run whose shards never started does NOT count (#158)', async () => {
+  const { runConsumedQuota } = await import(MOD);
+  const spent = await runConsumedQuota(
+    async () =>
+      JOBS([
+        ['Cloud-quota budget', 'success'],
+        ['E2E (chromium-gen 1/6)', 'skipped'],
+        ['E2E (firefox-gen 1/6)', 'skipped'],
+        ['Build', 'skipped'],
+      ]),
+    {
+      repo: 'o/r',
+      token: 't',
+      run: { id: 9, status: 'completed', conclusion: 'success' },
+    }
+  );
+  assert.strictEqual(
+    spent,
+    false,
+    'a gated-off lane concludes success with every shard skipped; billing it is what ' +
+      'produced 30/30 against 0 real runs'
+  );
+});
+
+// The other direction, so the fix above cannot become "success never counts".
 test('a SUCCESSFUL run counts — shards ran by definition', async () => {
   const { runConsumedQuota } = await import(MOD);
   const spent = await runConsumedQuota(
