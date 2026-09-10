@@ -462,6 +462,99 @@ describe('RETAIN_DAYS is sized for a returning visitor', () => {
         'window in days.'
     );
   });
+
+  /**
+   * THE SAME NUMBER LIVES IN THREE PLACES AND NOTHING MADE THEM AGREE (#82).
+   *
+   * `check-retained-assets.mjs:46` states the rule in PROSE — "Must match
+   * `RETAIN_DAYS` in .github/workflows/deploy.yml (#751)" — and nothing enforced it.
+   * The tests above pin only deploy.yml: that it is set, that it is at least 14, and
+   * that it is not RETAIN_GENERATIONS. So raising deploy.yml to 21 passes every one of
+   * them while the post-deploy probe still measures against 14, and the deploy
+   * script's own fallback still says 14.
+   *
+   * That matters more since #130 than it did when #82 was filed. The deploy-time
+   * per-asset assertion decides what is "past RETAIN_DAYS" and therefore what may be
+   * dropped without failing — so a divergence no longer just misreports a window, it
+   * changes which assets the gate permits to disappear.
+   *
+   * A shared runtime constant would be better engineering, but the two scripts run in
+   * different jobs with no import path between them, so agreement is asserted rather
+   * than enforced — the same shape as the #751 guard directly above.
+   */
+  it('is ONE value: deploy.yml, the deploy script and the probe all agree', () => {
+    const numberIn = (file, re, what) => {
+      const src = fs.readFileSync(path.join(REPO, file), 'utf8');
+      const m = src.match(re);
+      assert.ok(
+        m,
+        `could not find ${what} in ${file} — the matcher is stale, and this ` +
+          `assertion would otherwise pass for the wrong reason`
+      );
+      return Number(m[1]);
+    };
+
+    const inWorkflow = numberIn(
+      '.github/workflows/deploy.yml',
+      /RETAIN_DAYS:\s*'?(\d+)'?/,
+      'the workflow value'
+    );
+    const inDeployScript = numberIn(
+      'scripts/retain-previous-assets.mjs',
+      /const RETAIN_DAYS = Number\(process\.env\.RETAIN_DAYS \?\? (\d+)\)/,
+      'the deploy-script default'
+    );
+    const inProbe = numberIn(
+      'scripts/ci/check-retained-assets.mjs',
+      /const RETAIN_DAYS = Number\(process\.env\.RETAIN_DAYS \?\? (\d+)\)/,
+      'the probe default'
+    );
+
+    assert.equal(
+      inDeployScript,
+      inWorkflow,
+      `the deploy script falls back to ${inDeployScript} days while deploy.yml sets ` +
+        `${inWorkflow}. Any run that does not set the env var — a local run, or a ` +
+        `workflow that forgets it — silently uses a different window.`
+    );
+    assert.equal(
+      inProbe,
+      inWorkflow,
+      `the post-deploy probe measures against ${inProbe} days while the deploy ` +
+        `retains for ${inWorkflow}. smoke.yml passes only SITE, so the probe's ` +
+        `default IS its operative value — nothing overrides it. Its own comment says ` +
+        `it "must match RETAIN_DAYS in deploy.yml", and until now nothing checked.`
+    );
+  });
+
+  /**
+   * The matcher control. Every assertion above is an equality between numbers pulled
+   * out by regex; if two matchers silently returned the same wrong thing, or the same
+   * `undefined`, the test would pass while comparing nothing.
+   */
+  it('the extractors really read three different files', () => {
+    const wf = fs.readFileSync(
+      path.join(REPO, '.github/workflows/deploy.yml'),
+      'utf8'
+    );
+    const dep = fs.readFileSync(
+      path.join(REPO, 'scripts/retain-previous-assets.mjs'),
+      'utf8'
+    );
+    const probe = fs.readFileSync(
+      path.join(REPO, 'scripts/ci/check-retained-assets.mjs'),
+      'utf8'
+    );
+    assert.notEqual(wf, dep);
+    assert.notEqual(dep, probe);
+    // And the probe really does carry the prose rule this test now enforces.
+    assert.match(
+      probe,
+      /Must match `RETAIN_DAYS` in \.github\/workflows\/deploy\.yml/,
+      'the probe dropped the comment stating it must match deploy.yml. If that rule ' +
+        'is gone, this test is asserting something nobody claims any more.'
+    );
+  });
 });
 
 /**
