@@ -287,6 +287,45 @@ export function useCharacterPlay(
     setCell((c) => (origin ? origin : c));
   }, [origin]);
 
+  /**
+   * CHANGING MODE RE-ANCHORS, SO AN ARMCHAIR OFFSET CANNOT OUTLIVE ITS MODE (#150).
+   *
+   * The distance readout is gated on `offset` existing; the sentence that explains it
+   * — "Grid movement walks the map, not you" — is gated on the MODE. Nothing cleared
+   * the offset when the mode changed, so a player who stepped three tiles and then
+   * pressed "Use my location" kept the distance and lost the explanation: the app told
+   * someone who had not moved that they were 115 m from where they started. If they
+   * denied the permission prompt, `geo.fix` stayed null, both effects early-returned,
+   * and the stale value persisted for the whole session.
+   *
+   * The comment above that sentence names this exact state as the thing it exists to
+   * prevent — "the alternative is a player believing the game thinks they walked
+   * somewhere". A mode switch produced it.
+   *
+   * RE-ANCHOR ON THE CHANGE, NOT ON EVERY STEP. `step` moving the cell and never the
+   * origin is the design above, and anchoring per step would make `offset` permanently
+   * zero — a lie in the other direction. This anchors only when the player leaves the
+   * mode that produced the offset, which is the moment the number stops meaning what
+   * it said.
+   *
+   * Zone mode already happened to clear it, because picking a zone sets a cell. GPS did
+   * not. Gating on the mode change rather than on GPS specifically is what stops a
+   * third mode inheriting the bug.
+   */
+  const setMode = useCallback(
+    (next: LocationMode) => {
+      if (next === mode) return;
+      // RE-ANCHOR, DO NOT CLEAR. Setting origin to null also kills
+      // `resetToOrigin` — "Back to where I started" needs an anchor to return
+      // to. Anchoring to the current cell makes `offset` null (cell === origin)
+      // while leaving the player somewhere to go back to. The first version of
+      // this fix nulled it and reddened five tests that depend on the anchor.
+      setOrigin(cell);
+      setModeState(next);
+    },
+    [mode, cell]
+  );
+
   const offset = useMemo(
     () =>
       cell && origin && (cell.q !== origin.q || cell.r !== origin.r)
@@ -386,7 +425,7 @@ export function useCharacterPlay(
     begin,
     regenerate,
     exportCharacter,
-    setMode: setModeState,
+    setMode,
     setZone: setZoneId,
     setCellFromFix,
     step,

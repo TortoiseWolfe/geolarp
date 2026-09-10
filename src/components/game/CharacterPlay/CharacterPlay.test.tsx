@@ -722,3 +722,99 @@ describe('resolving a cell pays, once', () => {
     expect(opened[0].textContent).toContain('Lore');
   });
 });
+
+/**
+ * AN ARMCHAIR OFFSET MUST NOT SURVIVE A MODE CHANGE (#150).
+ *
+ * The distance readout is gated on `play.offset` (CharacterPlay.tsx:373); the sentence
+ * that explains it — "Grid movement walks the map, not you" — is gated on the MODE
+ * (:402). Nothing cleared the offset when the mode changed, so after a switch only the
+ * honest half disappeared, and the app told a player who had not moved that they were
+ * 115 m from where they started.
+ *
+ * The comment above that sentence names this exact state as the thing it exists to
+ * prevent: "the alternative is a player believing the game thinks they walked
+ * somewhere."
+ *
+ * WORSE THAN #140, NOT THE SAME. #140 is silence — a real walk produces no feedback.
+ * This is a false signal, aimed at precisely the player the honesty line was written
+ * for.
+ */
+describe('the offset never outlives the mode that produced it (#150)', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    mockGeo.fix = null;
+    mockGeo.accuracy = null;
+    mockGeo.error = null;
+    window.matchMedia = vi.fn().mockImplementation((q: string) => ({
+      matches: q.includes('prefers-reduced-motion'),
+      media: q,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+  });
+
+  async function beginAndStep() {
+    const user = userEvent.setup();
+    render(<CharacterPlay today={today} />);
+    await screen.findByRole('button', { name: 'Roll a character' });
+    await user.type(screen.getByLabelText('Name'), 'Ada Wren');
+    await user.click(screen.getByRole('button', { name: 'Roll a character' }));
+    await screen.findByRole('heading', { name: 'Ada Wren', level: 2 });
+    await user.click(screen.getByRole('button', { name: 'Grid movement' }));
+    await user.click(
+      screen.getByRole('button', { name: /^Move north-east to/ })
+    );
+    return user;
+  }
+
+  const readout = () => screen.queryByRole('status', { name: 'Grid position' });
+
+  it('shows the distance AND the disclaimer while still in grid mode', () => {
+    // The control. Without it, a fix that simply deleted the readout would satisfy
+    // the assertion below while removing the feature.
+    return beginAndStep().then(() => {
+      expect(readout()).toBeInTheDocument();
+      expect(
+        screen.getByText(/Grid movement walks the map, not you/)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('drops the armchair distance when the player switches to GPS', async () => {
+    const user = await beginAndStep();
+    expect(
+      readout(),
+      'the step produced no offset; the test proves nothing'
+    ).toBeInTheDocument();
+
+    // Deny the fix, which is the persistent case: both effects early-return while
+    // `geo.fix` is null, so nothing else can clear the stale value.
+    await user.click(screen.getByRole('button', { name: 'Use my location' }));
+
+    expect(
+      screen.queryByText(/Grid movement walks the map, not you/),
+      'the disclaimer is gated on mode and is expected to go'
+    ).not.toBeInTheDocument();
+
+    expect(
+      readout(),
+      'the grid-derived distance is still on screen in GPS mode, with the sentence ' +
+        'that explains it now gone — the app is telling a stationary player they walked'
+    ).not.toBeInTheDocument();
+  });
+
+  it('drops it when switching to zone mode too, not just GPS', async () => {
+    const user = await beginAndStep();
+    expect(readout()).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Pick a zone' }));
+    expect(
+      readout(),
+      'the offset leaked into zone mode; the gate must be the mode change, not GPS'
+    ).not.toBeInTheDocument();
+  });
+});
