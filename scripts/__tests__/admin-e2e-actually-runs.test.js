@@ -15,6 +15,17 @@
  * it "listed them and measured THE HOME PAGE", because `AdminGate.tsx:81` redirects a
  * non-admin to `/` and a populated, AAA-clean home page passed six times under other routes'
  * names. Same surface; the gate that covers it had never executed one of its own tests.
+ *
+ * THE FOURTH LINK IS CHECKED ELSEWHERE, ON PURPOSE. A step-level `env:` in the workflow does
+ * not reach the test process: Playwright runs inside a container and
+ * `scripts/ci/playwright-in-container.sh` forwards an explicit allowlist. The first version of
+ * this fix set the flag in the workflow and never added it there, so the guard would have gone
+ * on skipping — with all three assertions below green.
+ *
+ * `playwright-env-forwarding.test.js` caught it, and it is the right place for it: that test
+ * DERIVES the required list from `process.env.X` in the E2E sources rather than enumerating it,
+ * so it covers every future variable too. Re-asserting the same fact here by name would be a
+ * second list to drift against the first — which is the defect that test exists to prevent.
  */
 
 'use strict';
