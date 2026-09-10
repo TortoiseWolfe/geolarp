@@ -18,7 +18,9 @@
   <sub><b>How it fits together.</b> The <a href="./docs/architecture/architecture-detailed.png">full reference diagram</a> adds every table, Edge Function, and route. Or read <a href="./docs/architecture/README.md">the architecture guide</a>.</sub>
 </p>
 
-This is a real product, not a scaffold. It runs at [geolarp.com](https://www.geolarp.com/) with OAuth and email sign-in, Stripe and PayPal payments, end-to-end encrypted messaging, an admin surface, and an installable offline-capable app that meets WCAG AA.
+This is a real product, not a scaffold, and it runs at [geolarp.com](https://www.geolarp.com/) — with email sign-in, end-to-end encrypted messaging, an admin surface, and an installable offline-capable app held to WCAG AAA contrast by a gate that runs on every route.
+
+**What is built but not switched on** (checked against production 2026-09-10, not asserted): OAuth sign-in — the GitHub and Google flows exist and `/auth/v1/settings` reports `email` as the only enabled provider — and payments, where `PAYMENT_MODE_EXPECTED` is deliberately `none` (#102). `/` is pre-launch copy. The previous wording here advertised both as live (#15).
 
 You can also fork it and build your own thing on top. That takes about five minutes.
 

@@ -1,5 +1,20 @@
 # Stability Tracking — post-#44 work order
 
+> **⚠ INHERITED FROM SCRIPTHAMMER — every `#NNN` below refers to
+> [TortoiseWolfe/ScriptHammer](https://github.com/TortoiseWolfe/ScriptHammer), NOT this repository.**
+>
+> This was ScriptHammer's audit, and the rebrand changed only the H1 and the brand strings. The
+> substance beneath is upstream's and is kept because it encodes real engineering lessons about
+> code that genuinely is in this fork.
+>
+> **The numbering is now actively misleading, and it was not when this was flagged (#15).** At
+> the time geoLARP had zero PRs and one issue, so a stray `#89` resolved to nothing. Checked
+> 2026-09-10: **all 25 numbers cited here now match a real geoLARP issue or pull request** — and
+> none of them is the thing meant. `#89` here means upstream's E2E flake work; in this repo #89
+> is "the game sends people outdoors alone and has no age concept at all". Bare `#NNN` does not
+> autolink in repository markdown, so nothing renders as a broken link — the damage is entirely
+> semantic, which makes it harder to notice rather than easier.
+
 **Updated**: 2026-05-14 · **Audit baseline**: 2026-04-25 (see [STATUS.md](../STATUS.md))
 
 **Family A status**: both items shipped (PR #56, PR #59). **E2E flake mitigation (round 10) also closed on 2026-05-13** via PR #89 (concurrency mutex + WebKit scroll-event fix). Family A is empty.
