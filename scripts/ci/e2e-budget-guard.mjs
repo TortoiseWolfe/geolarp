@@ -273,8 +273,27 @@ async function listRuns(fetchImpl, { repo, token, sinceIso, maxPages = 6 }) {
  * conclusion alone, so the ambiguous conclusions are the ones that cost an API call:
  *
  *   in-progress / queued  -> it may be testing right now. Count it, no call.
- *   success               -> its shards ran by definition. Count it, no call.
- *   anything else         -> ambiguous. Ask the jobs endpoint; shards decide.
+ *   anything completed    -> ambiguous. Ask the jobs endpoint; shards decide.
+ *
+ * `success` USED TO SHORT-CIRCUIT HERE TOO, on the reasoning "its shards ran by
+ * definition." That was true when written and #48 falsified it. The lane is now gated at
+ * `e2e.yml`'s `build` job — `if: vars.TEST_USER_PRIMARY_EMAIL != ''` — so when the hosted
+ * credentials are unset every shard is `skipped`, only the `budget` job runs, and the run
+ * concludes **success** having made zero Supabase requests.
+ *
+ * Measured over all 87 e2e.yml runs in the 2026-09-02 cycle: the guard counted **30**, and
+ * **0** runs had started even one E2E shard. It tripped MONTH_EXCEEDED at its stop line on
+ * entirely false positives, turning `Cloud-quota budget` red on every PR while the resource
+ * it protects went untouched (#158).
+ *
+ * Note the asymmetry that hid it: once tripped, runs conclude `failure`, take the jobs path,
+ * and are correctly not counted — so the mis-count stops exactly when its damage is done and
+ * the already-counted runs stay in the window until the cycle rolls.
+ *
+ * COST OF DROPPING THE SHORT-CIRCUIT: one extra jobs call per successful run in the window.
+ * Measured on the 2026-09-02 cycle that is 30 more calls against 57 the guard already made,
+ * well inside `GITHUB_TOKEN`'s 1,000/hour. Cheap enough that "ask" beats "assume" — and the
+ * assumption is what cost a whole cycle of red checks.
  *
  * CANCELLED USED TO SHORT-CIRCUIT HERE, and it was the same defect #640 fixed one branch
  * over. The docblock said "cancelled -> may have run partially. Count it, no call." That
@@ -298,10 +317,8 @@ async function listRuns(fetchImpl, { repo, token, sinceIso, maxPages = 6 }) {
  */
 export async function runConsumedQuota(fetchImpl, { repo, token, run }) {
   if (run.status !== 'completed') return true;
-  // Only `success` is unambiguous — it cannot succeed without its shards running.
-  // Everything else (failure, cancelled, timed_out, startup_failure…) is settled by
-  // the jobs endpoint rather than assumed.
-  if (run.conclusion === 'success') return true;
+  // EVERY completed conclusion is settled by the jobs endpoint, `success` included.
+  // A gated-off lane concludes success with every shard skipped — see the note above.
 
   try {
     const res = await fetchImpl(
