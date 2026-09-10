@@ -33,16 +33,30 @@ const SUPABASE_ADMIN_URL =
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 test.describe('Admin User Pagination E2E', () => {
-  // SKIPPED ONLY WHERE THE STACK IS GENUINELY ABSENT (#152).
+  // WHY THIS IS `fixme` AND NOT `skip` (#152 -> #159).
   //
-  // This read `!!process.env.CI`, and the reason below is why that was wrong: #575 made
-  // the local lane "a Supabase per runner, brought up in the job" — exactly what these
-  // need — and that lane sets CI. So the guard fired against the one environment that
-  // satisfies it, and with the hosted lane setting CI too, 29 admin tests ran nowhere
-  // while `E2E (local) result` remained a required check.
-  test.skip(
-    !!process.env.CI && !process.env.E2E_LOCAL_SUPABASE,
-    'Skipped: needs a local Docker Supabase (the e2e-local lane provides one)'
+  // It read `test.skip(!!process.env.CI, 'Skipped in CI: requires local Docker Supabase')`.
+  // That reason was false twice over. #575 made the local lane exactly that — "a Supabase per
+  // runner, brought up in the job" — and `e2e-local.yml` sets `CI: 'true'`, so the guard fired
+  // against the one environment that satisfies it. The hosted lane sets `CI` too, so 29 tests
+  // ran in NEITHER while `E2E (local) result` stayed a required context on `main`.
+  //
+  // Unskipping them (#152) is what revealed the real blocker: these specs sign in as
+  // `test@example.com` and assume admin-ness comes from `app_metadata`. It does not.
+  // `user_profiles.is_admin` is "the single authority since #240" — see
+  // `admin-depth.spec.ts:15-18` — so `AdminGate` redirects, it renders `null` for a non-admin,
+  // and the console container never appears. That fails in EVERY environment; no lane keying
+  // can fix it.
+  //
+  // `fixme` rather than `skip` because the statement has to be true: this is known-broken and
+  // tracked, not unsupported here. `mode: 'serial'` means the first failure skips the rest, so
+  // the honest count of coverage these files deliver today is zero.
+  //
+  // #159 moves them onto `seedIsolatedAdmin` / `openAdminAs`, which is what `admin-depth.spec.ts`
+  // already uses and the only reason that file's tests pass.
+  test.fixme(
+    true,
+    'Asserts admin via app_metadata; user_profiles.is_admin is the authority since #240 — see #159'
   );
   test.describe.configure({ mode: 'serial' });
 

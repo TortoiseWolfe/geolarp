@@ -1,31 +1,26 @@
 /**
- * A required check must actually run the tests it is required for (#152).
+ * The admin specs must not claim a reason that is false (#152 → #159).
  *
- * Three admin specs skipped themselves on `!!process.env.CI` with the reason
- * "requires local Docker Supabase". That reason was true when written and stopped being true
- * at #575, which made the local lane exactly that — "a Supabase per runner, brought up in the
- * job" — and that lane sets `CI: 'true'`.
+ * Three admin specs carried `test.skip(!!process.env.CI, 'Skipped in CI: requires local Docker
+ * Supabase')`. That reason was true when written and stopped being true at #575, which made the
+ * local lane exactly that — "a Supabase per runner, brought up in the job" — while
+ * `e2e-local.yml` sets `CI: 'true'`. The guard therefore fired against the one environment that
+ * satisfies it, and the hosted lane sets `CI` too, so 29 tests ran in NEITHER while
+ * `E2E (local) result` stayed a required context on `main`.
  *
- * So the guard fired against the one environment that satisfies it. The hosted lane sets `CI`
- * too, so 29 admin tests (22 + 2 + 5) ran in NEITHER, while `E2E (local) result` stayed a
- * required context on `main`.
+ * WHAT UNSKIPPING THEM FOUND, AND WHY THIS FILE NO LONGER CHECKS A LANE FLAG. The first CI run
+ * of those 29 produced 3 failures and 26 skips (`mode: 'serial'` — one failure per file skips
+ * the rest). The blocker is not the environment: the specs sign in as `test@example.com` and
+ * assume admin-ness comes from `app_metadata`, but `user_profiles.is_admin` is "the single
+ * authority since #240" (`admin-depth.spec.ts:15-18`). `AdminGate` redirects, renders `null`,
+ * and the console container never appears — in EVERY environment. No lane keying fixes that,
+ * so the interim flag this file used to pin is gone rather than left as dead config.
  *
- * WHY THIS MATTERS MORE THAN UNUSED COVERAGE. `/admin` is six routes behind `AdminGate`, and
- * `color-contrast.spec.ts` records what happens when nobody checks them properly: before #454
- * it "listed them and measured THE HOME PAGE", because `AdminGate.tsx:81` redirects a
- * non-admin to `/` and a populated, AAA-clean home page passed six times under other routes'
- * names. Same surface; the gate that covers it had never executed one of its own tests.
- *
- * THE FOURTH LINK IS CHECKED ELSEWHERE, ON PURPOSE. A step-level `env:` in the workflow does
- * not reach the test process: Playwright runs inside a container and
- * `scripts/ci/playwright-in-container.sh` forwards an explicit allowlist. The first version of
- * this fix set the flag in the workflow and never added it there, so the guard would have gone
- * on skipping — with all three assertions below green.
- *
- * `playwright-env-forwarding.test.js` caught it, and it is the right place for it: that test
- * DERIVES the required list from `process.env.X` in the E2E sources rather than enumerating it,
- * so it covers every future variable too. Re-asserting the same fact here by name would be a
- * second list to drift against the first — which is the defect that test exists to prevent.
+ * WHY THIS STILL MATTERS. `/admin` is six routes behind `AdminGate`, and #454 is the scar:
+ * `color-contrast.spec.ts` "listed them and measured THE HOME PAGE" six times, because a
+ * non-admin is redirected to a clean, AAA-passing home page. Twenty-nine tests presenting as
+ * admin coverage while measuring nothing is that same failure wearing a test count — which is
+ * why the reason attached to them has to be true.
  */
 
 'use strict';
@@ -38,76 +33,103 @@ const path = require('node:path');
 const ROOT = path.resolve(__dirname, '..', '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
+/**
+ * Comments quote the very code these assertions forbid, so a raw match reads a spec's
+ * explanation of the old guard as the old guard. That is not hypothetical — writing this file
+ * without it produced three failures against specs that had already been fixed, which is a
+ * probe reporting on itself. `fix-boundary.test.ts:64-69` solves the same problem the same way
+ * and keeps a case proving the stripper works.
+ */
+const stripComments = (src) =>
+  src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+
 const ADMIN_SPECS = [
   'tests/e2e/admin/admin-dashboard.spec.ts',
   'tests/e2e/admin/admin-conversation-list.spec.ts',
   'tests/e2e/admin/admin-user-pagination.spec.ts',
 ];
-const LANE = '.github/workflows/e2e-local.yml';
-const FLAG = 'E2E_LOCAL_SUPABASE';
 
-describe('the admin specs run on the lane that can run them (#152)', () => {
+describe('the admin specs state a true reason (#152, #159)', () => {
   it('found the specs — a renamed file would make every assertion vacuous', () => {
     for (const spec of ADMIN_SPECS) {
-      const body = read(spec);
-      assert.ok(body.length > 500, `${spec} did not read`);
-      assert.match(body, /test\.skip\(/, `${spec} no longer has a skip guard`);
+      assert.ok(
+        fs.existsSync(path.join(ROOT, spec)),
+        `${spec} is gone. Re-point this test or delete it; silently passing on a missing ` +
+          `file is how a guard test stops guarding.`
+      );
     }
   });
 
   for (const spec of ADMIN_SPECS) {
-    it(`${path.basename(spec)} does not skip on bare CI`, () => {
-      const body = read(spec);
-      assert.doesNotMatch(
-        body,
-        /test\.skip\(\s*!!process\.env\.CI\s*,/,
-        `${spec} skips on \`!!process.env.CI\`. Both lanes set CI, so these tests run ` +
-          `nowhere — while E2E (local) result remains a required check (#152).`
+    it(`${path.basename(spec)} does not skip on bare CI again`, () => {
+      const src = stripComments(read(spec));
+      assert.ok(
+        !/test\.skip\(\s*!!process\.env\.CI\s*[,)]/.test(src),
+        `${spec} skips on \`!!process.env.CI\`. That is the #152 defect: the local lane sets ` +
+          `CI and is the very Docker Supabase the old reason asked for, so the guard fires ` +
+          `against the one environment that satisfies it — and the required check reports ` +
+          `green having run nothing.`
+      );
+    });
+
+    it(`${path.basename(spec)} says what is actually wrong`, () => {
+      const src = stripComments(read(spec));
+      assert.match(
+        src,
+        /test\.fixme\(/,
+        `${spec} no longer marks itself fixme. If #159 landed and these specs really run, ` +
+          `delete this assertion deliberately rather than letting it rot.`
       );
       assert.match(
-        body,
-        new RegExp(`process\\.env\\.${FLAG}`),
-        `${spec} does not consult ${FLAG}, so it cannot tell the local lane (which ` +
-          `provides a Docker Supabase) from the hosted one (which does not)`
+        src,
+        /#159/,
+        `${spec} must point at #159, or the next reader has a disabled test with no thread ` +
+          `back to why. A disabled test nobody can explain is deleted or trusted, and both ` +
+          `are wrong.`
+      );
+      assert.match(
+        src,
+        /user_profiles\.is_admin|app_metadata/,
+        `${spec}'s reason must name the authority mismatch it is actually blocked on. ` +
+          `"Skipped in CI" was false for however long it sat there; a vague replacement is ` +
+          `the same defect with better manners.`
       );
     });
   }
 
-  /**
-   * The other half. A flag the workflow never sets is a guard that skips everywhere —
-   * the same defect with the polarity flipped, and it would look correct in the spec.
-   */
-  it('the local lane actually sets the flag', () => {
-    const wf = read(LANE);
-    assert.ok(wf.length > 2000, `${LANE} did not read`);
+  it('the comment stripper actually strips — or every assertion below is vacuous', () => {
+    assert.equal(
+      stripComments(
+        "/* test.skip(!!process.env.CI, 'x') */\nconst a = 1;"
+      ).trim(),
+      'const a = 1;'
+    );
+    assert.equal(
+      stripComments('// test.skip(!!process.env.CI)\nconst b = 2;').trim(),
+      'const b = 2;'
+    );
     assert.match(
-      wf,
-      new RegExp(`^\\s*${FLAG}: 'true'$`, 'm'),
-      `${LANE} does not set ${FLAG}, so the admin specs skip on every lane — the same ` +
-        `bug with the polarity flipped`
+      stripComments("test.skip(!!process.env.CI, 'x');"),
+      /test\.skip/
     );
   });
 
-  /**
-   * `homepage.spec.ts:164` keeps a bare-CI skip for a genuine CI limitation (popups).
-   * Pinned so this test is not read as "no spec may ever skip on CI", which would be
-   * false and would get it deleted.
-   */
-  it('does not forbid legitimate CI skips elsewhere', () => {
-    const body = read('tests/e2e/tests/homepage.spec.ts');
-    assert.match(
-      body,
-      /test\.skip\(!!process\.env\.CI/,
-      'homepage.spec.ts lost its CI skip; if that was deliberate, drop this assertion'
-    );
-  });
-
-  it('the matcher can fail', () => {
-    assert.throws(() =>
-      assert.doesNotMatch(
-        "test.skip(!!process.env.CI, 'x');",
-        /test\.skip\(\s*!!process\.env\.CI\s*,/
-      )
-    );
+  it('the interim lane flag is gone, not left as dead config', () => {
+    // YAML/shell comments, not JS — strip `#` lines so a note about the removed flag
+    // does not read as the flag itself.
+    const nohash = (t) => t.replace(/(^|\s)#.*$/gm, '');
+    const lane = nohash(read('.github/workflows/e2e-local.yml'));
+    const forward = nohash(read('scripts/ci/playwright-in-container.sh'));
+    for (const [name, src] of [
+      ['.github/workflows/e2e-local.yml', lane],
+      ['scripts/ci/playwright-in-container.sh', forward],
+    ]) {
+      assert.ok(
+        !src.includes('E2E_LOCAL_SUPABASE'),
+        `${name} still sets or forwards E2E_LOCAL_SUPABASE. Nothing reads it: the repair in ` +
+          `#159 gates on whether the admin fixture could be seeded (the ` +
+          `\`test.skip(!fixture, …)\` pattern in admin-depth.spec.ts), which needs no lane flag.`
+      );
+    }
   });
 });
