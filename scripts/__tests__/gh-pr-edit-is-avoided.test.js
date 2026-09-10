@@ -82,7 +82,32 @@ function callSites() {
     for (const file of walk(path.join(ROOT, dir))) {
       const rel = path.relative(ROOT, file);
       if (rel === path.relative(ROOT, __filename)) continue;
-      const lines = fs.readFileSync(file, 'utf8').split('\n');
+
+      /*
+        A FILE CAN VANISH BETWEEN THE WALK AND THE READ (#153).
+
+        `walk()` above already anticipates half of this — `readdirSync` is wrapped, so a
+        DIRECTORY that disappears is tolerated. The read was not, and under `node --test`
+        this file runs concurrently with `integration/audit-workflow.test.js`, which
+        builds and deletes a throwaway project under `scripts/__tests__/fixtures/
+        test-project/`. Listed, then gone by the time it was opened, then ENOENT.
+
+        The cost was not the failure, it was the MESSAGE: a race reported as
+        "has no `gh pr edit` call site", naming a fixture that has no business existing
+        and pointing the reader at a rule about PR editing. A flake that misdescribes
+        itself is worse than one that simply fails.
+
+        Guarded rather than excluding `fixtures/`, because the next scratch directory
+        will not be called `fixtures` — this file writes a `.retain-work` tree, and #12's
+        blog regeneration touches another.
+      */
+      let lines;
+      try {
+        lines = fs.readFileSync(file, 'utf8').split('\n');
+      } catch (err) {
+        if (err && err.code === 'ENOENT') continue; // deleted mid-walk by a sibling test
+        throw err;
+      }
       lines.forEach((line, i) => {
         if (!/gh pr edit/.test(line)) return;
         if (/`gh pr edit`/.test(line)) return; // prose, in backticks
@@ -149,5 +174,59 @@ describe('the repo does not depend on `gh pr edit` (#397)', () => {
     );
     assert.equal(isCall('# gh pr edit fails here, see #397'), false);
     assert.equal(isCall('echo "hello"'), false);
+  });
+});
+
+/**
+ * The mid-walk deletion guard, both directions (#153).
+ *
+ * Swallowing every read error would turn this gate into one that reports "no call sites"
+ * because it could not read anything — the exact shape of vacuous pass this repo keeps
+ * finding. So ENOENT is skipped and everything else still throws.
+ */
+describe('a file deleted mid-walk does not break the scan (#153)', () => {
+  const realRead = fs.readFileSync;
+
+  it('skips a file that vanished, and still scans the rest', () => {
+    let vanished = 0;
+    fs.readFileSync = (file, ...rest) => {
+      // Fail exactly one real file the way a concurrent test deletion would.
+      if (vanished === 0 && String(file).endsWith('.js')) {
+        vanished = 1;
+        const err = new Error('ENOENT: no such file or directory');
+        err.code = 'ENOENT';
+        throw err;
+      }
+      return realRead(file, ...rest);
+    };
+    try {
+      const hits = callSites();
+      assert.ok(Array.isArray(hits), 'the scan threw instead of skipping');
+      assert.equal(
+        vanished,
+        1,
+        'the simulated deletion never fired; test is vacuous'
+      );
+    } finally {
+      fs.readFileSync = realRead;
+    }
+  });
+
+  it('still throws on any other read error', () => {
+    fs.readFileSync = () => {
+      const err = new Error('EACCES: permission denied');
+      err.code = 'EACCES';
+      throw err;
+    };
+    try {
+      assert.throws(
+        () => callSites(),
+        /EACCES/,
+        'a permissions failure was swallowed — the gate would report "no call sites" ' +
+          'because it could not read anything'
+      );
+    } finally {
+      fs.readFileSync = realRead;
+    }
   });
 });
