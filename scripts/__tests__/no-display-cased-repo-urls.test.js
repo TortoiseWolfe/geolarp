@@ -106,14 +106,22 @@ describe('no markdown URL uses the display-cased repo name (#12)', () => {
   /**
    * The specific 40 this ticket was about. They belong upstream, where the content lives.
    * A rebrand script that runs again would rewrite them straight back.
+   *
+   * SCOPED TO THE DISPLAY-CASED FORM, and the first version was not. It matched
+   * `geo[Ll][Aa][Rr][Pp]`, which also matches the correct lowercase slug — so it forbade
+   * linking to THIS repository's own issues by full URL, which is entirely legitimate. It
+   * went red the moment STATUS.md gained a link to geoLARP's own roadmap issue (#15). A
+   * rule that forbids the correct thing gets deleted rather than fixed, so it is narrowed
+   * to the case that is wrong by construction.
    */
   it('inherited issue links point at the upstream repo, not this one', () => {
     const offenders = [];
     for (const rel of FILES) {
       const body = fs.readFileSync(path.join(ROOT, rel), 'utf8');
       for (const m of body.matchAll(
-        /https:\/\/github\.com\/[^/\s)]+\/geo[Ll][Aa][Rr][Pp]\/issues\/\d+/g
+        /https:\/\/github\.com\/[^/\s)]+\/(geo[A-Za-z]*[A-Z][A-Za-z]*)\/issues\/\d+/g
       )) {
+        if (m[1] === repo) continue; // this repo's own issues, correctly cased
         offenders.push(`${rel}: ${m[0]}`);
       }
     }
