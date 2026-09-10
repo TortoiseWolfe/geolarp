@@ -290,3 +290,9 @@ docker-compose.override.yml
 # builds real generations on disk to drive the real script over a real socket; the
 # directory is rebuilt per run and must never be committed.
 scripts/__tests__/.retain-work/
+
+# uv.lock locks zero packages: pyproject.toml declares only [tool.ruff], no [project]
+# table for uv to resolve. Nothing in CI or .pre-commit-config.yaml invokes uv, and
+# `requires-python` is regenerated from whichever Python is installed, so a tracked copy
+# sits permanently dirty and rides into unrelated commits (#17).
+uv.lock
