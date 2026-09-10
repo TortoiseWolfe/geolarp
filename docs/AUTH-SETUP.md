@@ -103,7 +103,7 @@ Complete guide for configuring Supabase authentication with email/password and O
 
 | Field                          | Value                                                        |
 | ------------------------------ | ------------------------------------------------------------ |
-| **Application name**           | `geoLARP` (or your preferred name)                      |
+| **Application name**           | `geoLARP` (or your preferred name)                           |
 | **Homepage URL**               | `http://localhost:3000` (development) or your production URL |
 | **Application description**    | (Optional) "Next.js template with authentication"            |
 | **Authorization callback URL** | `https://<YOUR-PROJECT-REF>.supabase.co/auth/v1/callback`    |
@@ -144,6 +144,21 @@ Complete guide for configuring Supabase authentication with email/password and O
 
 - Ensure the callback URL in Supabase matches what you entered in GitHub:
   - `https://<YOUR-PROJECT-REF>.supabase.co/auth/v1/callback`
+
+### GitHub — the step that makes the button appear
+
+**Configuring the provider in Supabase does NOT make the button render.** `OAuthButtons.tsx`
+returns `null` unless a build-time flag says so, and that flag is read at BUILD time in a static
+export — so it must be a repo **Variable**, passed by `deploy.yml`, and the site must be rebuilt.
+
+Set this only AFTER the secret above is live, so a control that cannot succeed never ships:
+
+```
+Settings → Secrets and variables → Actions → Variables
+NEXT_PUBLIC_AUTH_GITHUB_ENABLED=true
+```
+
+Unset is off. That is deliberate and is what keeps a fork safe (#134).
 
 ## Part 4: Enable Google OAuth (Optional)
 
@@ -242,6 +257,21 @@ Complete guide for configuring Supabase authentication with email/password and O
 
 - **JWT expiry:** 3600 seconds (1 hour) - default is fine
 - **Refresh token rotation:** ON - prevents token theft
+
+### Google — the step that makes the button appear
+
+**Configuring the provider in Supabase does NOT make the button render.** `OAuthButtons.tsx`
+returns `null` unless a build-time flag says so, and that flag is read at BUILD time in a static
+export — so it must be a repo **Variable**, passed by `deploy.yml`, and the site must be rebuilt.
+
+Set this only AFTER the secret above is live, so a control that cannot succeed never ships:
+
+```
+Settings → Secrets and variables → Actions → Variables
+NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true
+```
+
+Unset is off. That is deliberate and is what keeps a fork safe (#134).
 
 ## Part 6: Test Authentication
 

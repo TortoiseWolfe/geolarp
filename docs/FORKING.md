@@ -38,10 +38,10 @@ git push
 
 The `scripts/rebrand.sh` script automates updating 200+ files:
 
-| Category  | Changes                                                                                                |
-| --------- | ------------------------------------------------------------------------------------------------------ |
+| Category  | Changes                                                                                           |
+| --------- | ------------------------------------------------------------------------------------------------- |
 | **Code**  | Replaces "geoLARP" with your project name in all TypeScript, JavaScript, JSON, and Markdown files |
-| **Files** | Renames files containing "geoLARP" (e.g., `geoLARPLogo.tsx` → `MyProjectLogo.tsx`)           |
+| **Files** | Renames files containing "geoLARP" (e.g., `geoLARPLogo.tsx` → `MyProjectLogo.tsx`)                |
 
 ### Your brand mark is not covered by any of that
 
@@ -194,6 +194,73 @@ succeeds — with no backend in the bundle, and the setup banner on every page.
 Set the two URLs even if you are not on a custom domain yet: `sitemap.xml` and `robots.txt` fall
 back to a `github.io` origin without them, and the asset-retention step falls back to crawling
 **this template's** site rather than yours.
+
+#### Auth: OAuth, CAPTCHA, and the eight `AUTH_*` overrides
+
+**None of this was documented here until #135**, and a fork could complete every other step in
+this file and still hit a red gate and invisible sign-in buttons.
+
+**The two that actually fail a check.** `auth-config-drift.yml` runs on every push to `main` and
+daily, and needs:
+
+```
+SUPABASE_ACCESS_TOKEN=sbp_...        ← a SECRET (Supabase account → Access Tokens)
+SUPABASE_PROJECT_REF=abcd1234        ← a VARIABLE (not the NEXT_PUBLIC_ one; see below)
+```
+
+Note the name. Locally the same value is `NEXT_PUBLIC_SUPABASE_PROJECT_REF`; CI reads
+`SUPABASE_PROJECT_REF` without the prefix. `set-auth-config.ts` accepts either, which is exactly
+why a local run succeeds while CI fails (#36).
+
+**The eight `AUTH_*` overrides** let a fork declare its own expectation without editing
+`scripts/supabase/auth-config.json` — the committed defaults are this template's, and a default
+is what makes drift detectable at all:
+
+```
+AUTH_SITE_URL              AUTH_URI_ALLOW_LIST
+AUTH_SMTP_HOST             AUTH_SMTP_USER
+AUTH_SMTP_ADMIN_EMAIL      AUTH_SMTP_SENDER_NAME
+AUTH_GITHUB_CLIENT_ID      AUTH_GOOGLE_CLIENT_ID
+```
+
+Only `AUTH_SITE_URL` and `AUTH_URI_ALLOW_LIST` will actually **fail** the drift check. The
+client-id fields are reported as `NOT ASSESSED` and exit 0, because their provider secret is
+absent — see below.
+
+**⚠ The OAuth client ids are inherited.** Their committed defaults belong to the upstream
+project. If you set a provider _secret_ without also setting `AUTH_GITHUB_CLIENT_ID` /
+`AUTH_GOOGLE_CLIENT_ID`, `--apply` would pair YOUR secret with the TEMPLATE's client id, and
+every sign-in fails `invalid_client` while the config reads as fully configured. `#134` added a
+guard that withholds the provider in exactly that state, so you will get a warning rather than a
+broken login — but set the client id.
+
+**⚠ Enabling the buttons is a separate step from enabling the provider.** Configuring GitHub or
+Google in Supabase does **not** make the buttons appear. They are gated on two build-time
+variables, and `OAuthButtons.tsx` returns `null` when neither is on:
+
+```
+NEXT_PUBLIC_AUTH_GITHUB_ENABLED=true
+NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true
+```
+
+Set each to `true` **only after** that provider's secret is live, so a button that cannot succeed
+never ships. Unset is off, which is the safe default.
+
+**Three values go to Supabase, not to GitHub** — they are read by `set-auth-config.ts` from your
+environment and pushed to the project:
+
+```
+TURNSTILE_SECRET               SUPABASE_AUTH_GITHUB_SECRET
+SUPABASE_AUTH_GOOGLE_SECRET
+```
+
+CAPTCHA has one more requirement that is easy to miss and takes **all** auth down when wrong —
+sign-in and recovery, not just sign-up. `security_captcha_enabled` is global, and the browser must
+be allowed to load the widget, so your CSP needs `https://challenges.cloudflare.com` in
+`script-src`, `frame-src` and `connect-src`. See `docs/AUTH-SETUP.md` Part 6.5 (#137).
+
+**Step-by-step walkthrough:** [FORK-CHECKLIST.md](./FORK-CHECKLIST.md) covers the auth provider
+setup in order.
 
 #### Recommended for E2E Testing
 
