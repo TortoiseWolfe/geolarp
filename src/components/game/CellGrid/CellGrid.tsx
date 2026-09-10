@@ -164,9 +164,25 @@ export default function CellGrid({
                 // The accessible name carries what the pips encode, spelled out.
                 // Counting dots is a sighted affordance; "difficulty 4 of 6" is the
                 // same fact in a form a screen reader can say.
+                /*
+                  A TILE THAT CANNOT BE ACTIVATED MUST NOT SAY "MOVE" (#139).
+                  Both branches used the same label, so a non-interactive `<div>` with
+                  no role announced "Move north-east to Hollow Steps" to a screen
+                  reader — an instruction issued by an element that cannot be focused
+                  or activated, and whose accessible name a `<div>` does not reliably
+                  expose at all. The 7:1 AAA sweep and the colourblind gate both
+                  passed it, because neither asks whether a control is operable.
+
+                  The facts stay; only the verb goes. A dead tile still names the
+                  place, the kind and the difficulty.
+                */
+                const interactive =
+                  Boolean(onStep) && !t.here && t.step !== null;
                 const label = t.here
                   ? `${t.name}, where you are. ${t.kind}, difficulty ${t.rank} of ${LADDER.length}`
-                  : `Move ${t.direction} to ${t.name}. ${t.kind}, difficulty ${t.rank} of ${LADDER.length}`;
+                  : interactive
+                    ? `Move ${t.direction} to ${t.name}. ${t.kind}, difficulty ${t.rank} of ${LADDER.length}`
+                    : `${t.name}, ${t.direction}. ${t.kind}, difficulty ${t.rank} of ${LADDER.length}`;
 
                 const shell = `flex min-h-11 flex-col items-center justify-center gap-0.5 rounded border p-1 text-center text-xs ${
                   t.here
@@ -174,6 +190,23 @@ export default function CellGrid({
                     : 'border-base-300 bg-base-100 text-base-content'
                 }`;
 
+                /*
+                  `data-interactive` IS THE WHOLE POINT OF THIS ATTRIBUTE (#141).
+                  Both branches emit the same `data-testid="cell-tile"`, so every
+                  selector in the suite counted seven tiles whether the grid was
+                  operable or inert. "Seven tiles rendered" and "seven tiles operable"
+                  were the same assertion, and the dead-grid defect could be
+                  introduced, shipped and reverted with a green suite each time.
+
+                  Added rather than changing the testid, so existing counts keep
+                  working — a gate that has to be rewritten to see a bug tends not to
+                  get rewritten.
+                */
+                // WRITTEN TWICE, and it has to be. `interactive` above is exactly
+                // this condition negated, but TypeScript cannot narrow `onStep` or
+                // `t.step` through a boolean — using it here loses the narrowing and
+                // `onStep(direction)` below stops compiling. The compiler is the thing
+                // keeping the two in agreement: change one and the other fails to build.
                 if (!onStep || t.here || t.step === null) {
                   return (
                     <div
@@ -181,6 +214,7 @@ export default function CellGrid({
                       className={`${shell} flex-1`}
                       aria-label={label}
                       data-testid="cell-tile"
+                      data-interactive="false"
                     >
                       {body}
                     </div>
@@ -194,6 +228,7 @@ export default function CellGrid({
                     className={`${shell} hover:border-primary flex-1`}
                     aria-label={label}
                     data-testid="cell-tile"
+                    data-interactive="true"
                     onClick={() => onStep(direction)}
                   >
                     {body}

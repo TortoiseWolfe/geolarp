@@ -120,3 +120,94 @@ describe('CellGrid', () => {
     ).toBeInTheDocument();
   });
 });
+
+/**
+ * "SEVEN TILES RENDERED" AND "SEVEN TILES OPERABLE" WERE THE SAME ASSERTION (#141).
+ *
+ * Both branches emitted the same `data-testid="cell-tile"` and the same `aria-label`, so
+ * every selector in the suite counted seven tiles whether the grid was interactive or
+ * inert. The dead-grid defect could be introduced, shipped and reverted with a fully green
+ * suite each time — the shape CLAUDE.md warns about throughout: a gate is only as wide as
+ * what it points at.
+ */
+describe('a gate can tell a live grid from a dead one (#141)', () => {
+  const operable = () =>
+    screen
+      .getAllByTestId('cell-tile')
+      .filter((t) => t.getAttribute('data-interactive') === 'true');
+
+  it('renders seven tiles either way — which is why counting them proves nothing', () => {
+    const { unmount } = render(<CellGrid centre={CENTRE} today={today} />);
+    expect(screen.getAllByTestId('cell-tile')).toHaveLength(7);
+    unmount();
+
+    render(<CellGrid centre={CENTRE} today={today} onStep={vi.fn()} />);
+    expect(screen.getAllByTestId('cell-tile')).toHaveLength(7);
+  });
+
+  it('marks the six moves operable only when a step handler exists', () => {
+    const { unmount } = render(<CellGrid centre={CENTRE} today={today} />);
+    expect(
+      operable(),
+      'tiles report themselves operable with no onStep — nothing can move'
+    ).toHaveLength(0);
+    unmount();
+
+    render(<CellGrid centre={CENTRE} today={today} onStep={vi.fn()} />);
+    // Six, not seven: the centre is where you already are.
+    expect(operable()).toHaveLength(6);
+    for (const tile of operable()) expect(tile.tagName).toBe('BUTTON');
+  });
+
+  /**
+   * THE ACCESSIBILITY HALF (#139), and the worse one.
+   *
+   * A dead tile kept `aria-label="Move north-east to …"` on a `<div>` with no role: a
+   * screen-reader user instructed to move by something that cannot be focused or
+   * activated, and whose accessible name a bare `<div>` does not reliably expose at all.
+   * The 7:1 AAA sweep and the colourblind gate both passed it, because neither asks
+   * whether a control is operable.
+   */
+  it('never tells a screen reader to MOVE via something it cannot activate', () => {
+    render(<CellGrid centre={CENTRE} today={today} />);
+    for (const tile of screen.getAllByTestId('cell-tile')) {
+      const label = tile.getAttribute('aria-label') ?? '';
+      expect(
+        label,
+        `a non-interactive tile is labelled "${label}". The facts may stay; the ` +
+          `instruction may not.`
+      ).not.toMatch(/^Move /);
+      // It must still SAY something — dropping the verb must not drop the place.
+      expect(label.length).toBeGreaterThan(10);
+    }
+  });
+
+  it('does say MOVE once the tile can actually be moved to', () => {
+    // The control for the assertion above: if the verb never appeared, that test
+    // would pass on a component that had lost its labels entirely.
+    render(<CellGrid centre={CENTRE} today={today} onStep={vi.fn()} />);
+    const moves = screen
+      .getAllByTestId('cell-tile')
+      .map((t) => t.getAttribute('aria-label') ?? '')
+      .filter((l) => l.startsWith('Move '));
+    expect(moves).toHaveLength(6);
+  });
+
+  /**
+   * CHARACTERIZATION, NOT APPROVAL. `useCharacterPlay.ts` starts in `'zone'` mode, so
+   * `CharacterPlay` passes no `onStep` and the player's primary control is inert on
+   * arrival — #139. Whether that default is right is a product decision and this test does
+   * not take it.
+   *
+   * It exists so the change is VISIBLE when it lands: fix #139 and this goes red, which is
+   * the signal to update it rather than a bug.
+   */
+  it('DOCUMENTS the current default: no step handler means no operable tile (#139)', () => {
+    render(<CellGrid centre={CENTRE} today={today} />);
+    expect(
+      operable(),
+      'the grid is now operable without an explicit onStep. If #139 was fixed, update ' +
+        'this test — it is a record of the old default, not a requirement.'
+    ).toHaveLength(0);
+  });
+});
