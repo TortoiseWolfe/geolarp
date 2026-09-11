@@ -316,6 +316,27 @@ services:
       GOTRUE_SMTP_PORT: 1025
       GOTRUE_SMTP_ADMIN_EMAIL: admin@example.com
       GOTRUE_SMTP_SENDER_NAME: Supabase
+      # THE TWO FLAGS THAT BROKE PASSWORD CHANGE IN PRODUCTION (#136).
+      #
+      # Both are live `true` on the hosted project, and neither was set here — so the
+      # local lane enforced LESS than production and could not reproduce the defect.
+      # They default to production's values rather than to whatever is convenient,
+      # because a lane that is easier than production is a lane that reports green on
+      # code production rejects. That is the whole of #136.
+      #
+      # REQUIRE_CURRENT_PASSWORD is the one that bites: `updateUser({ password })`
+      # alone is rejected with `current_password_required`, which is what the app was
+      # sending until d3440122. Needs gotrue >= v2.196.0 — the field does not exist in
+      # older builds and is silently dropped as an unknown key, which would make any
+      # test of it pass while proving nothing (see the image pin above).
+      #
+      # REQUIRE_REAUTHENTICATION is faithful but effectively inert here: gotrue skips
+      # the nonce entirely for a session created within 24 hours (`user.go:157`), and
+      # every session in a test run is seconds old.
+      #
+      # Overridable so a lane can turn one off deliberately; nothing does today.
+      GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD: ${GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD:-true}
+      GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_REAUTHENTICATION: ${GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_REAUTHENTICATION:-true}
       GOTRUE_EXTERNAL_PHONE_ENABLED: 'false'
       GOTRUE_SMS_AUTOCONFIRM: 'true'
     healthcheck:
