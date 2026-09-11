@@ -71,6 +71,10 @@ test.describe('Admin User Pagination E2E', () => {
   test('should display pagination when more than PAGE_SIZE users exist', async ({
     page,
   }) => {
+    test.fixme(
+      true,
+      'Needs >PAGE_SIZE (50) users; the lane has a handful and auth.users FK makes bulk seeding expensive — #172'
+    );
     await page.goto(`${BP}/admin/users`);
     await page.waitForLoadState('networkidle');
 

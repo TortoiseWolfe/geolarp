@@ -427,6 +427,10 @@ test.describe('Admin Dashboard E2E', () => {
     });
 
     test('should search/filter users', async ({ page }) => {
+      test.fixme(
+        true,
+        'Needs >PAGE_SIZE (50) users; the lane has a handful and auth.users FK makes bulk seeding expensive — #172'
+      );
       await page.goto(`${BP}/admin/users`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);
