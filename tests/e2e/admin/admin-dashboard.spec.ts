@@ -17,102 +17,70 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { createClient } from '@supabase/supabase-js';
+import {
+  seedIsolatedAdmin,
+  deleteIsolatedAdmin,
+  injectSessionIntoPage,
+  type IsolatedAdmin,
+} from '../utils/test-user-factory';
 
-const ADMIN_EMAIL = 'test@example.com';
-const ADMIN_PASSWORD = 'TestPassword123!';
-
-// Next.js basePath — all routes must be prefixed
-const BP = '/geoLARP';
-
-// Local-only spec (skipped in CI). The Node test process reaches local Kong via
-// SUPABASE_ADMIN_URL (compose-internal supabase-kong:8000); the browser reaches
-// it via NEXT_PUBLIC_SUPABASE_URL (host.docker.internal:54321). The old
-// page.route interception that rewrote localhost:54321 → a hardcoded container
-// name is gone — see #121.
-const SUPABASE_ADMIN_URL =
-  process.env.SUPABASE_ADMIN_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+/**
+ * Next.js basePath, DERIVED — never hardcoded.
+ *
+ * This read `const BP = '/geoLARP'`, so every route in this file resolved to
+ * `/geoLARP/admin...` and returned a 404 page. The tests then failed on a missing
+ * container, which reads as "the admin console is broken" rather than "we asked for a
+ * page that does not exist".
+ *
+ * `public/CNAME` exists, so this repo deploys at the apex and its basePath is `''` — the
+ * one value it can never be is the literal `/geoLARP` this hardcoded. CLAUDE.md records
+ * the same trap for `public/manifest.json`: "that was the stale value, it is what this
+ * repo can never generate, and reverting it is how four sessions lost the correct file."
+ *
+ * The other two admin specs already derived it; this one was the outlier.
+ */
+const BP = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 test.describe('Admin Dashboard E2E', () => {
-  // WHY THIS IS `fixme` AND NOT `skip` (#152 -> #159).
-  //
-  // It read `test.skip(!!process.env.CI, 'Skipped in CI: requires local Docker Supabase')`.
-  // That reason was false twice over. #575 made the local lane exactly that — "a Supabase per
-  // runner, brought up in the job" — and `e2e-local.yml` sets `CI: 'true'`, so the guard fired
-  // against the one environment that satisfies it. The hosted lane sets `CI` too, so 29 tests
-  // ran in NEITHER while `E2E (local) result` stayed a required context on `main`.
-  //
-  // Unskipping them (#152) is what revealed the real blocker: these specs sign in as
-  // `test@example.com` and assume admin-ness comes from `app_metadata`. It does not.
-  // `user_profiles.is_admin` is "the single authority since #240" — see
-  // `admin-depth.spec.ts:15-18` — so `AdminGate` redirects, it renders `null` for a non-admin,
-  // and the console container never appears. That fails in EVERY environment; no lane keying
-  // can fix it.
-  //
-  // `fixme` rather than `skip` because the statement has to be true: this is known-broken and
-  // tracked, not unsupported here. `mode: 'serial'` means the first failure skips the rest, so
-  // the honest count of coverage these files deliver today is zero.
-  //
-  // #159 moves them onto `seedIsolatedAdmin` / `openAdminAs`, which is what `admin-depth.spec.ts`
-  // already uses and the only reason that file's tests pass.
-  test.fixme(
-    true,
-    'Asserts admin via app_metadata; user_profiles.is_admin is the authority since #240 — see #159'
-  );
   test.describe.configure({ mode: 'serial' });
 
-  test.beforeEach(async ({ page }) => {
-    // Sign in via the Supabase API from the Node test process (reaches Kong via
-    // the compose-internal admin URL locally; public URL on cloud/CI).
-    const supabase = createClient(SUPABASE_ADMIN_URL, SUPABASE_ANON_KEY, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
-    });
-    if (error || !data.session) {
-      throw new Error(
-        `Supabase sign-in failed: ${error?.message ?? 'no session'}`
-      );
-    }
+  /**
+   * SEEDED, NOT ASSUMED (#159).
+   *
+   * These signed in as `test@example.com` and assumed admin-ness came from
+   * `app_metadata`. It does not: `user_profiles.is_admin` is "the single authority since
+   * #240" (`admin-depth.spec.ts:15-18`). `AdminGate` redirected, rendered `null`, the
+   * console container never appeared — so the first test in each file failed and
+   * `mode: 'serial'` skipped every test behind it. Twenty-nine tests, zero coverage.
+   *
+   * `seedIsolatedAdmin` promotes a throwaway user through that authority and REFUSES to
+   * return one whose `is_admin()` does not answer true through the user's OWN session, so
+   * a silent demotion fails here rather than sixty lines later as a missing element.
+   */
+  let fixture: IsolatedAdmin | null = null;
 
-    // Navigate to a page so we have a browsing context for localStorage
+  test.beforeAll(async () => {
+    fixture = await seedIsolatedAdmin();
+  });
+
+  test.afterAll(async () => {
+    await deleteIsolatedAdmin(fixture);
+    fixture = null;
+  });
+
+  test.beforeEach(async ({ page }) => {
+    // SKIPPED AT RUNTIME, NOT AT COLLECTION. A `test.skip(!fixture, …)` in the describe
+    // body evaluates before `beforeAll` has run, when `fixture` is still null — it would
+    // skip every test unconditionally and report green having run nothing, which is the
+    // exact failure #159 exists to remove. Inside a hook it evaluates after seeding.
+    test.skip(!fixture, 'Admin client unavailable to seed an admin');
+
     await page.goto(`${BP}/`);
     await page.waitForLoadState('domcontentloaded');
-
-    // Inject the Supabase session into localStorage so AuthContext picks it up
-    const session = data.session;
-    await page.evaluate(
-      ({ accessToken, refreshToken, expiresAt, user: u }) => {
-        const storageKey = Object.keys(localStorage).find((k) =>
-          k.startsWith('sb-')
-        );
-        const key = storageKey || 'sb-localhost-auth-token';
-        localStorage.setItem(
-          key,
-          JSON.stringify({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-            expires_at: expiresAt,
-            expires_in: 3600,
-            token_type: 'bearer',
-            user: u,
-          })
-        );
-      },
-      {
-        accessToken: session.access_token,
-        refreshToken: session.refresh_token,
-        expiresAt: session.expires_at,
-        user: session.user,
-      }
-    );
-
-    // Reload so AuthContext reads the injected session
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    // One shared helper instead of the hand-rolled sign-in and localStorage write each of
+    // these used to carry. It derives the storage key the way the browser app does, which
+    // is the part the three copies got subtly differently.
+    await injectSessionIntoPage(page, fixture!.session);
   });
 
   test.describe('Overview Page', () => {
@@ -186,6 +154,18 @@ test.describe('Admin Dashboard E2E', () => {
       await page.goto(`${BP}/admin/payments`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);
+      // FLOOR, so a data-less run cannot pass vacuously (#861, #396).
+      //
+      // Every assertion below this line is inside a data-presence `if`, so on a stack with
+      // no payment providers the test asserted NOTHING and still went green — which is how four tests
+      // in this file passed while measuring nothing the first time they ran. The invariant
+      // that always holds is that the PAGE rendered; the data check stays conditional
+      // beneath it. Same principle as `admin-depth.spec.ts:64-72`: assert the invariant and
+      // keep a floor that stops "nothing rendered" and "everything is correct" being the
+      // same green.
+      await expect(
+        page.getByRole('heading', { name: /payment/i }).first()
+      ).toBeVisible({ timeout: 10000 });
 
       const providerSection = page.getByText(/stripe|paypal/i).first();
       if (
@@ -260,6 +240,20 @@ test.describe('Admin Dashboard E2E', () => {
       await page.goto(`${BP}/admin/audit`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);
+      // FLOOR, so a data-less run cannot pass vacuously (#861, #396).
+      //
+      // Every assertion below this line is inside a data-presence `if`, so on a stack with
+      // no burst activity the test asserted NOTHING and still went green — which is how four tests
+      // in this file passed while measuring nothing the first time they ran. The invariant
+      // that always holds is that the PAGE rendered; the data check stays conditional
+      // beneath it. Same principle as `admin-depth.spec.ts:64-72`: assert the invariant and
+      // keep a floor that stops "nothing rendered" and "everything is correct" being the
+      // same green.
+      await expect(
+        page
+          .getByRole('heading', { name: /authentication statistics/i })
+          .first()
+      ).toBeVisible({ timeout: 10000 });
 
       const burstCards = page.locator('[data-testid="burst-card"]');
       const burstCount = await burstCards.count();
@@ -300,6 +294,20 @@ test.describe('Admin Dashboard E2E', () => {
       await page.goto(`${BP}/admin/audit`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);
+      // FLOOR, so a data-less run cannot pass vacuously (#861, #396).
+      //
+      // Every assertion below this line is inside a data-presence `if`, so on a stack with
+      // no audit events the test asserted NOTHING and still went green — which is how four tests
+      // in this file passed while measuring nothing the first time they ran. The invariant
+      // that always holds is that the PAGE rendered; the data check stays conditional
+      // beneath it. Same principle as `admin-depth.spec.ts:64-72`: assert the invariant and
+      // keep a floor that stops "nothing rendered" and "everything is correct" being the
+      // same green.
+      await expect(
+        page
+          .getByRole('heading', { name: /authentication statistics/i })
+          .first()
+      ).toBeVisible({ timeout: 10000 });
 
       const filterSelect = page.locator('[data-testid="event-type-filter"]');
       if (await filterSelect.isVisible({ timeout: 3000 }).catch(() => false)) {
@@ -346,6 +354,20 @@ test.describe('Admin Dashboard E2E', () => {
       await page.goto(`${BP}/admin/audit`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);
+      // FLOOR, so a data-less run cannot pass vacuously (#861, #396).
+      //
+      // Every assertion below this line is inside a data-presence `if`, so on a stack with
+      // no failed logins the test asserted NOTHING and still went green — which is how four tests
+      // in this file passed while measuring nothing the first time they ran. The invariant
+      // that always holds is that the PAGE rendered; the data check stays conditional
+      // beneath it. Same principle as `admin-depth.spec.ts:64-72`: assert the invariant and
+      // keep a floor that stops "nothing rendered" and "everything is correct" being the
+      // same green.
+      await expect(
+        page
+          .getByRole('heading', { name: /authentication statistics/i })
+          .first()
+      ).toBeVisible({ timeout: 10000 });
 
       const anomalyHeading = page.getByRole('heading', {
         name: /anomaly alerts/i,
@@ -374,7 +396,31 @@ test.describe('Admin Dashboard E2E', () => {
   });
 
   test.describe('Users Page', () => {
+    /**
+     * THE WHOLE PAGE IS BLOCKED, NOT INDIVIDUAL ASSERTIONS (#169).
+     *
+     * `/admin/users` renders for a legitimately promoted admin — gate open, rail and tabs
+     * drawn — and then shows "Failed to load user data" with Total Users 0. Every test
+     * here depends on that data, so marking them one at a time just moves the failure to
+     * the next test in the serial chain; I did that once before writing this.
+     *
+     * The reason the page cannot say what went wrong is #168: four admin services throw
+     * the raw PostgrestError, which is not an Error, so the page renders its generic
+     * fallback and discards what Postgres said. #168 is the prerequisite for diagnosing
+     * #169.
+     *
+     * Kept rather than deleted: these are the only thing that noticed the page is broken.
+     */
+    test.fixme(
+      true,
+      '/admin/users fails to load and the page discards the reason — #169, blocked on #168'
+    );
+
     test('should display users table with data', async ({ page }) => {
+      test.fixme(
+        true,
+        '/admin/users errors and the page discards the reason (#169); needs seeded users (#168 first)'
+      );
       await page.goto(`${BP}/admin/users`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);

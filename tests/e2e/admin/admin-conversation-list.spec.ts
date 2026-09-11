@@ -19,10 +19,13 @@
 
 import { test, expect } from '@playwright/test';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import {
+  seedIsolatedAdmin,
+  deleteIsolatedAdmin,
+  injectSessionIntoPage,
+  type IsolatedAdmin,
+} from '../utils/test-user-factory';
 import { STALE_THRESHOLD_MS } from '../../../src/components/organisms/AdminConversationList/AdminConversationList';
-
-const ADMIN_EMAIL = 'test@example.com';
-const ADMIN_PASSWORD = 'TestPassword123!';
 
 const BP = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
@@ -32,7 +35,6 @@ const BP = process.env.NEXT_PUBLIC_BASE_PATH || '';
 // --host-resolver-rules hack needed — see #121.
 const SUPABASE_ADMIN_URL =
   process.env.SUPABASE_ADMIN_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Seed placed safely past the threshold. Using STALE_THRESHOLD_MS * 1.5
@@ -47,38 +49,23 @@ const STALE_LAST_MESSAGE = new Date(
 const STALE_CONV_ID = 'eeeeeeee-eeee-4eee-aeee-000000000e2e';
 
 test.describe('Admin Conversation List E2E', () => {
-  // WHY THIS IS `fixme` AND NOT `skip` (#152 -> #159).
-  //
-  // It read `test.skip(!!process.env.CI, 'Skipped in CI: requires local Docker Supabase')`.
-  // That reason was false twice over. #575 made the local lane exactly that — "a Supabase per
-  // runner, brought up in the job" — and `e2e-local.yml` sets `CI: 'true'`, so the guard fired
-  // against the one environment that satisfies it. The hosted lane sets `CI` too, so 29 tests
-  // ran in NEITHER while `E2E (local) result` stayed a required context on `main`.
-  //
-  // Unskipping them (#152) is what revealed the real blocker: these specs sign in as
-  // `test@example.com` and assume admin-ness comes from `app_metadata`. It does not.
-  // `user_profiles.is_admin` is "the single authority since #240" — see
-  // `admin-depth.spec.ts:15-18` — so `AdminGate` redirects, it renders `null` for a non-admin,
-  // and the console container never appears. That fails in EVERY environment; no lane keying
-  // can fix it.
-  //
-  // `fixme` rather than `skip` because the statement has to be true: this is known-broken and
-  // tracked, not unsupported here. `mode: 'serial'` means the first failure skips the rest, so
-  // the honest count of coverage these files deliver today is zero.
-  //
-  // #159 moves them onto `seedIsolatedAdmin` / `openAdminAs`, which is what `admin-depth.spec.ts`
-  // already uses and the only reason that file's tests pass.
-  test.fixme(
-    true,
-    'Asserts admin via app_metadata; user_profiles.is_admin is the authority since #240 — see #159'
-  );
   test.describe.configure({ mode: 'serial' });
 
   let serviceClient: SupabaseClient;
 
+  /**
+   * SEEDED, NOT ASSUMED (#159). This signed in as `test@example.com` and assumed
+   * admin-ness came from `app_metadata`; `user_profiles.is_admin` is "the single authority
+   * since #240" (`admin-depth.spec.ts:15-18`). `AdminGate` redirected and the list
+   * container never rendered.
+   */
+  let fixture: IsolatedAdmin | null = null;
+
   test.beforeAll(async () => {
     // Supabase seeding can exceed the default 30s on a cold local stack.
     test.setTimeout(60000);
+
+    fixture = await seedIsolatedAdmin();
 
     // Seed the stale conversation. service_role bypasses RLS; conversations
     // RLS is participant-only and the test process is neither participant.
@@ -132,54 +119,23 @@ test.describe('Admin Conversation List E2E', () => {
 
   test.afterAll(async () => {
     await serviceClient?.from('conversations').delete().eq('id', STALE_CONV_ID);
+    await deleteIsolatedAdmin(fixture);
+    fixture = null;
   });
 
   test.beforeEach(async ({ page }) => {
-    const supabase = createClient(SUPABASE_ADMIN_URL, SUPABASE_ANON_KEY, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
-    });
-    if (error || !data.session) {
-      throw new Error(
-        `Supabase sign-in failed: ${error?.message ?? 'no session'}`
-      );
-    }
+    // Runtime, not collection: a `test.skip(!fixture, …)` in the describe body runs
+    // before `beforeAll` has seeded, so it would skip everything and report green
+    // having run nothing — the exact shape #159 exists to remove.
+    test.skip(!fixture, 'Admin client unavailable to seed an admin');
 
     await page.goto(`${BP}/`);
     await page.waitForLoadState('domcontentloaded');
+    await injectSessionIntoPage(page, fixture!.session);
 
-    const session = data.session;
-    // Storage key must match the BROWSER app's, derived from the browser URL.
-    const browserUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_ADMIN_URL;
-    const supabaseHost = new URL(browserUrl).hostname.split('.')[0];
-    const storageKey = `sb-${supabaseHost}-auth-token`;
-    await page.evaluate(
-      ({ key, accessToken, refreshToken, expiresAt, user: u }) => {
-        localStorage.setItem(
-          key,
-          JSON.stringify({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-            expires_at: expiresAt,
-            expires_in: 3600,
-            token_type: 'bearer',
-            user: u,
-          })
-        );
-      },
-      {
-        key: storageKey,
-        accessToken: session.access_token,
-        refreshToken: session.refresh_token,
-        expiresAt: session.expires_at,
-        user: session.user,
-      }
-    );
-
+    // The admin route itself. Dropped when this beforeEach was rewritten for #159, which
+    // left every test measuring the HOME page — and the failure read as "the container is
+    // missing" rather than "we never went there". Exactly the #454 shape, self-inflicted.
     await page.goto(`${BP}/admin/messaging`);
     await page.waitForLoadState('networkidle');
   });
