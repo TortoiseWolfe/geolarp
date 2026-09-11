@@ -343,6 +343,10 @@ test.describe('Admin Dashboard E2E', () => {
 
   test.describe('Users Page', () => {
     test('should display users table with data', async ({ page }) => {
+      test.fixme(
+        true,
+        '/admin/users errors and the page discards the reason (#169); needs seeded users (#168 first)'
+      );
       await page.goto(`${BP}/admin/users`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);

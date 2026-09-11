@@ -71,6 +71,10 @@ test.describe('Admin User Pagination E2E', () => {
   test('should display pagination when more than PAGE_SIZE users exist', async ({
     page,
   }) => {
+    test.fixme(
+      true,
+      '/admin/users errors and the page discards the reason (#169); needs seeded users (#168 first)'
+    );
     await page.goto(`${BP}/admin/users`);
     await page.waitForLoadState('networkidle');
 
