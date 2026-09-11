@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { validatePassword } from '@/lib/auth/password-validator';
 import { passwordChangeErrorMessage } from '@/lib/auth/password-change-errors';
+import NonceChallengeModal from '@/components/auth/NonceChallengeModal';
 import type { UserAttributes } from '@supabase/supabase-js';
 import { logAuthEvent } from '@/lib/auth/audit-logger';
 import AvatarDisplay from '@/components/atomic/AvatarDisplay';
@@ -62,6 +63,8 @@ export default function AccountSettings({
   }, [profile]);
 
   const [currentPassword, setCurrentPassword] = useState('');
+  /** Open only after gotrue asks for a nonce — a session older than 24 hours (#166). */
+  const [needsNonce, setNeedsNonce] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   // Feature 038: Split error/success states for profile and password forms (FR-003)
@@ -192,7 +195,18 @@ export default function AccountSettings({
     }
 
     setLoading(true);
+    await submitPasswordChange();
+  };
 
+  /**
+   * The actual update, factored out so the nonce path can retry it (#166).
+   *
+   * `nonce` is present only on the retry after `NonceChallengeModal` collected a code.
+   * gotrue demands one when the session is older than 24 hours (`user.go:157`), and
+   * ignores it otherwise — so the same call serves both paths and the common case still
+   * sends no nonce and triggers no email.
+   */
+  const submitPasswordChange = async (nonce?: string) => {
     /**
      * `current_password` IS a gotrue field; it is missing only from auth-js's types.
      *
@@ -212,6 +226,7 @@ export default function AccountSettings({
     const attributes: UserAttributes & { current_password?: string } = {
       password,
       current_password: currentPassword,
+      ...(nonce ? { nonce } : {}),
     };
 
     const { error: updateError } = await supabase.auth.updateUser(attributes);
@@ -227,6 +242,15 @@ export default function AccountSettings({
           success: false,
           error_message: updateError.message,
         });
+      }
+
+      // A stale session is not an error to report, it is a step to offer (#166). The
+      // modal collects the emailed code and retries; the message stays as the fallback
+      // for anyone who dismisses it.
+      if (updateError.code === 'reauthentication_needed') {
+        setLoading(false);
+        setNeedsNonce(true);
+        return;
       }
 
       // Map on the CODE, never the message: gotrue returns byte-identical text for a
@@ -246,6 +270,7 @@ export default function AccountSettings({
 
       setPasswordSuccess(true);
       // Feature 038 FR-014: Password fields NOT cleared on failure, but cleared on success
+      setNeedsNonce(false);
       setCurrentPassword('');
       setPassword('');
       setConfirmPassword('');
@@ -484,6 +509,29 @@ export default function AccountSettings({
           )}
         </div>
       </section>
+
+      {/*
+        Only mounted once gotrue has actually asked for a nonce. Mounting it eagerly would
+        fire `reauthenticate()` on open — and that email comes out of a budget of two an
+        hour, project-wide, shared with signup confirmations (#166).
+      */}
+      {needsNonce && (
+        <NonceChallengeModal
+          isOpen={needsNonce}
+          onSubmit={(nonce) => {
+            setNeedsNonce(false);
+            setLoading(true);
+            void submitPasswordChange(nonce);
+          }}
+          onClose={() => {
+            setNeedsNonce(false);
+            // Dismissing leaves them where they were, with the route that always works.
+            setPasswordError(
+              'For security, sign out and sign back in, then change your password.'
+            );
+          }}
+        />
+      )}
 
       {/* Password Change */}
       <form onSubmit={handleChangePassword} className="card bg-base-200">
