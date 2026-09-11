@@ -154,6 +154,18 @@ test.describe('Admin Dashboard E2E', () => {
       await page.goto(`${BP}/admin/payments`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);
+      // FLOOR, so a data-less run cannot pass vacuously (#861, #396).
+      //
+      // Every assertion below this line is inside a data-presence `if`, so on a stack with
+      // no payment providers the test asserted NOTHING and still went green — which is how four tests
+      // in this file passed while measuring nothing the first time they ran. The invariant
+      // that always holds is that the PAGE rendered; the data check stays conditional
+      // beneath it. Same principle as `admin-depth.spec.ts:64-72`: assert the invariant and
+      // keep a floor that stops "nothing rendered" and "everything is correct" being the
+      // same green.
+      await expect(
+        page.getByRole('heading', { name: /payment/i }).first()
+      ).toBeVisible({ timeout: 10000 });
 
       const providerSection = page.getByText(/stripe|paypal/i).first();
       if (
@@ -228,6 +240,20 @@ test.describe('Admin Dashboard E2E', () => {
       await page.goto(`${BP}/admin/audit`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);
+      // FLOOR, so a data-less run cannot pass vacuously (#861, #396).
+      //
+      // Every assertion below this line is inside a data-presence `if`, so on a stack with
+      // no burst activity the test asserted NOTHING and still went green — which is how four tests
+      // in this file passed while measuring nothing the first time they ran. The invariant
+      // that always holds is that the PAGE rendered; the data check stays conditional
+      // beneath it. Same principle as `admin-depth.spec.ts:64-72`: assert the invariant and
+      // keep a floor that stops "nothing rendered" and "everything is correct" being the
+      // same green.
+      await expect(
+        page
+          .getByRole('heading', { name: /authentication statistics/i })
+          .first()
+      ).toBeVisible({ timeout: 10000 });
 
       const burstCards = page.locator('[data-testid="burst-card"]');
       const burstCount = await burstCards.count();
@@ -268,6 +294,20 @@ test.describe('Admin Dashboard E2E', () => {
       await page.goto(`${BP}/admin/audit`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);
+      // FLOOR, so a data-less run cannot pass vacuously (#861, #396).
+      //
+      // Every assertion below this line is inside a data-presence `if`, so on a stack with
+      // no audit events the test asserted NOTHING and still went green — which is how four tests
+      // in this file passed while measuring nothing the first time they ran. The invariant
+      // that always holds is that the PAGE rendered; the data check stays conditional
+      // beneath it. Same principle as `admin-depth.spec.ts:64-72`: assert the invariant and
+      // keep a floor that stops "nothing rendered" and "everything is correct" being the
+      // same green.
+      await expect(
+        page
+          .getByRole('heading', { name: /authentication statistics/i })
+          .first()
+      ).toBeVisible({ timeout: 10000 });
 
       const filterSelect = page.locator('[data-testid="event-type-filter"]');
       if (await filterSelect.isVisible({ timeout: 3000 }).catch(() => false)) {
@@ -314,6 +354,20 @@ test.describe('Admin Dashboard E2E', () => {
       await page.goto(`${BP}/admin/audit`);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);
+      // FLOOR, so a data-less run cannot pass vacuously (#861, #396).
+      //
+      // Every assertion below this line is inside a data-presence `if`, so on a stack with
+      // no failed logins the test asserted NOTHING and still went green — which is how four tests
+      // in this file passed while measuring nothing the first time they ran. The invariant
+      // that always holds is that the PAGE rendered; the data check stays conditional
+      // beneath it. Same principle as `admin-depth.spec.ts:64-72`: assert the invariant and
+      // keep a floor that stops "nothing rendered" and "everything is correct" being the
+      // same green.
+      await expect(
+        page
+          .getByRole('heading', { name: /authentication statistics/i })
+          .first()
+      ).toBeVisible({ timeout: 10000 });
 
       const anomalyHeading = page.getByRole('heading', {
         name: /anomaly alerts/i,
