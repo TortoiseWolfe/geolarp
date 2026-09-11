@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { adminQueryError } from './admin-query-error';
 import type { PaymentActivity } from '@/types/payment';
 
 export interface AdminPaymentStats {
@@ -59,7 +60,7 @@ export class AdminPaymentService {
   async getStats(): Promise<AdminPaymentStats> {
     this.ensureInitialized();
     const { data, error } = await this.supabase.rpc('admin_payment_stats');
-    if (error) throw error;
+    if (error) throw adminQueryError('admin_payment_stats', error);
     return data as AdminPaymentStats;
   }
 
@@ -93,7 +94,7 @@ export class AdminPaymentService {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (error) throw error;
+    if (error) throw adminQueryError('payment_results select', error);
     return (data ?? []).map((r: Record<string, unknown>) => ({
       id: r.id as string,
       provider: r.provider as string,

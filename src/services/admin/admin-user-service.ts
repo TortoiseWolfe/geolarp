@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { adminQueryError } from './admin-query-error';
 
 export interface AdminUserStats {
   total_users: number;
@@ -52,7 +53,7 @@ export class AdminUserService {
   async getStats(): Promise<AdminUserStats> {
     this.ensureInitialized();
     const { data, error } = await this.supabase.rpc('admin_user_stats');
-    if (error) throw error;
+    if (error) throw adminQueryError('admin_user_stats', error);
     return data as AdminUserStats;
   }
 
