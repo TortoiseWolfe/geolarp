@@ -427,29 +427,31 @@ test.describe('Admin Dashboard E2E', () => {
     });
 
     test('should search/filter users', async ({ page }) => {
-      test.fixme(
-        true,
-        'Needs >PAGE_SIZE (50) users; the lane has a handful and auth.users FK makes bulk seeding expensive — #172'
-      );
       await page.goto(`${BP}/admin/users`);
       await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(3000);
 
-      const searchInput = page
-        .locator(
-          'input[type="search"], input[placeholder*="search" i], input[placeholder*="filter" i]'
-        )
-        .first();
-      if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await searchInput.fill('alice');
-        await page.waitForTimeout(1000);
+      // WAS VACUOUS, NOT DATA-STARVED (#172). This wrapped every assertion in
+      // `if (await searchInput.isVisible())` and then only checked the table had not
+      // disappeared — so it passed whether or not searching did anything, and it passed
+      // hardest when the input was missing entirely. It never needed >PAGE_SIZE users;
+      // it needed an assertion.
+      const search = page.locator('[data-testid="user-search"]');
+      await expect(search).toBeVisible({ timeout: 15000 });
 
-        // Table should remain present after search (filtered results may be
-        // empty or non-empty — both are valid; we're asserting the search
-        // didn't crash the view).
-        const table = page.locator('table').first();
-        await expect(table).toBeVisible();
-      }
+      const countLine = page.locator('[data-testid="user-count"]');
+      const baseline = await countLine.textContent();
+
+      // A term nothing can match must narrow the result, whatever the data volume.
+      await search.fill('zzz-no-user-can-match-this-zzz');
+      await expect(countLine).not.toHaveText(baseline ?? '', {
+        timeout: 10000,
+      });
+
+      // And clearing it must put back what was there — proving the filter is applied
+      // and lifted, rather than the view having simply broken.
+      await search.fill('');
+      await expect(countLine).toHaveText(baseline ?? '', { timeout: 10000 });
+      await expect(page.locator('[data-testid="user-table"]')).toBeVisible();
     });
 
     test('should display activity badges', async ({ page }) => {

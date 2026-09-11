@@ -15,7 +15,7 @@
  *     geolarp-geolarp-1 npx playwright test tests/e2e/admin/admin-user-pagination.spec.ts --project=chromium
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import {
   seedIsolatedAdmin,
   deleteIsolatedAdmin,
@@ -28,30 +28,6 @@ const BP = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 test.describe('Admin User Pagination E2E', () => {
   test.describe.configure({ mode: 'serial' });
-
-  /**
-   * EVERY TEST IN THIS FILE NEEDS MORE THAN PAGE_SIZE USERS (#172).
-   *
-   * PAGE_SIZE is 50 (`src/app/admin/users/page.tsx:14`) and a per-runner Supabase has a
-   * handful, so there is no page 2, no Next button to click, and nothing distinctive to
-   * search for. All five tests here assert behaviour that only exists above that
-   * threshold.
-   *
-   * MARKED AS A GROUP, DELIBERATELY. Marking them one at a time just moves the failure to
-   * the next test in the serial chain — I did that twice on this page before writing it
-   * down. The page itself is fine: it was genuinely broken in production (#169, a
-   * SECURITY INVOKER function hitting 42501 on a column `authenticated` cannot read) and
-   * that is fixed.
-   *
-   * Seeding is not a one-liner: `user_profiles.id REFERENCES auth.users(id)`, so 51
-   * profiles means 51 real auth users per shard per run. #172 proposes asserting the RULE
-   * instead — pagination absent at or below PAGE_SIZE, present above — which needs no
-   * fixture and covers both branches rather than one.
-   */
-  test.fixme(
-    true,
-    'Every test here needs >PAGE_SIZE (50) users; assert the rule instead — #172'
-  );
 
   /**
    * SEEDED, NOT ASSUMED (#159).
@@ -92,197 +68,182 @@ test.describe('Admin User Pagination E2E', () => {
     await injectSessionIntoPage(page, fixture!.session);
   });
 
-  test('should display pagination when more than PAGE_SIZE users exist', async ({
-    page,
-  }) => {
-    await page.goto(`${BP}/admin/users`);
-    await page.waitForLoadState('networkidle');
+  /**
+   * PAGE_SIZE, mirrored from `src/app/admin/users/page.tsx:14`.
+   *
+   * Not imported: that module is a client component with a `supabase` import chain, and
+   * pulling it into the Node test process drags the browser client in with it.
+   * `pagination-rule-mirrors-page-size.test.js` fails if the two ever disagree, which is
+   * the part that actually needs guarding.
+   */
+  const PAGE_SIZE = 50;
 
-    const container = page.locator('[data-testid="admin-users"]');
-    await expect(container).toBeVisible({ timeout: 15000 });
-
-    // Wait for table to load
-    const table = page.locator('[data-testid="user-table"]');
-    await expect(table).toBeVisible({ timeout: 10000 });
-
-    // Pagination should be visible (seed data has 50+ users)
-    const pagination = page.locator('[data-testid="user-pagination"]');
-    await expect(pagination).toBeVisible({ timeout: 5000 });
-
-    // Page indicator shows "Page 1 of N"
-    const indicator = page.locator('[data-testid="user-pagination-indicator"]');
-    await expect(indicator).toContainText('Page 1 of');
-
-    // Previous disabled on first page
-    const prevBtn = pagination.locator('button[aria-label="Previous page"]');
-    await expect(prevBtn).toBeDisabled();
-
-    // Next enabled (there are more pages)
-    const nextBtn = pagination.locator('button[aria-label="Next page"]');
-    await expect(nextBtn).toBeEnabled();
-  });
-
-  test('should navigate to page 2 and update table rows', async ({ page }) => {
-    await page.goto(`${BP}/admin/users`);
-    await page.waitForLoadState('networkidle');
-
-    const table = page.locator('[data-testid="user-table"]');
-    await expect(table).toBeVisible({ timeout: 10000 });
-
-    // Capture page 1 state
-    const page1Count = page.locator('[data-testid="user-count"]');
-    const page1CountText = await page1Count.textContent();
-
-    // Click Next
-    const nextBtn = page.locator('button[aria-label="Next page"]');
-    await nextBtn.click();
-
-    // Wait for indicator to update
-    const indicator = page.locator('[data-testid="user-pagination-indicator"]');
-    await expect(indicator).toContainText('Page 2 of', { timeout: 10000 });
-
-    // Range text should update (e.g., "Showing 51–100 of ...")
-    await expect(page1Count).not.toHaveText(page1CountText || '');
-
-    // Table still has rows
-    const page2Rows = table.locator('tbody tr');
-    const rowCount = await page2Rows.count();
-    expect(rowCount).toBeGreaterThan(0);
-  });
-
-  test('should search users and reset to page 1', async ({ page }) => {
-    await page.goto(`${BP}/admin/users`);
-    await page.waitForLoadState('networkidle');
-
-    const table = page.locator('[data-testid="user-table"]');
-    await expect(table).toBeVisible({ timeout: 10000 });
-
-    // Navigate to page 2 first
-    const nextBtn = page.locator('button[aria-label="Next page"]');
-    const pagination = page.locator('[data-testid="user-pagination"]');
-    await expect(pagination).toBeVisible({ timeout: 5000 });
-    await nextBtn.click();
-
-    const indicator = page.locator('[data-testid="user-pagination-indicator"]');
-    await expect(indicator).toContainText('Page 2 of', { timeout: 10000 });
-
-    // Now search — should reset to page 1
-    const searchInput = page.locator('[data-testid="user-search"]');
-    await searchInput.fill('alice');
-
-    // Wait for debounce (300ms) + network
-    await page.waitForTimeout(500);
-
-    // Page should reset — either back to "Page 1 of" or pagination hidden (results fit one page)
-    const paginationStillVisible = await pagination
-      .isVisible()
-      .catch(() => false);
-    if (paginationStillVisible) {
-      await expect(indicator).toContainText('Page 1 of');
+  /**
+   * The total the PAGE reports, read from "Showing 1–50 of 123".
+   *
+   * Every assertion below is derived from this rather than from an assumed fixture. That
+   * is the whole point of #172: these five tests each asserted one branch of a rule and
+   * needed 51 seeded users to reach it — and `user_profiles.id REFERENCES auth.users(id)`
+   * makes that 51 real auth users per shard, per run. Reading the total instead lets the
+   * same test assert the rule in whichever direction the data actually falls, and covers
+   * the branch that was never tested at all.
+   */
+  async function readTotal(page: Page): Promise<number> {
+    const line = page.locator('[data-testid="user-count"]');
+    await expect(line).toBeVisible({ timeout: 10000 });
+    const text = (await line.textContent()) ?? '';
+    const m = text.match(/of\s+([\d,]+)/);
+    if (!m) {
+      throw new Error(
+        `could not read a total from the count line: ${JSON.stringify(text)}. ` +
+          `Every assertion in this file derives from it, so a format change must fail ` +
+          `here rather than silently make the tests vacuous.`
+      );
     }
+    return Number.parseInt(m[1].replace(/,/g, ''), 10);
+  }
 
-    // Table should still be present after search (results may be empty or
-    // filtered — both are valid; the real assertion is the page-reset above).
-    await expect(table).toBeVisible();
-  });
-
-  test('should search, page forward, and confirm results update at each step', async ({
-    page,
-  }) => {
-    // Single-flow test: three state captures, two transitions. Searching and
-    // paging are independent code paths (handleSearchChange vs handlePageChange
-    // in admin/users/page.tsx) — this asserts both drive the table without
-    // having to assume the seed has 51+ rows sharing a search substring.
+  async function openUsers(page: Page) {
     await page.goto(`${BP}/admin/users`);
     await page.waitForLoadState('networkidle');
-
-    const table = page.locator('[data-testid="user-table"]');
-    await expect(table).toBeVisible({ timeout: 10000 });
-
-    const searchInput = page.locator('[data-testid="user-search"]');
-    const countLine = page.locator('[data-testid="user-count"]');
-    const indicator = page.locator('[data-testid="user-pagination-indicator"]');
-    const pagination = page.locator('[data-testid="user-pagination"]');
-    const nextBtn = page.locator('button[aria-label="Next page"]');
-    const firstRow = table.locator('tbody tr').first();
-
-    // --- State 0: unfiltered page 1 -----------------------------------------
-    await expect(pagination).toBeVisible({ timeout: 5000 });
-    await expect(indicator).toContainText('Page 1 of');
-    const baselineCount = await countLine.textContent();
-    const baselineFirstRow = await firstRow.textContent();
-    expect(baselineCount).toBeTruthy();
-    expect(baselineFirstRow).toBeTruthy();
-
-    // --- Transition 1: search -----------------------------------------------
-    // admin_list_users at migration:872-873 searches username OR display_name
-    // via ILIKE. Seed has only testadmin + testuser-b with non-null values;
-    // admin_list_users filters is_admin=FALSE so 'test' narrows to ≤1 row.
-    await searchInput.fill('test');
-    // Wait for the count line to change — debounce is 300ms, but polling on
-    // the mutated DOM is more honest than a fixed timeout.
-    await expect(countLine).not.toHaveText(baselineCount ?? '', {
-      timeout: 5000,
+    await expect(page.locator('[data-testid="admin-users"]')).toBeVisible({
+      timeout: 15000,
     });
-
-    // --- State 1: filtered --------------------------------------------------
-    // Results now fit one page — Pagination returns null when totalPages ≤ 1.
-    await expect(pagination).not.toBeVisible();
-    const filteredCount = await countLine.textContent();
-    expect(filteredCount).not.toBe(baselineCount);
-
-    // --- Transition 2: clear + page forward ---------------------------------
-    await searchInput.fill('');
-    // Back to unfiltered — count line returns to baseline.
-    await expect(countLine).toHaveText(baselineCount ?? '', { timeout: 5000 });
-    await expect(pagination).toBeVisible();
-    await nextBtn.click();
-
-    // --- State 2: page 2 ----------------------------------------------------
-    await expect(indicator).toContainText('Page 2 of', { timeout: 10000 });
-    // handlePageChange sets currentPage THEN awaits the fetch THEN setUsers
-    // (admin/users/page.tsx:76-85). The indicator is derived from currentPage
-    // so it flips to "Page 2" before rows arrive. A .textContent() snapshot
-    // here races the fetch; the auto-retrying not.toHaveText polls until
-    // setUsers re-renders the tbody — proof the server actually answered.
-    await expect(firstRow).not.toHaveText(baselineFirstRow ?? '', {
+    await expect(page.locator('[data-testid="user-table"]')).toBeVisible({
       timeout: 10000,
     });
+  }
+
+  /**
+   * THE RULE, straight from `Pagination.tsx:36-38`:
+   *
+   *     const totalPages = Math.ceil(totalItems / pageSize);
+   *     if (totalPages <= 1) return null;
+   *
+   * So the control appears exactly when there is somewhere to go. Asserting BOTH sides
+   * means a lane with two users tests the same contract as one with two hundred — and
+   * the "one page" side had never been covered by anything.
+   */
+  test('pagination appears exactly when there is more than one page', async ({
+    page,
+  }) => {
+    await openUsers(page);
+    const total = await readTotal(page);
+    const pagination = page.locator('[data-testid="user-pagination"]');
+
+    if (total > PAGE_SIZE) {
+      await expect(pagination).toBeVisible({ timeout: 5000 });
+      await expect(
+        page.locator('[data-testid="user-pagination-indicator"]')
+      ).toContainText(`Page 1 of ${Math.ceil(total / PAGE_SIZE)}`);
+      await expect(
+        pagination.locator('button[aria-label="Previous page"]')
+      ).toBeDisabled();
+      await expect(
+        pagination.locator('button[aria-label="Next page"]')
+      ).toBeEnabled();
+    } else {
+      // The branch the old test could never reach, and the one this lane is always in.
+      await expect(pagination).toHaveCount(0);
+    }
   });
 
-  test('should disable Next on last page', async ({ page }) => {
-    await page.goto(`${BP}/admin/users`);
-    await page.waitForLoadState('networkidle');
-
-    const pagination = page.locator('[data-testid="user-pagination"]');
-    await expect(pagination).toBeVisible({ timeout: 10000 });
-
-    // Read total pages from indicator text "Page 1 of N"
-    const indicator = page.locator('[data-testid="user-pagination-indicator"]');
-    const indicatorText = await indicator.textContent();
-    const match = indicatorText?.match(/Page \d+ of (\d+)/);
-    const totalPages = match ? parseInt(match[1], 10) : 1;
-
-    // Navigate to the last page
+  test('paging forward is offered only when there is a page to reach', async ({
+    page,
+  }) => {
+    await openUsers(page);
+    const total = await readTotal(page);
     const nextBtn = page.locator('button[aria-label="Next page"]');
-    for (let i = 1; i < totalPages; i++) {
+
+    if (total <= PAGE_SIZE) {
+      await expect(nextBtn).toHaveCount(0);
+      return;
+    }
+
+    const indicator = page.locator('[data-testid="user-pagination-indicator"]');
+    const countLine = page.locator('[data-testid="user-count"]');
+    const before = await countLine.textContent();
+
+    await nextBtn.click();
+    await expect(indicator).toContainText('Page 2 of', { timeout: 10000 });
+    // Auto-retrying, because `handlePageChange` sets currentPage BEFORE awaiting the
+    // fetch (`admin/users/page.tsx:76-85`) — the indicator flips before rows arrive, so
+    // a textContent() snapshot here races the response.
+    await expect(countLine).not.toHaveText(before ?? '', { timeout: 10000 });
+    await expect(
+      page.locator('[data-testid="user-table"] tbody tr').first()
+    ).toBeVisible();
+  });
+
+  test('Next is disabled on the last page, whichever page that is', async ({
+    page,
+  }) => {
+    await openUsers(page);
+    const total = await readTotal(page);
+    const nextBtn = page.locator('button[aria-label="Next page"]');
+
+    if (total <= PAGE_SIZE) {
+      await expect(nextBtn).toHaveCount(0);
+      return;
+    }
+
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    const indicator = page.locator('[data-testid="user-pagination-indicator"]');
+    for (let i = 1; i < totalPages; i += 1) {
       await nextBtn.click();
-      // Wait for page indicator to update instead of blind sleep
       await expect(indicator).toContainText(`Page ${i + 1} of`, {
         timeout: 10000,
       });
     }
-
-    // Verify we're on the last page
-    await expect(indicator).toContainText(
-      `Page ${totalPages} of ${totalPages}`
-    );
-
-    // Next should be disabled
     await expect(nextBtn).toBeDisabled();
+  });
 
-    // Previous should be enabled (unless there's only 1 page, but we wouldn't be here)
-    const prevBtn = pagination.locator('button[aria-label="Previous page"]');
-    await expect(prevBtn).toBeEnabled();
+  /**
+   * Searching needs no threshold at all — which is why this one never should have been
+   * gated on PAGE_SIZE. A term that matches nothing must narrow the table, and clearing
+   * it must restore what was there.
+   */
+  test('searching narrows the table, and clearing it restores the table', async ({
+    page,
+  }) => {
+    await openUsers(page);
+    const countLine = page.locator('[data-testid="user-count"]');
+    const baseline = await countLine.textContent();
+    const total = await readTotal(page);
+
+    const search = page.locator('[data-testid="user-search"]');
+    await search.fill('zzz-no-user-can-match-this-zzz');
+    // The page debounces at 300ms before refetching.
+    await expect(countLine).not.toHaveText(baseline ?? '', { timeout: 10000 });
+    expect(await readTotal(page)).toBeLessThan(total);
+
+    await search.fill('');
+    await expect(countLine).toHaveText(baseline ?? '', { timeout: 10000 });
+  });
+
+  test('searching returns to the first page', async ({ page }) => {
+    await openUsers(page);
+    const total = await readTotal(page);
+    const indicator = page.locator('[data-testid="user-pagination-indicator"]');
+    const search = page.locator('[data-testid="user-search"]');
+
+    if (total > PAGE_SIZE) {
+      await page.locator('button[aria-label="Next page"]').click();
+      await expect(indicator).toContainText('Page 2 of', { timeout: 10000 });
+    }
+
+    await search.fill('zzz-no-user-can-match-this-zzz');
+
+    // Whatever the data, the page index must not survive a new search. Above PAGE_SIZE
+    // that means returning to page 1; at or below it, the control is gone entirely —
+    // `handleSearchChange` sets currentPage to 0 either way
+    // (`admin/users/page.tsx:52-56`).
+    const pagination = page.locator('[data-testid="user-pagination"]');
+    if (await pagination.isVisible().catch(() => false)) {
+      await expect(indicator).toContainText('Page 1 of', { timeout: 10000 });
+    } else {
+      await expect(pagination).toHaveCount(0);
+    }
+    await expect(page.locator('[data-testid="user-table"]')).toBeVisible();
   });
 });
