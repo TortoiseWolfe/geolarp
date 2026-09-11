@@ -1560,7 +1560,26 @@ $$;
 CREATE OR REPLACE FUNCTION admin_user_stats()
 RETURNS JSON
 LANGUAGE plpgsql
-SECURITY INVOKER
+-- SECURITY DEFINER, and it has to be (#169). This was INVOKER, so it ran with the
+-- CALLER's privileges — and #38 deliberately narrowed `authenticated` to column-scoped
+-- SELECT on user_profiles that EXCLUDES `is_admin`, to stop any signed-in user running
+-- `UPDATE user_profiles SET is_admin = true WHERE id = auth.uid()`.
+--
+-- That hardening was right. The side effect was that both counts below filter on
+-- `WHERE is_admin = FALSE`, so every call raised 42501 "permission denied for table
+-- user_profiles" and /admin/users showed an error to real admins in PRODUCTION. Measured:
+-- `authenticated` holds SELECT on avatar_url, bio, created_at, display_name, id,
+-- updated_at, username, welcome_message_sent — and not is_admin.
+--
+-- Every sibling that reads that column is already DEFINER: admin_list_users,
+-- admin_overview, admin_messaging_trends. This was the lone INVOKER, which is also why
+-- the Overview page worked — admin_overview is DEFINER and calls this one internally, so
+-- the inner call inherits its privileges. Only the direct call failed.
+--
+-- The `IF NOT is_admin()` guard below is what keeps DEFINER safe: a non-admin gets '{}'
+-- rather than counts. `is_admin()` is itself DEFINER and reads the live column, so a
+-- revoked admin loses access immediately (#240).
+SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
@@ -1578,6 +1597,18 @@ BEGIN
   );
 END;
 $$;
+
+-- REVOKE FROM PUBLIC IS NOT ENOUGH ON SUPABASE, and assuming it was would have left this
+-- comment lying. The platform grants `anon` EXECUTE explicitly (`anon=X/postgres` in
+-- proacl), and a revoke from PUBLIC does not touch a role-specific grant — measured right
+-- after applying it. `anon` must be named.
+--
+-- The guard inside already returns '{}' for a non-admin, so this is defence in depth
+-- rather than the thing standing between anon and the data. admin_list_users still carries
+-- the weaker pair; worth aligning, tracked separately rather than widened here.
+REVOKE ALL ON FUNCTION admin_user_stats() FROM PUBLIC;
+REVOKE ALL ON FUNCTION admin_user_stats() FROM anon;
+GRANT EXECUTE ON FUNCTION admin_user_stats() TO authenticated;
 
 -- admin_messaging_stats(): Messaging metrics for admin dashboard
 CREATE OR REPLACE FUNCTION admin_messaging_stats()
