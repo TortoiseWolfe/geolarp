@@ -27,27 +27,31 @@ import {
 const BP = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 test.describe('Admin User Pagination E2E', () => {
+  test.describe.configure({ mode: 'serial' });
+
   /**
-   * THE WHOLE PAGE IS BLOCKED, NOT INDIVIDUAL ASSERTIONS (#169).
+   * EVERY TEST IN THIS FILE NEEDS MORE THAN PAGE_SIZE USERS (#172).
    *
-   * `/admin/users` renders for a legitimately promoted admin — gate open, rail and tabs
-   * drawn — and then shows "Failed to load user data" with Total Users 0. Every test
-   * here depends on that data, so marking them one at a time just moves the failure to
-   * the next test in the serial chain; I did that once before writing this.
+   * PAGE_SIZE is 50 (`src/app/admin/users/page.tsx:14`) and a per-runner Supabase has a
+   * handful, so there is no page 2, no Next button to click, and nothing distinctive to
+   * search for. All five tests here assert behaviour that only exists above that
+   * threshold.
    *
-   * The reason the page cannot say what went wrong is #168: four admin services throw
-   * the raw PostgrestError, which is not an Error, so the page renders its generic
-   * fallback and discards what Postgres said. #168 is the prerequisite for diagnosing
-   * #169.
+   * MARKED AS A GROUP, DELIBERATELY. Marking them one at a time just moves the failure to
+   * the next test in the serial chain — I did that twice on this page before writing it
+   * down. The page itself is fine: it was genuinely broken in production (#169, a
+   * SECURITY INVOKER function hitting 42501 on a column `authenticated` cannot read) and
+   * that is fixed.
    *
-   * Kept rather than deleted: these are the only thing that noticed the page is broken.
+   * Seeding is not a one-liner: `user_profiles.id REFERENCES auth.users(id)`, so 51
+   * profiles means 51 real auth users per shard per run. #172 proposes asserting the RULE
+   * instead — pagination absent at or below PAGE_SIZE, present above — which needs no
+   * fixture and covers both branches rather than one.
    */
   test.fixme(
     true,
-    '/admin/users fails to load and the page discards the reason — #169, blocked on #168'
+    'Every test here needs >PAGE_SIZE (50) users; assert the rule instead — #172'
   );
-
-  test.describe.configure({ mode: 'serial' });
 
   /**
    * SEEDED, NOT ASSUMED (#159).
