@@ -258,7 +258,18 @@ services:
 
   supabase-auth:
     profiles: [supabase]
-    image: supabase/gotrue:v2.177.0
+    # MUST NOT FALL BEHIND PRODUCTION, and it had by nineteen minor versions (#136).
+    #
+    # Production runs v2.196.0 (`GET /auth/v1/health`). This was pinned at v2.177.0, in
+    # which `current_password` does not exist AT ALL — zero occurrences in
+    # `internal/api/user.go`, against seven in v2.196.0. So the local lane could not test
+    # what production enforces: a spec sending `current_password` would have had the field
+    # silently dropped as an unknown key, passed green, and proven nothing.
+    #
+    # That is the shape CLAUDE.md keeps cataloguing — a probe that cannot report failure.
+    # `scripts/__tests__/local-gotrue-matches-production.test.js` now asserts a floor so a
+    # downgrade below the version that understands the field cannot happen quietly.
+    image: supabase/gotrue:v2.196.0
     restart: unless-stopped
     depends_on:
       supabase-db:
