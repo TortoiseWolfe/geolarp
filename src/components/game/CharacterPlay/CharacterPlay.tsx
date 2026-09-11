@@ -407,7 +407,17 @@ export default function CharacterPlay({
             </p>
           )}
 
-          {play.offset && (
+          {/*
+            GRID ONLY, EVEN THOUGH `offset` NOW EXISTS IN GPS MODE TOO (#140).
+
+            `resetToOrigin` sets the cell back to the anchor. In grid mode nothing
+            contradicts it. Under GPS the next fix overwrites the cell within seconds,
+            so the button would appear to work, snap back, and tell a walking player
+            the game had moved them somewhere they are not. The distance line is the
+            honest way back for someone on foot: it already carries the metres and the
+            bearing.
+          */}
+          {play.offset && play.mode === 'grid' && (
             <button
               type="button"
               className="btn btn-outline btn-sm min-h-11 self-start"
