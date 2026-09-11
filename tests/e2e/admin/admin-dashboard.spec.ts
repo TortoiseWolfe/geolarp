@@ -24,8 +24,22 @@ import {
   type IsolatedAdmin,
 } from '../utils/test-user-factory';
 
-// Next.js basePath — all routes must be prefixed
-const BP = '/geoLARP';
+/**
+ * Next.js basePath, DERIVED — never hardcoded.
+ *
+ * This read `const BP = '/geoLARP'`, so every route in this file resolved to
+ * `/geoLARP/admin...` and returned a 404 page. The tests then failed on a missing
+ * container, which reads as "the admin console is broken" rather than "we asked for a
+ * page that does not exist".
+ *
+ * `public/CNAME` exists, so this repo deploys at the apex and its basePath is `''` — the
+ * one value it can never be is the literal `/geoLARP` this hardcoded. CLAUDE.md records
+ * the same trap for `public/manifest.json`: "that was the stale value, it is what this
+ * repo can never generate, and reverting it is how four sessions lost the correct file."
+ *
+ * The other two admin specs already derived it; this one was the outlier.
+ */
+const BP = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 test.describe('Admin Dashboard E2E', () => {
   test.describe.configure({ mode: 'serial' });

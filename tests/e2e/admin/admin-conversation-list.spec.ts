@@ -132,6 +132,12 @@ test.describe('Admin Conversation List E2E', () => {
     await page.goto(`${BP}/`);
     await page.waitForLoadState('domcontentloaded');
     await injectSessionIntoPage(page, fixture!.session);
+
+    // The admin route itself. Dropped when this beforeEach was rewritten for #159, which
+    // left every test measuring the HOME page — and the failure read as "the container is
+    // missing" rather than "we never went there". Exactly the #454 shape, self-inflicted.
+    await page.goto(`${BP}/admin/messaging`);
+    await page.waitForLoadState('networkidle');
   });
 
   test('renders all five metadata column headers', async ({ page }) => {

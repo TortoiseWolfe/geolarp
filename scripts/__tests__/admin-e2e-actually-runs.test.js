@@ -121,6 +121,39 @@ describe('the admin specs run, as a real admin (#152, #159)', () => {
       );
     });
 
+    it(`${name} navigates to an admin route, not just the home page`, () => {
+      // THIS ASSERTION EXISTS BECAUSE I BROKE IT. Rewriting the `beforeEach` for #159
+      // deleted `page.goto('/admin/messaging')` from admin-conversation-list, so every
+      // test in that file measured the HOME page — and the failure read as "the console
+      // container is missing" rather than "we never went there". A spec that only ever
+      // visits `/` cannot be testing the admin console, whatever its assertions say.
+      //
+      // This is #454 in miniature: a clean, populated home page passes far more
+      // assertions than it should.
+      const src = stripComments(read(spec));
+      assert.match(
+        src,
+        /page\.goto\(`\$\{BP\}\/admin/,
+        `${spec} never navigates to an /admin route. Every assertion in it would be ` +
+          `measuring whatever page it happened to be left on — the home page — which is ` +
+          `exactly the failure #454 records.`
+      );
+    });
+
+    it(`${name} derives the basePath instead of hardcoding it`, () => {
+      const src = stripComments(read(spec));
+      const decl = src.split('\n').find((l) => l.includes('const BP'));
+      assert.ok(decl, `${spec} has no BP declaration to check`);
+      assert.doesNotMatch(
+        decl,
+        /=\s*['"`]\//,
+        `${spec} hardcodes a basePath: ${decl.trim()}. \`public/CNAME\` means this repo ` +
+          `deploys at the apex, so its basePath is '' — a literal '/geoLARP' is the one ` +
+          `value it can never have, and every route built from it 404s. CLAUDE.md records ` +
+          `the identical trap for public/manifest.json.`
+      );
+    });
+
     it(`${name} cleans up the admin it seeded`, () => {
       assert.match(
         stripComments(read(spec)),
