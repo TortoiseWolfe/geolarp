@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { validatePassword } from '@/lib/auth/password-validator';
+import { passwordChangeErrorMessage } from '@/lib/auth/password-change-errors';
+import type { UserAttributes } from '@supabase/supabase-js';
 import { logAuthEvent } from '@/lib/auth/audit-logger';
 import AvatarDisplay from '@/components/atomic/AvatarDisplay';
 import AvatarUpload from '@/components/molecular/AvatarUpload';
@@ -59,6 +61,7 @@ export default function AccountSettings({
     }
   }, [profile]);
 
+  const [currentPassword, setCurrentPassword] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   // Feature 038: Split error/success states for profile and password forms (FR-003)
@@ -172,6 +175,11 @@ export default function AccountSettings({
     setPasswordError(null);
     setPasswordSuccess(false);
 
+    if (!currentPassword) {
+      setPasswordError('Enter your current password to change it.');
+      return;
+    }
+
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
       setPasswordError(passwordValidation.error);
@@ -185,9 +193,28 @@ export default function AccountSettings({
 
     setLoading(true);
 
-    const { error: updateError } = await supabase.auth.updateUser({
+    /**
+     * `current_password` IS a gotrue field; it is missing only from auth-js's types.
+     *
+     * The server declares it at `internal/api/user.go:21` —
+     * `CurrentPassword *string \`json:"current_password,omitempty"\`` — and upstream's own
+     * tests drive `PUT /user` with it (`user_test.go:338-367`). auth-js's `UserAttributes`
+     * simply never listed it, while `_updateUser` spreads every attribute onto the request
+     * body verbatim (`GoTrueClient.js:1252`), so the value reaches the server today.
+     *
+     * WHY A TYPED VARIABLE AND NOT AN OBJECT LITERAL. TypeScript's excess-property check
+     * fires on literals only, so writing these fields inline is rejected with TS2353 while
+     * the identical object routed through a named type is accepted. That is the documented
+     * rule rather than a loophole, and it beats `as any`: the extra key stays named and
+     * typed, so a future auth-js release that adds `current_password` for real will merge
+     * with this instead of silently shadowing a cast.
+     */
+    const attributes: UserAttributes & { current_password?: string } = {
       password,
-    });
+      current_password: currentPassword,
+    };
+
+    const { error: updateError } = await supabase.auth.updateUser(attributes);
 
     setLoading(false);
 
@@ -202,7 +229,12 @@ export default function AccountSettings({
         });
       }
 
-      setPasswordError(updateError.message);
+      // Map on the CODE, never the message: gotrue returns byte-identical text for a
+      // missing and a wrong current password. `null` means it had nothing better to say
+      // than gotrue did — a weak-password rejection names the rule that failed.
+      setPasswordError(
+        passwordChangeErrorMessage(updateError) ?? updateError.message
+      );
     } else {
       // Log successful password change (T035)
       if (user) {
@@ -214,6 +246,7 @@ export default function AccountSettings({
 
       setPasswordSuccess(true);
       // Feature 038 FR-014: Password fields NOT cleared on failure, but cleared on success
+      setCurrentPassword('');
       setPassword('');
       setConfirmPassword('');
       // Feature 038 FR-013: Auto-dismiss success message after 3 seconds
@@ -457,6 +490,32 @@ export default function AccountSettings({
         <div className="card-body">
           <h3 className="card-title">Change Password</h3>
 
+          {/*
+            Current password first, because that is the order the browser and every
+            password manager expect: `autoComplete="current-password"` then
+            `new-password`. Without the current-password field a manager offers to fill
+            the new-password box with the saved one.
+          */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-x-6">
+            <label
+              htmlFor="current-password-input"
+              className="label sm:w-36 sm:shrink-0 sm:text-right"
+            >
+              <span className="label-text">Current Password</span>
+            </label>
+            <div className="min-w-0 flex-1">
+              <input
+                id="current-password-input"
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="input input-bordered min-h-11 w-full"
+                disabled={loading || isUpdatingProfile}
+              />
+            </div>
+          </div>
+
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-x-6">
             <label
               htmlFor="new-password-input"
@@ -468,6 +527,7 @@ export default function AccountSettings({
               <input
                 id="new-password-input"
                 type="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="input input-bordered min-h-11 w-full"
@@ -487,6 +547,7 @@ export default function AccountSettings({
               <input
                 id="confirm-password-input"
                 type="password"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="input input-bordered min-h-11 w-full"

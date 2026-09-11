@@ -15,6 +15,7 @@ const {
   mockUsernameNeq,
   mockUsernameLimit,
   mockProfile,
+  mockUpdateUser,
 } = vi.hoisted(() => ({
   mockRefetch: vi.fn(),
   mockRefreshSession: vi.fn(),
@@ -26,6 +27,12 @@ const {
   mockUsernameEq: vi.fn(),
   mockUsernameNeq: vi.fn(),
   mockUsernameLimit: vi.fn(),
+  // HOISTED ON PURPOSE. This used to be `vi.fn()` created INSIDE the client factory
+  // below, so `createClient()` handed back a brand-new spy on every call and no test
+  // could ever see what the component sent. That is why nothing caught #136 — a bare
+  // `{ password }` and a correct `{ password, current_password }` were equally
+  // unobservable.
+  mockUpdateUser: vi.fn(),
   mockProfile: {
     id: 'test-user-id',
     username: 'testuser-b',
@@ -59,7 +66,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: {
-      updateUser: vi.fn().mockResolvedValue({ error: null }),
+      updateUser: mockUpdateUser,
     },
     from: mockFrom,
   }),
@@ -70,6 +77,7 @@ describe('AccountSettings', () => {
     vi.clearAllMocks();
     mockProfile.username = 'testuser-b';
 
+    mockUpdateUser.mockResolvedValue({ error: null });
     mockUsernameLimit.mockResolvedValue({ data: [], error: null });
     mockUsernameNeq.mockReturnValue({ limit: mockUsernameLimit });
     mockUsernameEq.mockReturnValue({ neq: mockUsernameNeq });
@@ -277,5 +285,148 @@ describe('AccountSettings', () => {
     expect(
       screen.queryByText('Failed to update profile. Please try again.')
     ).not.toBeInTheDocument();
+  });
+  /**
+   * #136 — password change could not succeed for anyone who signed in with a password.
+   *
+   * Production has `security_update_password_require_current_password` on, and this form
+   * sent a bare `{ password }`. gotrue rejected every attempt with
+   * `current_password_required`. It was invisible here because the `updateUser` spy was
+   * built inside the client factory, so no test could see the request at all — see the
+   * note on `mockUpdateUser` above.
+   */
+  describe('password change sends the current password (#136)', () => {
+    const fillPasswordForm = (current: string, next = 'NewPassword123!') => {
+      fireEvent.change(screen.getByLabelText('Current Password'), {
+        target: { value: current },
+      });
+      fireEvent.change(screen.getByLabelText('New Password'), {
+        target: { value: next },
+      });
+      fireEvent.change(screen.getByLabelText('Confirm Password'), {
+        target: { value: next },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Change Password' }));
+    };
+
+    it('sends current_password alongside the new one', async () => {
+      render(<AccountSettings />);
+      fillPasswordForm('OldPassword123!');
+
+      await waitFor(() => expect(mockUpdateUser).toHaveBeenCalled());
+      expect(mockUpdateUser).toHaveBeenCalledWith({
+        password: 'NewPassword123!',
+        current_password: 'OldPassword123!',
+      });
+    });
+
+    it('does not call the server at all when the current password is blank', async () => {
+      render(<AccountSettings />);
+      fillPasswordForm('');
+
+      expect(
+        await screen.findByText('Enter your current password to change it.')
+      ).toBeInTheDocument();
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The two cases below are the reason this maps on `error.code`. gotrue returns the
+     * SAME sentence for both (`user.go:177` and `:184`), so a message-based mapping
+     * would tell a user with the wrong password that they had left the field empty.
+     */
+    it('tells a wrong current password apart from a missing one', async () => {
+      mockUpdateUser.mockResolvedValue({
+        error: {
+          message: 'Current password required when setting new password.',
+          code: 'current_password_invalid',
+        },
+      });
+      render(<AccountSettings />);
+      fillPasswordForm('WrongPassword123!');
+
+      expect(
+        await screen.findByText('That is not your current password.')
+      ).toBeInTheDocument();
+    });
+
+    it('surfaces a missing-current-password rejection from the server', async () => {
+      mockUpdateUser.mockResolvedValue({
+        error: {
+          message: 'Current password required when setting new password.',
+          code: 'current_password_required',
+        },
+      });
+      render(<AccountSettings />);
+      fillPasswordForm('OldPassword123!');
+
+      expect(
+        await screen.findByText('Enter your current password to change it.')
+      ).toBeInTheDocument();
+    });
+
+    /**
+     * Only reachable on a session older than 24 hours (`user.go:157`). Until the nonce
+     * flow ships, signing out and back in is a complete fix from the player's side, so
+     * the message has to say that rather than leaving them at a dead end.
+     */
+    it('gives an actionable message when the session is too old', async () => {
+      mockUpdateUser.mockResolvedValue({
+        error: {
+          message: 'Password update requires reauthentication',
+          code: 'reauthentication_needed',
+        },
+      });
+      render(<AccountSettings />);
+      fillPasswordForm('OldPassword123!');
+
+      expect(
+        await screen.findByText(
+          'For security, sign out and sign back in, then change your password.'
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("keeps gotrue's own text when it is more specific than ours", async () => {
+      mockUpdateUser.mockResolvedValue({
+        error: {
+          message:
+            'Password should contain at least one character of each: abcdefg.',
+          code: 'weak_password',
+        },
+      });
+      render(<AccountSettings />);
+      fillPasswordForm('OldPassword123!');
+
+      expect(
+        await screen.findByText(
+          'Password should contain at least one character of each: abcdefg.'
+        )
+      ).toBeInTheDocument();
+    });
+
+    it('clears the current-password field on success, not on failure', async () => {
+      render(<AccountSettings />);
+      fillPasswordForm('OldPassword123!');
+      await waitFor(() => expect(mockUpdateUser).toHaveBeenCalled());
+      await waitFor(() =>
+        expect(screen.getByLabelText('Current Password')).toHaveValue('')
+      );
+
+      mockUpdateUser.mockResolvedValue({
+        error: {
+          message: 'Current password required when setting new password.',
+          code: 'current_password_invalid',
+        },
+      });
+      fillPasswordForm('StillWrong123!');
+      expect(
+        await screen.findByText('That is not your current password.')
+      ).toBeInTheDocument();
+      // Feature 038 FR-014: fields are NOT cleared on failure, so a typo is fixable.
+      expect(screen.getByLabelText('Current Password')).toHaveValue(
+        'StillWrong123!'
+      );
+    });
   });
 });
