@@ -27,26 +27,6 @@ import {
 const BP = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 test.describe('Admin User Pagination E2E', () => {
-  /**
-   * THE WHOLE PAGE IS BLOCKED, NOT INDIVIDUAL ASSERTIONS (#169).
-   *
-   * `/admin/users` renders for a legitimately promoted admin — gate open, rail and tabs
-   * drawn — and then shows "Failed to load user data" with Total Users 0. Every test
-   * here depends on that data, so marking them one at a time just moves the failure to
-   * the next test in the serial chain; I did that once before writing this.
-   *
-   * The reason the page cannot say what went wrong is #168: four admin services throw
-   * the raw PostgrestError, which is not an Error, so the page renders its generic
-   * fallback and discards what Postgres said. #168 is the prerequisite for diagnosing
-   * #169.
-   *
-   * Kept rather than deleted: these are the only thing that noticed the page is broken.
-   */
-  test.fixme(
-    true,
-    '/admin/users fails to load and the page discards the reason — #169, blocked on #168'
-  );
-
   test.describe.configure({ mode: 'serial' });
 
   /**
