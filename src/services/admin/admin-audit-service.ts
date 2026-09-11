@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { adminQueryError } from './admin-query-error';
 
 export interface AdminAuthStats {
   logins_today: number;
@@ -71,7 +72,7 @@ export class AdminAuditService {
   async getStats(): Promise<AdminAuthStats> {
     this.ensureInitialized();
     const { data, error } = await this.supabase.rpc('admin_auth_stats');
-    if (error) throw error;
+    if (error) throw adminQueryError('admin_auth_stats', error);
     return data as AdminAuthStats;
   }
 
@@ -102,7 +103,7 @@ export class AdminAuditService {
       .limit(limit);
     if (eventType) query = query.eq('event_type', eventType);
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) throw adminQueryError('auth_audit_logs select', error);
     return (data ?? []) as AuditLogEntry[];
   }
 }
