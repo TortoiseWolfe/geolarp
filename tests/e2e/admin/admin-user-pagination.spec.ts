@@ -30,6 +30,30 @@ test.describe('Admin User Pagination E2E', () => {
   test.describe.configure({ mode: 'serial' });
 
   /**
+   * EVERY TEST IN THIS FILE NEEDS MORE THAN PAGE_SIZE USERS (#172).
+   *
+   * PAGE_SIZE is 50 (`src/app/admin/users/page.tsx:14`) and a per-runner Supabase has a
+   * handful, so there is no page 2, no Next button to click, and nothing distinctive to
+   * search for. All five tests here assert behaviour that only exists above that
+   * threshold.
+   *
+   * MARKED AS A GROUP, DELIBERATELY. Marking them one at a time just moves the failure to
+   * the next test in the serial chain — I did that twice on this page before writing it
+   * down. The page itself is fine: it was genuinely broken in production (#169, a
+   * SECURITY INVOKER function hitting 42501 on a column `authenticated` cannot read) and
+   * that is fixed.
+   *
+   * Seeding is not a one-liner: `user_profiles.id REFERENCES auth.users(id)`, so 51
+   * profiles means 51 real auth users per shard per run. #172 proposes asserting the RULE
+   * instead — pagination absent at or below PAGE_SIZE, present above — which needs no
+   * fixture and covers both branches rather than one.
+   */
+  test.fixme(
+    true,
+    'Every test here needs >PAGE_SIZE (50) users; assert the rule instead — #172'
+  );
+
+  /**
    * SEEDED, NOT ASSUMED (#159).
    *
    * These signed in as `test@example.com` and assumed admin-ness came from
@@ -71,10 +95,6 @@ test.describe('Admin User Pagination E2E', () => {
   test('should display pagination when more than PAGE_SIZE users exist', async ({
     page,
   }) => {
-    test.fixme(
-      true,
-      'Needs >PAGE_SIZE (50) users; the lane has a handful and auth.users FK makes bulk seeding expensive — #172'
-    );
     await page.goto(`${BP}/admin/users`);
     await page.waitForLoadState('networkidle');
 
