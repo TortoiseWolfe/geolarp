@@ -16,6 +16,7 @@ const {
   mockUsernameLimit,
   mockProfile,
   mockUpdateUser,
+  mockReauthenticate,
 } = vi.hoisted(() => ({
   mockRefetch: vi.fn(),
   mockRefreshSession: vi.fn(),
@@ -33,6 +34,7 @@ const {
   // `{ password }` and a correct `{ password, current_password }` were equally
   // unobservable.
   mockUpdateUser: vi.fn(),
+  mockReauthenticate: vi.fn(),
   mockProfile: {
     id: 'test-user-id',
     username: 'testuser-b',
@@ -70,6 +72,21 @@ vi.mock('@/lib/supabase/client', () => ({
     },
     from: mockFrom,
   }),
+  /**
+   * The SINGLETON, which `NonceChallengeModal` imports directly (#166) — `createClient`
+   * above does not satisfy it.
+   *
+   * DELIBERATELY WITHOUT `rpc`. `audit-logger.ts` imports this same singleton and calls
+   * `supabase.rpc(...)`; today that throws into its own catch and `logAuthEvent` no-ops,
+   * which is the behaviour the ten tests above were written against. Giving this object
+   * an `rpc` would quietly switch the audit logger on and change what those tests
+   * exercise — so it gets exactly what the modal needs and nothing more.
+   */
+  supabase: {
+    auth: {
+      reauthenticate: mockReauthenticate,
+    },
+  },
 }));
 
 describe('AccountSettings', () => {
@@ -78,6 +95,7 @@ describe('AccountSettings', () => {
     mockProfile.username = 'testuser-b';
 
     mockUpdateUser.mockResolvedValue({ error: null });
+    mockReauthenticate.mockResolvedValue({ data: {}, error: null });
     mockUsernameLimit.mockResolvedValue({ data: [], error: null });
     mockUsernameNeq.mockReturnValue({ limit: mockUsernameLimit });
     mockUsernameEq.mockReturnValue({ neq: mockUsernameNeq });
@@ -366,11 +384,14 @@ describe('AccountSettings', () => {
     });
 
     /**
-     * Only reachable on a session older than 24 hours (`user.go:157`). Until the nonce
-     * flow ships, signing out and back in is a complete fix from the player's side, so
-     * the message has to say that rather than leaving them at a dead end.
+     * Only reachable on a session older than 24 hours (`user.go:157`).
+     *
+     * THIS TEST INVERTED WHEN #166 SHIPPED, deliberately. It used to assert the message
+     * telling the player to sign out and back in, because that was all there was. Now the
+     * challenge opens and collects the emailed code, and that message is what a DISMISSAL
+     * falls back to — still true, no longer the outcome.
      */
-    it('gives an actionable message when the session is too old', async () => {
+    it('opens the reauthentication challenge instead of dead-ending', async () => {
       mockUpdateUser.mockResolvedValue({
         error: {
           message: 'Password update requires reauthentication',
@@ -379,6 +400,52 @@ describe('AccountSettings', () => {
       });
       render(<AccountSettings />);
       fillPasswordForm('OldPassword123!');
+
+      expect(await screen.findByLabelText('6-digit code')).toBeInTheDocument();
+      // And the code is requested exactly once, because that email comes out of a
+      // project-wide budget of two an hour shared with signup confirmations.
+      await waitFor(() => expect(mockReauthenticate).toHaveBeenCalledTimes(1));
+    });
+
+    it('retries with the nonce, keeping the current password alongside it', async () => {
+      mockUpdateUser.mockResolvedValue({
+        error: {
+          message: 'Password update requires reauthentication',
+          code: 'reauthentication_needed',
+        },
+      });
+      render(<AccountSettings />);
+      fillPasswordForm('OldPassword123!');
+
+      const code = await screen.findByLabelText('6-digit code');
+      mockUpdateUser.mockResolvedValue({ error: null });
+      fireEvent.change(code, { target: { value: '123456' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+
+      // The retry must carry BOTH: the nonce satisfies reauthentication, and
+      // `current_password` satisfies a separate, independent check (`user.go:154` vs
+      // `:173`). Dropping either one fails for a different reason.
+      await waitFor(() =>
+        expect(mockUpdateUser).toHaveBeenLastCalledWith({
+          password: 'NewPassword123!',
+          current_password: 'OldPassword123!',
+          nonce: '123456',
+        })
+      );
+    });
+
+    it('falls back to the sign-out advice when the challenge is dismissed', async () => {
+      mockUpdateUser.mockResolvedValue({
+        error: {
+          message: 'Password update requires reauthentication',
+          code: 'reauthentication_needed',
+        },
+      });
+      render(<AccountSettings />);
+      fillPasswordForm('OldPassword123!');
+
+      await screen.findByLabelText('6-digit code');
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
       expect(
         await screen.findByText(
