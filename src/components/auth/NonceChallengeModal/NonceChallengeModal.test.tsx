@@ -102,12 +102,13 @@ describe('NonceChallengeModal', () => {
   it('hands the trimmed code back rather than updating anything itself', async () => {
     const p = props();
     render(<NonceChallengeModal {...p} />);
-    await waitFor(() => expect(mockReauthenticate).toHaveBeenCalled());
+    const confirm = screen.getByRole('button', { name: 'Confirm' });
+    await waitFor(() => expect(confirm).toBeEnabled());
 
     fireEvent.change(screen.getByLabelText('6-digit code'), {
       target: { value: '  123456  ' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    fireEvent.click(confirm);
 
     expect(p.onSubmit).toHaveBeenCalledWith('123456');
   });
@@ -115,9 +116,16 @@ describe('NonceChallengeModal', () => {
   it('will not submit an empty code', async () => {
     const p = props();
     render(<NonceChallengeModal {...p} />);
-    await waitFor(() => expect(mockReauthenticate).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    // WAIT FOR THE BUTTON, NOT FOR THE CALL. Confirm is `disabled={sending}`, and
+    // awaiting `reauthenticate` having been CALLED does not mean its promise has resolved
+    // and cleared that flag. Locally it resolves instantly and this passed; in CI under
+    // load the click landed on a disabled button, nothing happened, and the assertion
+    // below timed out. A race I introduced, caught by CI rather than by me.
+    const confirm = screen.getByRole('button', { name: 'Confirm' });
+    await waitFor(() => expect(confirm).toBeEnabled());
+
+    fireEvent.click(confirm);
 
     expect(p.onSubmit).not.toHaveBeenCalled();
     expect(
