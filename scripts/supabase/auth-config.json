@@ -7,6 +7,8 @@
   "disable_signup": false,
   "mailer_autoconfirm": false,
   "security_captcha_enabled": true,
+  "security_update_password_require_reauthentication": true,
+  "security_update_password_require_current_password": true,
   "security_captcha_provider": "turnstile",
   "smtp_host": "${AUTH_SMTP_HOST:-smtp.resend.com}",
   "smtp_port": "587",
