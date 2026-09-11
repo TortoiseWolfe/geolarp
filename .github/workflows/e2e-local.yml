@@ -244,6 +244,39 @@ jobs:
             echo "EDGE_RUNTIME_PRESENT=0" >> "$GITHUB_ENV"
             echo "::notice::this commit predates the local edge runtime (#598) — Edge Function specs cannot pass here"
           fi
+          # PULL FIRST, WITH BACKOFF — AND RETRY ONLY THE PULL (#174).
+          #
+          # Docker Hub refuses anonymous tokens under load, and Actions runners share
+          # egress addresses. Twice on 2026-09-11 this step died before a single test ran:
+          #
+          #   supabase-db  Error Head ".../supabase/postgres/manifests/15.8.1.060"
+          #   supabase-rest Error Head ".../postgrest/postgrest/manifests/v12.2.12"
+          #   Get "https://auth.docker.io/token?account=githubactions&scope=..."
+          #
+          # This repo lost NINE rounds to flake mitigation that attacked symptoms, so be
+          # exact about what this is: the retry wraps a network fetch from a third party,
+          # not a test and not the orchestration. `up` is NOT retried — if the stack fails
+          # to start once the images are local, that is a real failure and must surface on
+          # the first attempt rather than three times slower.
+          #
+          # The actual fix is authenticating to Docker Hub, which needs credentials this
+          # repo does not have; tracked on #174. This makes the lane survive the flake, it
+          # does not remove it.
+          echo "pulling: $SERVICES"
+          pulled=0
+          for attempt in 1 2 3; do
+            if docker compose --profile supabase pull --quiet $SERVICES; then
+              pulled=1
+              break
+            fi
+            echo "::warning::image pull attempt $attempt failed — Docker Hub token refusal is the usual cause (#174)"
+            sleep $((attempt * 15))
+          done
+          if [ "$pulled" != "1" ]; then
+            echo "::error::could not pull the Supabase images after 3 attempts (#174). This is a registry failure, NOT a failure of the change under test."
+            exit 1
+          fi
+
           echo "starting: $SERVICES"
           docker compose --profile supabase up -d $SERVICES
 
