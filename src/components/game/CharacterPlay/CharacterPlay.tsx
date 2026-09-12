@@ -370,6 +370,38 @@ export default function CharacterPlay({
             onStep={play.mode === 'grid' ? play.step : undefined}
           />
 
+          {/*
+            THE SWITCH THAT ARMS THE GRID WAS NOT NEXT TO THE GRID (#139).
+
+            The mode buttons live inside the collapsed "Where you are" disclosure, and
+            the grid deliberately sits outside it (see the comment above). So the control
+            was on screen and the thing that makes it work was not, which is most of why
+            the screen reads as having nothing to do.
+
+            ZONE ONLY, NOT GPS. Under GPS the tiles are inert because the player moves by
+            walking, which is the published promise; offering to switch them to armchair
+            stepping there would undercut it. The dashed border is what explains the inert
+            state in that mode.
+
+            Named "Step the grid" rather than anything containing "grid movement":
+            Playwright's `name:` substring-matches by default, so the latter would collide
+            with `getByRole('button', { name: 'Grid movement' })` in four specs.
+          */}
+          {play.mode === 'zone' && (
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-base-content text-sm">
+                These are the six cells around this zone. Stepping is off.
+              </p>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm min-h-11"
+                onClick={() => play.setMode('grid')}
+              >
+                Step the grid
+              </button>
+            </div>
+          )}
+
           {play.offset && (
             <p
               className="text-base-content text-sm"

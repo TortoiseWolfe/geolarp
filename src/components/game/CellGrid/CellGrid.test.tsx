@@ -211,3 +211,64 @@ describe('a gate can tell a live grid from a dead one (#141)', () => {
     ).toHaveLength(0);
   });
 });
+
+/**
+ * AN INERT TILE HAS TO LOOK INERT (#139).
+ *
+ * #141 gave the branches `data-interactive`, which is a test hook: no player perceives it.
+ * The only human-visible difference left was `hover:border-primary`, and hover does not
+ * exist on touch — so on a phone the live and dead grids were pixel-identical. These assert
+ * the distinction is one a screenshot would catch, and that it is a stroke rather than a
+ * colour, because the colourblind gate and the 7:1 sweep both apply here.
+ */
+describe('a non-steppable tile is visibly non-steppable (#139)', () => {
+  const dashed = () =>
+    screen
+      .getAllByTestId('cell-tile')
+      .filter((t) => t.className.includes('border-dashed'));
+
+  it('dashes the dead tiles and leaves the live ones solid', () => {
+    // Both halves in one test, so it fails whether the treatment is missing OR
+    // applied to everything. Split across two tests the second half passed with
+    // the feature entirely absent, which is the vacuous-negative shape #141 was
+    // filed about.
+    const inert = render(<CellGrid centre={CENTRE} today={today} />);
+    expect(dashed(), 'no tile was marked inert').toHaveLength(6);
+    inert.unmount();
+
+    render(<CellGrid centre={CENTRE} today={today} onStep={() => {}} />);
+    expect(
+      dashed(),
+      'a steppable tile was drawn as though it were not'
+    ).toHaveLength(0);
+  });
+
+  it('never dashes the centre, which is not steppable for a different reason', () => {
+    render(<CellGrid centre={CENTRE} today={today} />);
+    // The control: without it this passes on a component that dashes nothing.
+    expect(
+      dashed(),
+      'nothing was dashed, so "the centre is not dashed" means nothing'
+    ).toHaveLength(6);
+
+    const here = screen
+      .getAllByTestId('cell-tile')
+      .find((t) => t.className.includes('bg-primary'));
+    expect(here, 'no centre tile found').toBeDefined();
+    expect(here!.className).not.toContain('border-dashed');
+  });
+
+  it('changes the stroke and not the box, so the 44px target is untouched', () => {
+    render(<CellGrid centre={CENTRE} today={today} />);
+    const tiles = dashed();
+    // Same control. Iterating an empty list asserts nothing at all.
+    expect(
+      tiles,
+      'nothing was dashed; the loop below would be vacuous'
+    ).toHaveLength(6);
+    for (const tile of tiles) {
+      expect(tile.className).toContain('min-h-11');
+      expect(tile.className).not.toMatch(/\bborder-[0-9]/);
+    }
+  });
+});
