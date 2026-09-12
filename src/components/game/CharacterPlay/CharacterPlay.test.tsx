@@ -818,3 +818,113 @@ describe('the offset never outlives the mode that produced it (#150)', () => {
     ).not.toBeInTheDocument();
   });
 });
+
+/**
+ * THE PLAYER WHO ACTUALLY WALKS GETS FEEDBACK TOO (#140).
+ *
+ * `setCellFromFix` anchored `origin` on every fix, so `cell` and `origin` were set to
+ * the same value in the same breath and `offset` was permanently null under GPS. The
+ * distance readout is gated on `offset`, so the mode the published promise is about —
+ * "a game that only works if you move" — was the one with no instrumentation, while
+ * grid movement, which the hook's own comment calls armchair movement, had all of it.
+ *
+ * The second test here guards the lie the fix could have introduced. `setMode` anchors
+ * to the CURRENT cell on every mode change (#150). Deferring the GPS anchor naively
+ * would leave `origin` on whatever zone the player was browsing, so picking Downtown
+ * Chattanooga and then walking outside in London would have announced several thousand
+ * kilometres "from where you started" — #150's defect wearing #140's clothes.
+ *
+ * Together they fail in both directions: anchor on every fix and the first fails;
+ * never anchor and the second fails.
+ */
+describe('the walking player is instrumented too (#140)', () => {
+  const CHATTANOOGA = { latitude: 35.0456, longitude: -85.3097 };
+  // ~333 m north: 0.003 degrees of latitude, several 100 m cells.
+  const THREE_HUNDRED_M_NORTH = { latitude: 35.0486, longitude: -85.3097 };
+  const LONDON = { latitude: 51.5042, longitude: -0.0905 };
+
+  const fixAt = (c: { latitude: number; longitude: number }) =>
+    coarseFixFrom({
+      coords: { ...c, accuracy: 5 },
+      timestamp: 1_757_000_000_000,
+    } as GeolocationPosition);
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    mockGeo.fix = null;
+    mockGeo.accuracy = null;
+    mockGeo.error = null;
+  });
+
+  const readout = () => screen.queryByRole('status', { name: 'Grid position' });
+
+  async function beginOnGps(at: { latitude: number; longitude: number }) {
+    mockGeo.fix = fixAt(at);
+    mockGeo.accuracy = 5;
+    const user = userEvent.setup();
+    const view = render(<CharacterPlay today={today} />);
+    await screen.findByRole('button', { name: 'Roll a character' });
+    await user.type(screen.getByLabelText('Name'), 'Ada Wren');
+    await user.click(screen.getByRole('button', { name: 'Roll a character' }));
+    await screen.findByRole('heading', { name: 'Ada Wren', level: 2 });
+    await user.click(screen.getByRole('button', { name: 'Use my location' }));
+    return { user, view };
+  }
+
+  it('says nothing until the player has moved, then reports the distance', async () => {
+    const { view } = await beginOnGps(CHATTANOOGA);
+
+    // The control: standing still is not "somewhere else". Without this a fix that
+    // simply always rendered the readout would satisfy the assertion below.
+    expect(
+      readout(),
+      'a player who has not moved was told they had'
+    ).not.toBeInTheDocument();
+
+    mockGeo.fix = fixAt(THREE_HUNDRED_M_NORTH);
+    view.rerender(<CharacterPlay today={today} />);
+
+    const moved = await screen.findByRole('status', { name: 'Grid position' });
+    expect(moved).toHaveTextContent(/of where you started/);
+    expect(moved).toHaveTextContent(/north/);
+  });
+
+  it('anchors on the first fix, not on the zone the player was browsing', async () => {
+    const user = userEvent.setup();
+    const view = render(<CharacterPlay today={today} />);
+    await screen.findByRole('button', { name: 'Roll a character' });
+    await user.type(screen.getByLabelText('Name'), 'Ada Wren');
+    await user.click(screen.getByRole('button', { name: 'Roll a character' }));
+    await screen.findByRole('heading', { name: 'Ada Wren', level: 2 });
+
+    // Default mode is a hand-picked Chattanooga zone. Go outside somewhere else.
+    mockGeo.fix = fixAt(LONDON);
+    mockGeo.accuracy = 5;
+    await user.click(screen.getByRole('button', { name: 'Use my location' }));
+
+    expect(
+      readout(),
+      'the zone-to-fix distance leaked: the player was told they walked from a place ' +
+        'they only browsed'
+    ).not.toBeInTheDocument();
+
+    // And the anchor is live rather than merely absent — walking still registers.
+    mockGeo.fix = fixAt({ latitude: 51.5072, longitude: -0.0905 });
+    view.rerender(<CharacterPlay today={today} />);
+    expect(
+      await screen.findByRole('status', { name: 'Grid position' })
+    ).toHaveTextContent(/of where you started/);
+  });
+
+  it('offers no "Back to where I started" on foot, because the next fix would undo it', async () => {
+    const { view } = await beginOnGps(CHATTANOOGA);
+    mockGeo.fix = fixAt(THREE_HUNDRED_M_NORTH);
+    view.rerender(<CharacterPlay today={today} />);
+    await screen.findByRole('status', { name: 'Grid position' });
+
+    expect(
+      screen.queryByRole('button', { name: 'Back to where I started' }),
+      'a walking player was offered a button the next fix overwrites'
+    ).not.toBeInTheDocument();
+  });
+});

@@ -160,6 +160,8 @@ export function useCharacterPlay(
     `${seed}|${skill ?? ''}`;
   /** `${seed}|${skill}|${stake}` already charged. Identical dice, one bill. */
   const charged = useRef(new Set<string>());
+  /** Set when the player enters GPS mode; the next fix anchors and clears it (#140). */
+  const anchorNextFix = useRef(false);
 
   // A new cell is a new encounter — but an outcome already earned on this cell
   // comes BACK rather than being wiped. Stepping away and returning used to
@@ -256,11 +258,33 @@ export function useCharacterPlay(
     });
   }, [character]);
 
+  /**
+   * THE FIRST FIX ANCHORS. EVERY FIX AFTER IT MOVES THE CELL AND LEAVES THE ANCHOR (#140).
+   *
+   * Anchoring on every fix made `offset` permanently null for anyone actually walking,
+   * because `cell` and `origin` were set to the same value in the same breath. The
+   * distance readout and "Back to where I started" are both gated on `offset`
+   * (CharacterPlay.tsx:373, :410), so the player who obeys the published promise — "a
+   * game that only works if you move" — was the one the screen told nothing. Walk half a
+   * mile, the design target in the post, and the app reported no metres and no bearing.
+   * Grid movement, which the comment below calls armchair movement, had all of the
+   * instrumentation.
+   *
+   * `anchorNextFix` is what makes this safe rather than a second lie. `setMode` anchors
+   * to the CURRENT cell on every mode change (#150), so entering GPS from a zone would
+   * otherwise leave `origin` sitting on the zone — pick Downtown Chattanooga, walk
+   * outside in London, and the first fix would announce several thousand kilometres
+   * "from where you started". The anchor for GPS has to be a place the player physically
+   * was, so the first fix sets it and no later one does.
+   */
   const setCellFromFix = useCallback((lat: number, lon: number) => {
     const c = cellOf(lat, lon);
     setCell(c);
-    // An anchor, because a fix is somewhere the player physically is.
-    setOrigin(c);
+    if (anchorNextFix.current) {
+      // An anchor, because a fix is somewhere the player physically is.
+      setOrigin(c);
+      anchorNextFix.current = false;
+    }
   }, []);
 
   /**
@@ -321,6 +345,9 @@ export function useCharacterPlay(
       // while leaving the player somewhere to go back to. The first version of
       // this fix nulled it and reddened five tests that depend on the anchor.
       setOrigin(cell);
+      // GPS's anchor must be a place the player physically was, and `cell` here is
+      // wherever the mode they are LEAVING had them. Defer it to the first fix (#140).
+      anchorNextFix.current = next === 'gps';
       setModeState(next);
     },
     [mode, cell]
