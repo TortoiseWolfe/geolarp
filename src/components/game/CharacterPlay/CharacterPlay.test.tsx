@@ -928,3 +928,72 @@ describe('the walking player is instrumented too (#140)', () => {
     ).not.toBeInTheDocument();
   });
 });
+
+/**
+ * THE SWITCH THAT ARMS THE GRID IS NOW NEXT TO THE GRID (#139).
+ *
+ * The mode buttons live inside the collapsed "Where you are" disclosure while the grid
+ * deliberately sits outside it, so the control was on screen and the thing that makes it
+ * work was not. A player tapped a tile, nothing happened, and nothing distinguished
+ * "broken" from "not switched on yet".
+ *
+ * Zone only. Under GPS the tiles are inert because the player moves by walking — the
+ * published promise — so offering armchair stepping there would undercut it.
+ */
+describe('there is a visible way to turn stepping on (#139)', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    mockGeo.fix = null;
+    mockGeo.accuracy = null;
+    mockGeo.error = null;
+  });
+
+  async function begunWithCharacter() {
+    const user = userEvent.setup();
+    render(<CharacterPlay today={today} />);
+    await screen.findByRole('button', { name: 'Roll a character' });
+    await user.type(screen.getByLabelText('Name'), 'Ada Wren');
+    await user.click(screen.getByRole('button', { name: 'Roll a character' }));
+    await screen.findByRole('heading', { name: 'Ada Wren', level: 2 });
+    return user;
+  }
+
+  const stepper = () => screen.queryByRole('button', { name: 'Step the grid' });
+  const operable = () =>
+    screen
+      .getAllByTestId('cell-tile')
+      .filter((t) => t.getAttribute('data-interactive') === 'true');
+
+  it('offers it in the default mode, where the tiles are inert', async () => {
+    await begunWithCharacter();
+    expect(
+      operable(),
+      'the tiles were already live; this test proves nothing'
+    ).toHaveLength(0);
+    expect(stepper()).toBeInTheDocument();
+  });
+
+  it('actually makes the tiles operable, without opening the disclosure', async () => {
+    const user = await begunWithCharacter();
+    await user.click(stepper()!);
+    expect(operable().length).toBeGreaterThan(0);
+    // And it takes itself away once it has done its job.
+    expect(stepper()).not.toBeInTheDocument();
+  });
+
+  it('stays out of GPS mode, where inert tiles are the promise being kept', async () => {
+    const user = await begunWithCharacter();
+    // The control. Asserting only the absence passes on a build where the button
+    // was never added at all, which is how three of these first shipped.
+    expect(
+      stepper(),
+      'the offer is missing in zone mode, so its absence under GPS proves nothing'
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Use my location' }));
+    expect(
+      stepper(),
+      'a walking player was invited to move the map instead of themselves'
+    ).not.toBeInTheDocument();
+  });
+});

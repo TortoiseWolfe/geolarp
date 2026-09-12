@@ -184,11 +184,30 @@ export default function CellGrid({
                     ? `Move ${t.direction} to ${t.name}. ${t.kind}, difficulty ${t.rank} of ${LADDER.length}`
                     : `${t.name}, ${t.direction}. ${t.kind}, difficulty ${t.rank} of ${LADDER.length}`;
 
+                /*
+                  DASHED MEANS NOT STEPPABLE, AND IT IS A SHAPE RATHER THAN A COLOUR (#139).
+
+                  #141 gave the two branches `data-interactive`, which no human perceives.
+                  The only thing a PERSON could see was `hover:border-primary` on the live
+                  branch — a hover state that does not exist on a phone. Live and dead tiles
+                  were otherwise pixel-identical, so a player tapped one, nothing happened,
+                  and nothing on screen distinguished "broken" from "not switched on yet".
+
+                  Not a colour, deliberately. `globals.css:120-135` documents a 7:1 AAA sweep
+                  and the difficulty pips a few lines below are counted rather than coloured
+                  for the colourblind gate; a new colour-only distinction would walk into
+                  both. `border-dashed` changes the stroke, not the box, so the 44px target
+                  #146 asserts at 320px is untouched.
+
+                  The centre is excluded. It is legitimately non-steppable — you are already
+                  there — and it already says so with `border-primary bg-primary`. Dashing it
+                  would claim something false.
+                */
                 const shell = `flex min-h-11 flex-col items-center justify-center gap-0.5 rounded border p-1 text-center text-xs ${
                   t.here
                     ? 'border-primary bg-primary text-primary-content'
                     : 'border-base-300 bg-base-100 text-base-content'
-                }`;
+                }${!t.here && !interactive ? ' border-dashed' : ''}`;
 
                 /*
                   `data-interactive` IS THE WHOLE POINT OF THIS ATTRIBUTE (#141).
