@@ -1,0 +1,17 @@
+{
+  "_comment": [
+    "Checks for ~/.claude/workflows/director.js. Run each from a worktree root; all proven green on origin/main 73503479 (2026-09-30).",
+    "Where Docker's credential helper can't run (WSL interop off), prefix each with `export DOCKER_CONFIG=<dir with {\"auths\":{}}>;`.",
+    "Empty .env: compose requires env_file .env; CI runs without secrets (Supabase is mocked), so the checks do too. Never copy the real .env into a worktree.",
+    "-v $G:$G:ro: a worktree's .git points into the main repo's git dir; the git tests (uv.lock, repo URLs) need it readable. Read-only, and `--ignore-scripts` skips `prepare`, which would otherwise write core.hooksPath into the shared config and race between parallel checks.",
+    "GIT_AUTHOR_*: compose sets GIT_COMMITTER_NAME=${GIT_AUTHOR_NAME}, which is empty when unset and breaks the hook tests' temp commits.",
+    "-v /app/node_modules -v /app/.next: throwaway volumes per run, seeded from the image, so parallel worktrees never share state. -p geolarp-wf keeps one image for all worktrees and never touches the dev stack's volumes.",
+    "CHECK_BUILD uses CI's NEXT_PUBLIC_DEPLOY_URL so the generated robots.txt matches the committed one, and fails if the build leaves tracked changes."
+  ],
+  "base": "origin/main",
+  "checks": {
+    "CHECK_SUITE": "[ -f .env ] || : > .env; G=$(git rev-parse --path-format=absolute --git-common-dir); GIT_AUTHOR_NAME=director-check GIT_AUTHOR_EMAIL=director-check@localhost docker compose -p geolarp-wf run --rm --no-deps -T -v /app/node_modules -v /app/.next -v \"$G\":\"$G\":ro -e NEXT_PUBLIC_DEPLOY_URL=https://geolarp.com --entrypoint sh geolarp -c 'set -e; pnpm install --frozen-lockfile --ignore-scripts --prefer-offline; node scripts/detect-project.js >/dev/null; pnpm lint; pnpm type-check; pnpm validate:breakpoints; pnpm test:scripts; ./tests/rebrand/test-rebrand.sh; pnpm check:icons; pnpm exec vitest run; echo SUITE_OK'",
+    "CHECK_BUILD": "[ -f .env ] || : > .env; G=$(git rev-parse --path-format=absolute --git-common-dir); GIT_AUTHOR_NAME=director-check GIT_AUTHOR_EMAIL=director-check@localhost docker compose -p geolarp-wf run --rm --no-deps -T -v /app/node_modules -v /app/.next -v \"$G\":\"$G\":ro -e NEXT_PUBLIC_DEPLOY_URL=https://geolarp.com --entrypoint sh geolarp -c 'set -e; pnpm install --frozen-lockfile --ignore-scripts --prefer-offline; node scripts/detect-project.js >/dev/null; pnpm build; echo BUILD_OK' && git diff --exit-code --stat",
+    "CHECK_IMAGE": "[ -f .env ] || : > .env; docker compose -p geolarp-wf build geolarp"
+  }
+}
