@@ -225,22 +225,18 @@ describe('MapContainer', () => {
       expect(mockGetCurrentPosition).toHaveBeenCalled();
     });
 
-    // THE CELL, NOT THE READING (#39). `onLocationFound` used to emit the platform
-    // `GeolocationPosition` straight through; it now emits a `CoarseFix`, and this
-    // is the assertion that says so. The expected centre is hardcoded rather than
-    // recomputed from cellOf/cellCentre, so an expectation derived from the code
-    // under test cannot mask that code changing.
+    // THE EXACT READING, AND ITS CELL (#183), as a DeviceFix rather than the
+    // platform object. The cell is hardcoded rather than recomputed from cellOf, so
+    // an expectation derived from the code under test cannot mask it changing.
     await waitFor(() => {
       expect(onLocationFound).toHaveBeenCalledWith({
         cell: { r: 66205, q: -63 },
-        lat: 51.505250512262535,
-        lon: -0.0894785551339524,
+        lat: 51.505,
+        lon: -0.09,
         accuracy: 10,
         timestamp: mockPosition.timestamp,
       });
     });
-    // And never the reading itself.
-    expect(onLocationFound).not.toHaveBeenCalledWith(mockPosition);
   });
 
   it('should call onLocationError when location fails', async () => {

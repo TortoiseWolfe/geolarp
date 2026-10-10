@@ -1,14 +1,12 @@
 /**
- * The 100-metre grid.
+ * The 100-metre grid: what encounters are built from.
  *
- * THIS IS THE PRIVACY DESIGN, NOT A HELPER. The published promise is that
- * "Location is rounded to 100 metres BEFORE anything is done with it" and that
- * "the game never knows which building you are in"
- * (`the-world-is-the-board.md:87-90`). So the raw fix must reach `cellOf` and
- * nothing else — no logging it, no formatting it, no putting it in a URL.
- *
- * The same coarseness is what makes encounters stable, which is why the post
- * calls the rounding "not a privacy feature bolted on afterwards. It is the grid."
+ * The cell a position falls in seeds what is there, so everyone standing in the
+ * same cell on the same day meets the same thing, and the coarseness is what keeps
+ * an encounter stable while a player stands still. It is NOT a cap on what the game
+ * knows about where a player is: the device's exact reading is kept and used
+ * (`deviceFix.ts`, #183). Until 2026-10-10 this module was also the privacy design,
+ * rounding every reading to its cell; the owner retired that.
  */
 
 /** Metres per degree of latitude. Constant enough at this resolution. */
@@ -169,12 +167,11 @@ export function cellOf(lat: number, lon: number): Cell {
 }
 
 /**
- * The centre of a cell, as a lat/lon.
+ * The centre of a cell, as a lat/lon: where an encounter is placed on a map.
  *
- * This is the ONLY location the app should ever display, log or hand to a map.
- * It is derived from the cell index, so it carries no more precision than the
- * grid does — the real fix cannot be recovered from it, and a player is never
- * shown a pin on their own roof. The worst case is half a diagonal, ~71m.
+ * Derived from the cell index alone. A point in the cell is at most half a
+ * diagonal, ~71m, from it. A player's own position is the device's reading
+ * (`deviceFix.ts`), not this.
  */
 export function cellCentre(cell: Cell): { lat: number; lon: number } {
   return {

@@ -97,9 +97,8 @@ export interface UseCharacterPlayReturn {
 /**
  * Everything the play surface needs, and nothing it does not.
  *
- * The RAW FIX NEVER ENTERS STATE. `setCellFromFix` quantises on the way in and
- * stores only the cell, so no later render, log or export can leak a precise
- * position — the promise at `:87-90` is structural rather than a habit.
+ * `setCellFromFix` stores the cell a fix falls in, which is what the encounter is
+ * built from. The exact reading itself is the location hook's `fix` (#183).
  */
 export function useCharacterPlay(
   today: Date = new Date()

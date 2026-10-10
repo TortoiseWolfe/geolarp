@@ -37,7 +37,7 @@ export default function MapPage() {
   const [mapCenter, setMapCenter] = useState<LatLngTuple>([51.505, -0.09]); // Default to London
 
   // No options (#39): the ask is stated once in GRID_POSITION_OPTIONS and callers
-  // cannot restate it. `fix` is a cell centre, never a device reading.
+  // cannot restate it. `fix` is the device's exact reading (#183).
   const {
     fix,
     permission,
@@ -174,21 +174,14 @@ export default function MapPage() {
             {userLocation && (
               <div className="stats">
                 <div className="stat">
-                  <div className="stat-title">Your 100-metre cell</div>
-                  {/*
-                    `toFixed(4)` is unchanged and was never the problem — what
-                    changed is what is fed to it. These are cell-centre
-                    coordinates, so the four decimals describe the cell, not the
-                    reader. EncounterCard already prints the identical formatter
-                    on a cell centre.
-                  */}
+                  <div className="stat-title">You are here</div>
+                  {/* Five decimals is about a metre: the exact reading (#183). */}
                   <div className="stat-value text-lg">
-                    {userLocation[0].toFixed(4)}, {userLocation[1].toFixed(4)}
+                    {userLocation[0].toFixed(5)}, {userLocation[1].toFixed(5)}
                   </div>
                   {accuracy && (
                     <div className="stat-desc">
-                      ±{accuracy.toFixed(0)}m device fix, rounded to a 100 m
-                      cell before display
+                      ±{accuracy.toFixed(0)} m, as your device reports it
                     </div>
                   )}
                 </div>
@@ -211,7 +204,7 @@ export default function MapPage() {
                       {
                         id: 'user-location',
                         position: userLocation,
-                        popup: `Your 100-metre cell (device fix was ±${accuracy?.toFixed(0) || 0}m)`,
+                        popup: `You are here (±${accuracy?.toFixed(0) || 0} m)`,
                       },
                     ]
                   : []),
@@ -228,9 +221,9 @@ export default function MapPage() {
         LOCATION_ANALYTICS and PERSONALIZATION. This product does neither — there
         are no geo columns anywhere in the schema, and the published post says so —
         so the live page was asking a visitor to consent to processing that does not
-        exist. Over-asking is the same defect as the rounding it sits next to: a
-        statement about location that is not true. "explore nearby places" goes for
-        the same reason; nothing here searches anything.
+        exist. Over-asking is a statement about location that is not true.
+        "explore nearby places" goes for the same reason; nothing here searches
+        anything.
       */}
       <GeolocationConsent
         isOpen={showConsentModal}
@@ -239,8 +232,8 @@ export default function MapPage() {
         onClose={() => setShowConsentModal(false)}
         purposes={[GeolocationPurpose.USER_LOCATION_DISPLAY]}
         title="Enable Location Services"
-        description="We'd like to show which 100-metre cell you are in. Your precise location is rounded before anything is done with it, and never leaves your device."
-        privacyPolicyUrl="/privacy"
+        description="We'd like to show where you are on the map, as precisely as your device can tell."
+        privacyPolicyUrl="/app-privacy"
       />
     </main>
   );

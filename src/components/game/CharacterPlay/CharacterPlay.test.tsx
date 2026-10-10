@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { coarseFixFrom, type CoarseFix } from '@/lib/geolarp/coarseFix';
+import { deviceFixFrom, type DeviceFix } from '@/lib/geolarp/deviceFix';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CharacterPlay from './CharacterPlay';
@@ -11,7 +11,7 @@ import { ZONES } from './useCharacterPlay';
 const today = new Date('2026-08-26T12:00:00Z');
 
 const mockGeo = vi.hoisted(() => ({
-  fix: null as CoarseFix | null,
+  fix: null as DeviceFix | null,
   accuracy: null as number | null,
   error: null as GeolocationPositionError | null,
   getCurrentPosition: vi.fn(),
@@ -314,20 +314,9 @@ describe('CharacterPlay', () => {
     expect(screen.getByText(/everyone in this cell today/)).toBeInTheDocument();
   });
 
-  /**
-   * THROUGH THE REAL QUANTISER, NOT A HAND-ROUNDED MOCK (#39).
-   *
-   * The hook no longer returns a raw position at all, so a mock supplying one
-   * would not compile and a mock supplying an already-rounded `fix` could not
-   * fail — the raw digits would be absent because the test author removed them,
-   * which proves nothing.
-   *
-   * So the raw reading goes through `coarseFixFrom`, the real function on the real
-   * path. If it ever stops rounding, the raw digits reach the DOM and this fails.
-   * The component-level claim and the library-level claim are then the same claim.
-   */
-  it('never prints the raw fix it was handed', async () => {
-    mockGeo.fix = coarseFixFrom({
+  /** Through the real socket function, so the test reads what the app builds. */
+  it('tells the player where they are, with the device error', async () => {
+    mockGeo.fix = deviceFixFrom({
       coords: {
         latitude: 35.045612345,
         longitude: -85.309787654,
@@ -338,13 +327,8 @@ describe('CharacterPlay', () => {
     mockGeo.accuracy = 5;
     const user = await begin();
     await user.click(screen.getByRole('button', { name: 'Use my location' }));
-    await screen.findByText(/precise fix was discarded/);
-    // The shipped sentence at CharacterPlay.tsx:310 says the precise fix was
-    // discarded. Until #39 that sentence was false. These two lines are what
-    // make it true, and `page.content()`-style markup coverage is why the
-    // assertion reads the whole body rather than a single node.
-    expect(document.body.innerHTML).not.toContain('35.045612');
-    expect(document.body.innerHTML).not.toContain('-85.309787');
+    // The exact reading, with the device's own error (#183).
+    await screen.findByText('You are here, to within ±5 m.');
   });
 
   it('rolls a skill picked from the sheet and reports the outcome', async () => {
@@ -844,7 +828,7 @@ describe('the walking player is instrumented too (#140)', () => {
   const LONDON = { latitude: 51.5042, longitude: -0.0905 };
 
   const fixAt = (c: { latitude: number; longitude: number }) =>
-    coarseFixFrom({
+    deviceFixFrom({
       coords: { ...c, accuracy: 5 },
       timestamp: 1_757_000_000_000,
     } as GeolocationPosition);

@@ -378,7 +378,7 @@ for (const theme of THEMES) {
           );
         return {
           primer: hit('There are no turns'),
-          where: hit('The game only ever knows your 100-metre cell'),
+          where: hit('How the game knows where you are'),
           seed: hit('everyone in this cell today meets the same thing'),
         };
       });

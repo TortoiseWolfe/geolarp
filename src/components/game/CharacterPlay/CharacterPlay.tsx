@@ -43,10 +43,11 @@ const MODES: ReadonlyArray<{ id: LocationMode; label: string }> = [
 /**
  * The playable surface: a sheet, the cell you are in, and a roll against it.
  *
- * Location is optional by design. The published fallbacks — a hand-picked zone
- * and grid movement with no GPS at all (`the-world-is-the-board.md:93-95`) —
- * are first-class here, not a degraded path: the default is "pick a zone", so
- * the game is playable before any permission prompt appears.
+ * Location is optional in this screen: a hand-picked zone and grid movement with
+ * no GPS at all are first-class here, and the default is "pick a zone", so the
+ * game is playable before any permission prompt appears. (The owner's rule of
+ * 2026-10-10 is "if you don't want to share your location don't play"; whether
+ * these modes stay is recorded as open in docs/privacy/location-intent.md.)
  *
  * @category game
  */
@@ -58,11 +59,8 @@ export default function CharacterPlay({
   const [name, setName] = useState('');
   const geo = useGeolocation();
 
-  // Already a cell centre by the time it gets here (#39): the hook now returns a
-  // CoarseFix, and the rounding happened in the callback the platform invoked.
-  // Passing the centre back through `setCellFromFix` is provably identical to
-  // passing the reading — `cellOf(cellCentre(cellOf(p))) === cellOf(p)`, asserted
-  // in tests/unit/coarse-fix.test.ts — so the encounter seed is unchanged.
+  // The device's exact reading (#183). `setCellFromFix` finds the cell it is in,
+  // which is what the encounter is built from.
   React.useEffect(() => {
     if (play.mode !== 'gps' || !geo.fix) return;
     play.setCellFromFix(geo.fix.lat, geo.fix.lon);
@@ -251,8 +249,7 @@ export default function CharacterPlay({
           <div className="flex flex-col gap-3 p-4 pt-3">
             <fieldset className="flex flex-wrap gap-2">
               <legend className="text-base-content mb-2 text-sm">
-                The game only ever knows your 100-metre cell. Location is
-                optional.
+                How the game knows where you are.
               </legend>
               {MODES.map((m) => (
                 <button
@@ -308,7 +305,7 @@ export default function CharacterPlay({
                     // in the same breath as the bad news.
                     `${getGeolocationErrorMessage(geo.error)} Pick a zone or use grid movement instead. The game plays either way.`
                   : geo.fix
-                    ? 'Location rounded to a 100-metre cell. The precise fix was discarded.'
+                    ? `You are here, to within ±${Math.round(geo.fix.accuracy)} m.`
                     : 'Waiting for a location…'}
               </p>
             )}
