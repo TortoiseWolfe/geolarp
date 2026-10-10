@@ -64,17 +64,15 @@ export default function TermsOfServicePage() {
         <section className="mb-8">
           <h2>2. Who can play, and playing safely</h2>
           <p>
-            <strong>You must be at least 13 years old to play geoLARP.</strong>{' '}
-            Where the law where you live sets a higher minimum age for
-            consenting to online services or to the processing of your location
-            &mdash; several EU and EEA countries set 16 &mdash; that higher age
-            applies to you instead.
+            <strong>You must be 18 or over to play geoLARP.</strong> Children
+            cannot play.
           </p>
           <p>
-            geoLARP is not offered to children under 13, and we do not knowingly
-            collect their personal information. If you believe a child under 13
-            has used it, contact us and we will delete what we hold. How the
-            game handles your location is set out on our{' '}
+            geoLARP is not offered to anyone under 18, and we do not knowingly
+            collect their personal information. If you believe someone under 18
+            has used it, contact us and we will delete what we hold. Everyone
+            who plays shares their exact location with the other players; see
+            our{' '}
             <Link href="/app-privacy" className="link-hover link">
               App Privacy
             </Link>{' '}
@@ -86,10 +84,6 @@ export default function TermsOfServicePage() {
             somewhere is safe to go, and when. Obey traffic laws, respect
             private property and posted access rules, and keep your attention on
             your surroundings rather than your screen.
-          </p>
-          <p>
-            You never have to travel to play. Grid movement plays the entire
-            game without using your location at all.
           </p>
         </section>
 

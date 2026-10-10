@@ -75,11 +75,8 @@ export default function PrivacyPolicyPage() {
         <section className="mb-8">
           <h2>10. Children&apos;s Privacy</h2>
           <p>
-            <strong>geoLARP is for people aged 13 and over.</strong> Where the
-            law where you live sets a higher minimum age for consenting to
-            online services or to the processing of your location &mdash;
-            several EU and EEA countries set 16 under Article 8 GDPR &mdash;
-            that higher age applies to you instead.
+            <strong>geoLARP is for adults, 18 and over.</strong> Children cannot
+            play.
           </p>
           <p>
             We do not knowingly collect personal data from anyone below the age

@@ -76,39 +76,30 @@ of your street holds the same thing for you as for the person who walks past an
 hour later, because it is derived from the place, not handed out. That is what
 makes it a shared world rather than a private one.
 
-**Solo, it works with nothing behind it.** No matchmaking, no world state, no
-database of what is where. Your device can generate the 3×3 grid of cells around
-you while completely offline, from map tiles it cached earlier.
+**Encounters need nothing behind them.** No matchmaking and no database of what
+is where: your device can generate the 3×3 grid of cells around you while
+completely offline, from map tiles it cached earlier.
 
 ## 🔒 Where you are, and who knows it
 
-Your phone knows exactly where you are, and the game uses all of it.
+geoLARP is for adults, and it is played with other people on real streets.
 
-The **100-metre grid** is what encounters are built from, so the same square holds
-the same thing for everyone standing in it. Your place inside that square is not
-rounded or blurred: the game works from the most precise position your phone can
-give, because a game played on real streets needs to know where you really are.
+Everyone who plays shares their exact location with the other players and game
+masters, all the time, as precisely as their phone can give it. That is the game:
+the people around you know where you are, and you know where they are. If you do
+not want to share your location, do not play.
 
-Playing solo, that position never leaves your phone, and there is no location history
-to leak, because none is collected. Deny the permission entirely and it still plays:
-pick a zone by hand, or use grid movement and play the whole game with no GPS at all.
+No history of where you went is kept, and your location is never sold or used for
+advertising. The details are on the [App Privacy](https://geolarp.com/app-privacy/)
+page.
 
 ## 🚶 What playing actually looks like
 
 You generate a character in well under a minute — the target is ten seconds — and
 it lives in your browser's storage. You can export it as a file or a QR code and
-carry it to another device. Solo, nothing about you goes to a server, which is also why
-**you** are responsible for that export; clearing your browser data clears your
-character, and the game will warn you rather than quietly lose it.
-
-Play with others and the street fills up. Adults playing together see the players
-near them on a radar when they are close: the people around you can, or might, know
-you are there. A game master running a game sees exactly where its players are, so
-know your game master. You can turn your own visibility off, block players, or share
-only within one game master's game, and the game can hide you too, with cloaking and
-fog of war. Positions are shared only while you play and are never kept. Players
-under 18 play solo. The details are on the [App Privacy](https://geolarp.com/app-privacy/)
-page.
+carry it to another device, and **you** are responsible for that export; clearing
+your browser data clears your character, and the game will warn you rather than
+quietly lose it.
 
 Then you go outside. Quests are built around real distance — walk a quarter mile
 and see what is at the other end. The design target is about half a mile of actual

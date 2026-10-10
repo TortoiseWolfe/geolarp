@@ -1,8 +1,9 @@
 /**
- * /app-privacy/ is the policy the App Store listing links, and every sentence in
- * it is a promise about code (geoLARP-Expo) or a decision recorded in
- * docs/privacy/location-intent.md. This pins the promises, so a later edit that
- * softens one has to change this file too, in the same diff.
+ * /app-privacy/ is the policy the App Store listing links. The owner's rule,
+ * 2026-10-10: "kids can't play, everyone shares their full location all the
+ * time", and "if you don't want to share your location don't play". This pins
+ * that, and fails if the page drifts back to rounding, opt-outs, solo play or a
+ * release history.
  *
  * Modelled on AsBuilt-Expo's tests/lane/privacy-page.test.ts, written after that
  * app's first draft said "no tracking" while sending GPS with every photo.
@@ -22,65 +23,41 @@ describe('/app-privacy/', () => {
   });
 
   it.each([
-    // Playing solo.
+    ['adults only', 'geoLARP is for adults, 18 and over.'],
+    ['no children', 'Children cannot play.'],
     [
-      'exact location',
-      'the app asks your phone for the most precise position it can give, and the game uses all of it',
-    ],
-    ['on request', 'When you press'],
-    ['foreground only', 'never uses your location in the background'],
-    [
-      'solo sends nothing',
-      'Playing solo, your position never leaves your phone',
-    ],
-    // Playing with others, as intended.
-    ['two modes: solo', 'Playing solo'],
-    ['two modes: with others', 'Playing with others'],
-    ['adults only', 'It is for adults, 18 and over.'],
-    [
-      'minors stay solo',
-      'If you are under 18, you play solo, and your position never leaves your phone.',
+      'everyone shares, all the time',
+      'Everyone who plays shares their exact location with the other players and game masters, all the time.',
     ],
     [
-      'nearby players may see you',
-      'Other players near you may see where you are',
+      'as precise as the phone can give',
+      'the most precise position your phone can give',
     ],
     [
-      'the player controls it',
-      'You can turn it off, block particular players, or share only with players in the same game master',
+      "share or don't play",
+      "If you don't want to share your location, don't play.",
     ],
-    ['the game can hide you', 'cloaking and fog of war'],
-    [
-      'game master sees exactly',
-      'A game master sees exactly where the players in their game are',
-    ],
-    ['know your game master', 'Know your game master'],
-    ['live only', 'It is shared only while you play.'],
-    ['no history', 'no history of where you went is kept.'],
+    ['no history', 'No history of where you went is kept.'],
     ['Apple label stated', 'Precise Location'],
-    ['never sold', 'We do not sell it, use it for advertising'],
+    ['account', 'Playing needs a geoLARP account'],
+    ['never sold', 'We do not sell it or use it for advertising'],
   ])('promises: %s', (_what, sentence) => {
     expect(text()).toContain(sentence);
   });
 
-  it('never promises to blur the position: precision on the phone is the design', () => {
-    // The owner: "solo play your phone still needs precision of where you are, no
-    // rounding or vaguing, as accurate as we can get". The 100-metre square is what
-    // encounters are built from, not a cap on what the phone knows.
+  it('never talks about a rough location, an opt-out, solo play or under-18s', () => {
     expect(text()).not.toMatch(
-      /rounds? (it|your location)|approximate|coarse|never stored, shown or sent/i
+      /100|metre|meter|square|rounded|approximate|close enough|turn it off|block|solo|under 18|13 and over/i
     );
   });
 
   it('describes the game, not its release history', () => {
-    // The owner: "who cares what it was before the game was released". No
-    // "last updated" date, no "this version", no "coming later".
     expect(text()).not.toMatch(
-      /last updated|this version|later version|coming in|before it happens/i
+      /last updated|this version|later version|coming in/i
     );
   });
 
-  it('never says "no tracking": the game reads location, so say what for instead', () => {
+  it('never says "no tracking"', () => {
     expect(text()).not.toMatch(/no tracking/i);
   });
 
