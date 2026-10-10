@@ -129,7 +129,10 @@ export const MapContainer: React.FC<MapContainerProps> = ({
     }
 
     // Through the one socket (#39): this component used to have its own
-    // `navigator.geolocation` call with its own options.
+    // `navigator.geolocation` call with its own options. Centring on the exact
+    // reading (#183) means the tile requests that follow tell the map provider
+    // where the player is, to tile precision. /map's consent prompt and
+    // /app-privacy both say so; a consumer that shows a map must too.
     getDeviceFix(
       (fix) => {
         setLocationLoading(false);

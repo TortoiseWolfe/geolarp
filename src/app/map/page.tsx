@@ -232,7 +232,7 @@ export default function MapPage() {
         onClose={() => setShowConsentModal(false)}
         purposes={[GeolocationPurpose.USER_LOCATION_DISPLAY]}
         title="Enable Location Services"
-        description="We'd like to show where you are on the map, as precisely as your device can tell."
+        description="We'd like to show where you are on the map, as precisely as your device can tell. The map pictures come from OpenStreetMap or CARTO, which see the area on screen, and that includes where you are."
         privacyPolicyUrl="/app-privacy"
       />
     </main>
