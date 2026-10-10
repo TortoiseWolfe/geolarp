@@ -50,6 +50,9 @@ over-discloses on purpose.
   player presses Find my cell. Continuous sharing needs a watch (geolarp#90). Sharing
   while the phone is locked needs Apple's Always permission, which `audit:plist`
   forbids today.
-- **Refusing location:** the app and the website still let a player walk the grid
-  without location. The policy says don't play without sharing, so this is the
-  owner's call.
+- **Refusing location:** the ways to play without it (the website's zone and grid
+  modes, the app's grid movement) are archived, not deleted: the owner's instruction
+  was "archive them for later if we revisit it, don't delete them yet". One switch per
+  repo, `LOCATION_FREE_MODES` (geolarp `src/components/game/CharacterPlay/playModes.ts`
+  in #184, geoLARP-Expo `src/game/playModes.ts`), is off. Their tests still run with it
+  on.
