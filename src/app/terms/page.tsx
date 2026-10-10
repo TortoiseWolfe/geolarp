@@ -73,12 +73,12 @@ export default function TermsOfServicePage() {
           <p>
             geoLARP is not offered to children under 13, and we do not knowingly
             collect their personal information. If you believe a child under 13
-            has used it, contact us and we will delete what we hold. How we
-            handle location is covered in our{' '}
-            <Link href="/privacy" className="link-hover link">
-              Privacy Policy
-            </Link>
-            .
+            has used it, contact us and we will delete what we hold. How the
+            game handles your location is set out on our{' '}
+            <Link href="/app-privacy" className="link-hover link">
+              App Privacy
+            </Link>{' '}
+            page.
           </p>
           <p>
             geoLARP suggests places. It does not supervise you, and it does not

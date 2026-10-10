@@ -25,6 +25,7 @@ const staticPages = [
   '/blog/seo',
   '/blog/tags',
   '/privacy',
+  '/app-privacy',
   '/cookies',
   '/privacy-controls',
   '/comment-policy',

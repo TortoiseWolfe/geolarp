@@ -45,6 +45,14 @@ export default function PrivacyPolicyPage() {
             information in compliance with the General Data Protection
             Regulation (GDPR) and other applicable privacy laws.
           </p>
+          <p>
+            How the game uses your location, in the app and on this website, is
+            set out on our{' '}
+            <Link href="/app-privacy" className="link-hover link">
+              App Privacy
+            </Link>{' '}
+            page.
+          </p>
         </section>
         <section className="mb-8">
           <h2>2. Data Retention</h2>

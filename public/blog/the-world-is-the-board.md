@@ -101,6 +101,14 @@ carry it to another device. Nothing about you goes to a server, which is also wh
 **you** are responsible for that export; clearing your browser data clears your
 character, and the game will warn you rather than quietly lose it.
 
+> 🔒 **Update (October 2026):** everything above is still exactly what the game does
+> today. One thing coming will change it: game-master games, where a person runs a
+> game and needs to know where its players are. In those games, and only for adults
+> who choose to join one, your current 100-metre square is shared with that game
+> master while the game runs, and forgotten when it ends. Your exact position still
+> never leaves your device, and players under 18 play solo, with nothing shared at
+> all. The details are on the [App Privacy](https://geolarp.com/app-privacy/) page.
+
 Then you go outside. Quests are built around real distance — walk a quarter mile
 and see what is at the other end. The design target is about half a mile of actual
 walking in a session. This is a game that only works if you move.
