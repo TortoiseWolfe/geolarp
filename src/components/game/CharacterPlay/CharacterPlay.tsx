@@ -13,11 +13,14 @@ import { placeName } from '@/lib/geolarp/place';
 import { getGeolocationErrorMessage } from '@/utils/map-utils';
 import { ratingFor } from '@/lib/geolarp/character';
 import { LocationMode, ZONES, useCharacterPlay } from './useCharacterPlay';
+import { LOCATION_FREE_MODES } from './playModes';
 
 export interface CharacterPlayProps {
   /** Fixes the day, so a story or a test is not at the mercy of the clock. */
   today?: Date;
   className?: string;
+  /** Offer the archived zone and grid modes. Defaults to playModes.ts. */
+  locationFreeModes?: boolean;
 }
 
 /**
@@ -43,26 +46,26 @@ const MODES: ReadonlyArray<{ id: LocationMode; label: string }> = [
 /**
  * The playable surface: a sheet, the cell you are in, and a roll against it.
  *
- * Location is optional by design. The published fallbacks — a hand-picked zone
- * and grid movement with no GPS at all (`the-world-is-the-board.md:93-95`) —
- * are first-class here, not a degraded path: the default is "pick a zone", so
- * the game is playable before any permission prompt appears.
+ * The game plays from the device's location. The owner's rule, 2026-10-10: "if you
+ * don't want to share your location don't play". The two ways to play without it,
+ * a hand-picked zone and grid movement, are archived behind `locationFreeModes`
+ * (playModes.ts) rather than deleted. Nothing prompts until the player presses the
+ * location button, which is the user gesture #39 requires.
  *
  * @category game
  */
 export default function CharacterPlay({
   today,
   className = '',
+  locationFreeModes = LOCATION_FREE_MODES,
 }: CharacterPlayProps) {
-  const play = useCharacterPlay(today);
+  const play = useCharacterPlay(today, { locationFreeModes });
+  const modes = locationFreeModes ? MODES : MODES.filter((m) => m.id === 'gps');
   const [name, setName] = useState('');
   const geo = useGeolocation();
 
-  // Already a cell centre by the time it gets here (#39): the hook now returns a
-  // CoarseFix, and the rounding happened in the callback the platform invoked.
-  // Passing the centre back through `setCellFromFix` is provably identical to
-  // passing the reading — `cellOf(cellCentre(cellOf(p))) === cellOf(p)`, asserted
-  // in tests/unit/coarse-fix.test.ts — so the encounter seed is unchanged.
+  // The device's exact reading (#183). `setCellFromFix` finds the cell it is in,
+  // which is what the encounter is built from.
   React.useEffect(() => {
     if (play.mode !== 'gps' || !geo.fix) return;
     play.setCellFromFix(geo.fix.lat, geo.fix.lon);
@@ -130,8 +133,14 @@ export default function CharacterPlay({
       <strong>Eyes up.</strong> geoLARP suggests places; it does not know what
       is there and it is not watching out for you. Obey traffic laws, respect
       private property, and decide for yourself whether somewhere is safe to go
-      and when. You never have to travel &mdash; grid movement plays the whole
-      game. For players 13 and over; see the{' '}
+      and when.{' '}
+      {locationFreeModes && (
+        <>
+          You never have to travel &mdash; grid movement plays the whole
+          game.{' '}
+        </>
+      )}
+      For players 13 and over; see the{' '}
       <Link href="/terms" className="link-hover link">
         terms
       </Link>
@@ -215,12 +224,16 @@ export default function CharacterPlay({
       // completely unsayable. "Low Gate" is a sentence.
       placeName(play.cell)
     : play.mode === 'gps' && geo.error
-      ? 'No location — playing without it'
+      ? locationFreeModes
+        ? 'No location — playing without it'
+        : 'No location'
       : // NOT the body's "Waiting for a location…". A summary that repeats its
         // own body word for word is the duplication this pass exists to
         // remove, and it makes every test matching that phrase ambiguous
         // between two elements.
-        'Locating…';
+        geo.loading
+        ? 'Locating…'
+        : 'Not located yet';
 
   return (
     <div className={`flex flex-col gap-6${className ? ` ${className}` : ''}`}>
@@ -251,10 +264,9 @@ export default function CharacterPlay({
           <div className="flex flex-col gap-3 p-4 pt-3">
             <fieldset className="flex flex-wrap gap-2">
               <legend className="text-base-content mb-2 text-sm">
-                The game only ever knows your 100-metre cell. Location is
-                optional.
+                How the game knows where you are.
               </legend>
-              {MODES.map((m) => (
+              {modes.map((m) => (
                 <button
                   key={m.id}
                   type="button"
@@ -306,10 +318,14 @@ export default function CharacterPlay({
                     // about them. The reassurance stays attached: the game
                     // plays either way, and that is the part a player needs
                     // in the same breath as the bad news.
-                    `${getGeolocationErrorMessage(geo.error)} Pick a zone or use grid movement instead. The game plays either way.`
+                    locationFreeModes
+                    ? `${getGeolocationErrorMessage(geo.error)} Pick a zone or use grid movement instead. The game plays either way.`
+                    : `${getGeolocationErrorMessage(geo.error)} geoLARP needs your location to play.`
                   : geo.fix
-                    ? 'Location rounded to a 100-metre cell. The precise fix was discarded.'
-                    : 'Waiting for a location…'}
+                    ? `You are here, to within ±${Math.round(geo.fix.accuracy)} m.`
+                    : geo.loading
+                      ? 'Waiting for a location…'
+                      : 'Press “Get my location” to start.'}
               </p>
             )}
 

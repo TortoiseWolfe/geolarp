@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { waitForLoadStateOrGiveUp } from './utils/settle';
@@ -6,6 +6,33 @@ import {
   measureNullRatioNodes,
   VENDOR_EXCLUDED,
 } from './utils/contrast-fallback';
+import { LOCATION_FREE_MODES } from '@/components/game/CharacterPlay/playModes';
+
+/**
+ * THE GAME STARTS ON THE DEVICE'S LOCATION. The zone and grid modes are archived
+ * (playModes.ts; the owner, 2026-10-10: "if you don't want to share your location
+ * don't play"), so a test that needs an encounter takes a fix first, from this
+ * emulated position in downtown Chattanooga.
+ */
+test.use({
+  geolocation: { latitude: 35.0456, longitude: -85.3097, accuracy: 5 },
+  permissions: ['geolocation'],
+});
+
+async function locate(page: Page): Promise<void> {
+  if (LOCATION_FREE_MODES) return;
+  // The button sits inside the "Where you are" disclosure, and Playwright will not
+  // click into a closed <details>.
+  await page.evaluate(() => {
+    for (const d of Array.from(document.querySelectorAll('details'))) {
+      if ((d.textContent ?? '').includes('Get my location')) d.open = true;
+    }
+  });
+  await page.getByRole('button', { name: 'Get my location' }).click();
+  await expect(
+    page.getByRole('status', { name: 'Location status' })
+  ).toContainText('You are here', { timeout: 15000 });
+}
 
 /**
  * WCAG AAA on the PLAYED state of /character.
@@ -246,6 +273,7 @@ for (const theme of THEMES) {
       await expect(
         page.getByRole('heading', { name: 'Ada Wren', level: 2 })
       ).toBeVisible({ timeout: 15000 });
+      await locate(page);
 
       // Before any interaction: the mode buttons the grid test clicks now sit
       // inside "Where you are", and Playwright will not click into a closed
@@ -378,7 +406,7 @@ for (const theme of THEMES) {
           );
         return {
           primer: hit('There are no turns'),
-          where: hit('The game only ever knows your 100-metre cell'),
+          where: hit('How the game knows where you are'),
           seed: hit('everyone in this cell today meets the same thing'),
         };
       });
@@ -386,6 +414,10 @@ for (const theme of THEMES) {
     });
 
     test('the grid-movement controls are AAA', async ({ page }) => {
+      test.skip(
+        !LOCATION_FREE_MODES,
+        'Grid movement is archived (playModes.ts); this runs again when it is back.'
+      );
       await page.getByRole('button', { name: 'Grid movement' }).click();
       await expect(
         page.getByRole('group', { name: 'Move one cell' })
@@ -426,6 +458,7 @@ test.describe('/character played — no horizontal overflow', () => {
       await expect(
         page.getByRole('heading', { name: 'Ada Wren', level: 2 })
       ).toBeVisible({ timeout: 15000 });
+      await locate(page);
 
       // Open the roller too — the dice row is the widest thing on the page.
       await page
@@ -558,6 +591,10 @@ test.describe('/character played — the grid is a real control', () => {
   test('every tile meets 44px and the six moves are operable buttons', async ({
     page,
   }) => {
+    test.skip(
+      !LOCATION_FREE_MODES,
+      'Grid movement is archived (playModes.ts); this runs again when it is back.'
+    );
     await page.addInitScript(
       ([t, c]) => {
         window.localStorage.setItem('theme', t as string);
@@ -643,6 +680,7 @@ test.describe('/character played — the grid is a real control', () => {
     await expect(
       page.getByRole('heading', { name: 'Ada Wren', level: 2 })
     ).toBeVisible({ timeout: 15000 });
+    await locate(page);
 
     await expect(page.locator('[data-testid="cell-tile"]')).toHaveCount(7);
     await expect(

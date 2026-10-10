@@ -2,8 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { LocationMarker } from './LocationMarker';
-import { cellOf, cellCentre } from '@/lib/geolarp/cell';
-import type { CoarseFix } from '@/lib/geolarp/coarseFix';
+import { deviceFixFrom, type DeviceFix } from '@/lib/geolarp/deviceFix';
 
 expect.extend(toHaveNoViolations);
 
@@ -47,17 +46,12 @@ vi.mock('leaflet', () => ({
   },
 }));
 
-/** A reading whose coordinate is already gone, built the way the app builds one. */
-function fixAt(lat: number, lon: number, accuracy = 10): CoarseFix {
-  const cell = cellOf(lat, lon);
-  const centre = cellCentre(cell);
-  return {
-    cell,
-    lat: centre.lat,
-    lon: centre.lon,
-    accuracy,
+/** A reading built the way the app builds one, through the socket. */
+function fixAt(lat: number, lon: number, accuracy = 10): DeviceFix {
+  return deviceFixFrom({
+    coords: { latitude: lat, longitude: lon, accuracy },
     timestamp: 1_757_000_000_000,
-  };
+  } as GeolocationPosition);
 }
 
 describe('LocationMarker Accessibility', () => {

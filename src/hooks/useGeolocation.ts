@@ -1,29 +1,20 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  clearCoarseWatch,
-  getCoarseFix,
+  clearDeviceWatch,
+  getDeviceFix,
   isGeolocationSupported,
-  watchCoarseFix,
-  type CoarseFix,
-} from '@/lib/geolarp/coarseFix';
+  watchDeviceFix,
+  type DeviceFix,
+} from '@/lib/geolarp/deviceFix';
 
 export interface GeolocationState {
-  /**
-   * The cell the device is in, and its centre. NEVER the reading (#39).
-   *
-   * RENAMED FROM `position`, deliberately, rather than retyped in place. This hook
-   * used to hold the raw `GeolocationPosition` here and hand it to every consumer,
-   * which is what made the published sentence "rounded to 100 metres before
-   * anything is done with it" false. A same-named field with a new type produces
-   * vague errors at each call site; a new name produces one clear error per
-   * consumer, so the compiler walks them all.
-   */
-  fix: CoarseFix | null;
+  /** The device's exact reading and the cell it is in (#183). */
+  fix: DeviceFix | null;
   permission: PermissionState;
   loading: boolean;
   error: GeolocationPositionError | null;
   lastUpdated: Date | null;
-  /** The device's error radius in metres — a scalar, carrying no position. */
+  /** The device's error radius in metres. */
   accuracy: number | null;
 }
 
@@ -118,10 +109,7 @@ export function useGeolocation(
   }, [isSupported]);
 
   // Handle success
-  // Takes a CoarseFix, not a GeolocationPosition: the rounding already happened,
-  // inside the socket, in the callback the platform invoked. Nothing raw reaches
-  // this function, so nothing raw can reach state (#39).
-  const handleSuccess = useCallback((fix: CoarseFix) => {
+  const handleSuccess = useCallback((fix: DeviceFix) => {
     setState({
       fix,
       permission: 'granted',
@@ -168,40 +156,27 @@ export function useGeolocation(
     if (options?.watch) {
       // Clear existing watch if any
       if (watchId.current !== null) {
-        clearCoarseWatch(watchId.current);
+        clearDeviceWatch(watchId.current);
       }
-      watchId.current = watchCoarseFix(handleSuccess, handleError);
+      watchId.current = watchDeviceFix(handleSuccess, handleError);
     } else {
-      getCoarseFix(handleSuccess, handleError);
+      getDeviceFix(handleSuccess, handleError);
     }
   }, [isSupported, options, handleSuccess, handleError]);
 
   // Clear watch
   const clearWatch = useCallback(() => {
     if (watchId.current !== null && isSupported) {
-      clearCoarseWatch(watchId.current);
+      clearDeviceWatch(watchId.current);
       watchId.current = null;
     }
   }, [isSupported]);
-
-  /*
-   * `distanceFrom` IS GONE (#39), not quantised.
-   *
-   * It computed haversine metres between the raw fix and a target — which required
-   * holding the raw pair, and is the one thing cell.ts explicitly refuses to do:
-   * "a metre figure derived from cell centres would imply a precision the grid does
-   * not carry". Quantising it would have produced a number that looks precise and
-   * is not. It had no production consumer — only this hook, one test, and two test
-   * mocks — so deleting is cheaper than inventing an honest replacement nobody
-   * asked for. `offsetMetres` in cell.ts is the grid-aware answer if one is ever
-   * wanted.
-   */
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (watchId.current !== null && isSupported) {
-        clearCoarseWatch(watchId.current);
+        clearDeviceWatch(watchId.current);
       }
     };
   }, [isSupported]);
