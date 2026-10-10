@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: { url: '/app-privacy/' },
   title: 'App Privacy - geoLARP',
   description:
-    'What the geoLARP app does with your location: today, and when game-master games arrive.',
+    'What the geoLARP app does with your location: today, and when playing with others arrives.',
 };
 
 /**
@@ -16,11 +16,12 @@ export const metadata: Metadata = {
  *
  * Every claim here is a claim about code in another repo or a decision recorded
  * in docs/privacy/location-intent.md, which lists the source for each one. It
- * describes the game as intended, game-master games included, because the owner
- * chose that on 2026-10-10; the part not yet built says so in its heading. Adults
- * in a game-master game share their EXACT position with that game master, by the
- * owner's decision the same day: the game master is someone the players know and
- * trust, and needs complete accuracy to run the game.
+ * describes the game as intended, playing with others included, because the owner
+ * chose that on 2026-10-10; the part not yet built says so in its heading. The
+ * owner's design the same day: adult players near each other can see each other
+ * (a radar), each player can turn it off, block players or keep it within one game
+ * master's game, the game can hide them (cloaking, fog of war), and a game master
+ * sees their players' exact positions. Shared live, never kept.
  * tests/unit/app-privacy-page.test.tsx pins the promises.
  */
 export default function AppPrivacyPage() {
@@ -73,47 +74,50 @@ export default function AppPrivacyPage() {
         </section>
 
         <section className="mb-8">
-          <h2>Game-master games (coming in a later version)</h2>
+          <h2>Playing with others (coming in a later version)</h2>
           <p>
-            A game-master game is run by a person, the game master, who needs to
-            know exactly where the players in their game are in order to run it.
-            When these games arrive:
+            geoLARP is at its best when the players around you might be anywhere
+            nearby. When playing with others arrives:
           </p>
           <p>
-            <strong>They are for adults, 18 and over.</strong> If you are under
-            18, you play solo, and your position never leaves your phone.
+            <strong>It is for adults, 18 and over.</strong> If you are under 18,
+            you play solo, and your position never leaves your phone.
           </p>
           <p>
-            <strong>Your exact position is shared with the game master</strong>{' '}
-            of a game you chose to join, and with no one else. Other players do
-            not see it.
+            <strong>Other players near you may see where you are</strong>, for
+            example on their radar when you are close by. That is part of the
+            game: the players around you can, or might, know you are there.
           </p>
           <p>
-            <strong>Know your game master.</strong> They see exactly where you
-            are for as long as the game runs, so join only games run by someone
-            you know and trust.
+            <strong>You control it.</strong> You can turn it off, block
+            particular players, or share only with players in the same game
+            master&apos;s game. The game can hide you too, with effects such as
+            cloaking and fog of war.
           </p>
           <p>
-            <strong>It is kept only while the game runs.</strong> When you leave
-            the game or it ends, the server forgets your position. No history of
-            where you went is kept.
+            <strong>
+              A game master sees exactly where the players in their game are
+            </strong>
+            , because they need it to run the game. Know your game master: join
+            only games run by someone you know and trust.
           </p>
           <p>
-            <strong>Joining needs a geoLARP account</strong>, so the game master
-            knows who is who. Deleting your account removes what is tied to it;
-            see the{' '}
+            <strong>It is shared only while you play.</strong> When you stop
+            playing or a game ends, the server forgets where you were, and no
+            history of where you went is kept.
+          </p>
+          <p>
+            <strong>Playing with others needs a geoLARP account</strong>, so
+            players and game masters know who is who. Deleting your account
+            removes what is tied to it; see the{' '}
             <Link href="/privacy" className="link-hover link">
               Privacy Policy
             </Link>
             .
           </p>
           <p>
-            Nothing is shared until you join a game yourself, and you can leave
-            at any time.
-          </p>
-          <p>
             The App Store lists this as &ldquo;Precise Location&rdquo;, because
-            that is what a game master sees.
+            a game master can see your exact position.
           </p>
         </section>
 
@@ -135,7 +139,7 @@ export default function AppPrivacyPage() {
             <Link href="/terms" className="link-hover link">
               Terms of Service
             </Link>
-            . Game-master games are for adults only.
+            . Playing with others is for adults only.
           </p>
         </section>
 
@@ -143,7 +147,7 @@ export default function AppPrivacyPage() {
           <h2>What we never do with your location</h2>
           <p>
             We do not sell it, use it for advertising, or share it with anyone
-            outside a game you have joined.
+            but the players and game masters described above.
           </p>
         </section>
 

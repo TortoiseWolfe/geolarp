@@ -34,25 +34,29 @@ describe('/app-privacy/', () => {
     ],
     ['foreground only', 'never uses your location in the background'],
     ['nothing sent today', 'This version makes no network requests.'],
-    // Game-master games, as intended.
-    ['marked as not built', 'Game-master games (coming in a later version)'],
-    ['adults only', 'They are for adults, 18 and over.'],
+    // Playing with others, as intended.
+    ['marked as not built', 'Playing with others (coming in a later version)'],
+    ['adults only', 'It is for adults, 18 and over.'],
     [
       'minors stay solo',
       'If you are under 18, you play solo, and your position never leaves your phone.',
     ],
     [
-      'exact, to the game master only',
-      'Your exact position is shared with the game master of a game you chose to join, and with no one else.',
+      'nearby players may see you',
+      'Other players near you may see where you are',
     ],
     [
-      'know your game master',
-      'Know your game master. They see exactly where you are for as long as the game runs',
+      'the player controls it',
+      'You can turn it off, block particular players, or share only with players in the same game master',
     ],
-    ['the game master only', 'Other players do not see it.'],
-    ['live only', 'It is kept only while the game runs.'],
-    ['no history', 'No history of where you went is kept.'],
-    ['opt in', 'Nothing is shared until you join a game yourself'],
+    ['the game can hide you', 'cloaking and fog of war'],
+    [
+      'game master sees exactly',
+      'A game master sees exactly where the players in their game are',
+    ],
+    ['know your game master', 'Know your game master'],
+    ['live only', 'It is shared only while you play.'],
+    ['no history', 'no history of where you went is kept.'],
     ['Apple label stated', 'Precise Location'],
     ['never sold', 'We do not sell it, use it for advertising'],
   ])('promises: %s', (_what, sentence) => {

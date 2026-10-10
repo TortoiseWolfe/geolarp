@@ -102,12 +102,13 @@ carry it to another device. Nothing about you goes to a server, which is also wh
 character, and the game will warn you rather than quietly lose it.
 
 > 🔒 **Update (October 2026):** everything above is still exactly what the game does
-> today. One thing coming will change it: game-master games, where a person runs a
-> game and needs to know exactly where its players are. In those games, and only for
-> adults who choose to join one, your exact position is shared with that game master
-> while the game runs, and forgotten when it ends. Nobody else sees it, so know your
-> game master before you join. Players under 18 play solo, with nothing shared at all.
-> The details are on the [App Privacy](https://geolarp.com/app-privacy/) page.
+> today. One thing coming will change it: playing with others. Adult players will be
+> able to see the players near them, on a radar when they are close, and a game
+> master will see exactly where the players in their game are. You will be able to
+> turn that off, block players, or share only within one game master's game, and the
+> game itself can hide you, with cloaking and fog of war. Positions are shared only
+> while you play and are never kept. Players under 18 play solo, with nothing shared
+> at all. The details are on the [App Privacy](https://geolarp.com/app-privacy/) page.
 
 Then you go outside. Quests are built around real distance — walk a quarter mile
 and see what is at the other end. The design target is about half a mile of actual
