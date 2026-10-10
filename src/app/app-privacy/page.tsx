@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: { url: '/app-privacy/' },
   title: 'App Privacy - geoLARP',
   description:
-    'What the geoLARP app does with your location: today, and when playing with others arrives.',
+    'How the geoLARP app uses your location, playing solo and playing with others.',
 };
 
 /**
@@ -16,17 +16,14 @@ export const metadata: Metadata = {
  *
  * Every claim here is a claim about code in another repo or a decision recorded
  * in docs/privacy/location-intent.md, which lists the source for each one. It
- * describes the game as intended, playing with others included, because the owner
- * chose that on 2026-10-10; the part not yet built says so in its heading. The
- * owner's design the same day: adult players near each other can see each other
+ * describes the game as designed, in its two modes. Playing with others is the
+ * owner's design: adult players near each other can see each other
  * (a radar), each player can turn it off, block players or keep it within one game
  * master's game, the game can hide them (cloaking, fog of war), and a game master
  * sees their players' exact positions. Shared live, never kept.
  * tests/unit/app-privacy-page.test.tsx pins the promises.
  */
 export default function AppPrivacyPage() {
-  const lastUpdated = '2026-10-10';
-
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:py-8 md:py-12">
       <header>
@@ -36,12 +33,9 @@ export default function AppPrivacyPage() {
       </header>
 
       <article className="sh-doc">
-        <p className="text-base-content mb-6 text-sm">
-          Last updated: {lastUpdated}
-        </p>
         <p>
-          This covers the geoLARP app, and how the game uses your location in
-          the app and on this website. Website accounts are covered by our{' '}
+          How geoLARP uses your location, in the app and on this website.
+          Website accounts are covered by our{' '}
           <Link href="/privacy" className="link-hover link">
             Privacy Policy
           </Link>
@@ -49,7 +43,7 @@ export default function AppPrivacyPage() {
         </p>
 
         <section className="mb-8">
-          <h2>What this version of the app does</h2>
+          <h2>Playing solo</h2>
           <p>
             <strong>Location, only when you ask.</strong> The app asks for your
             location only when you press &ldquo;Find my cell&rdquo;. It takes
@@ -59,25 +53,25 @@ export default function AppPrivacyPage() {
             The app never uses your location in the background.
           </p>
           <p>
-            <strong>Nothing is sent.</strong> This version makes no network
-            requests. Nothing about you, your character or your location is sent
-            to us or to anyone else. Tapping a link opens it in your browser.
+            <strong>Nothing is sent.</strong> Nothing about you, your character
+            or your location is sent to us or to anyone else. Tapping a link
+            opens it in your browser.
           </p>
           <p>
             <strong>What stays on your phone.</strong> Your character and your
             diary. Neither includes a location. Deleting the app deletes them.
           </p>
           <p>
-            There is no account, and no analytics, advertising, crash reporting
-            or identifiers.
+            Solo play needs no account, and there is no analytics, advertising,
+            crash reporting or identifiers. Anyone 13 and over can play solo.
           </p>
         </section>
 
         <section className="mb-8">
-          <h2>Playing with others (coming in a later version)</h2>
+          <h2>Playing with others</h2>
           <p>
             geoLARP is at its best when the players around you might be anywhere
-            nearby. When playing with others arrives:
+            nearby.
           </p>
           <p>
             <strong>It is for adults, 18 and over.</strong> If you are under 18,
@@ -152,14 +146,13 @@ export default function AppPrivacyPage() {
         </section>
 
         <section className="mb-8">
-          <h2>Contact and changes</h2>
+          <h2>Contact</h2>
           <p>
             Questions go through our{' '}
             <Link href="/contact" className="link-hover link">
               contact page
             </Link>
-            . When this page changes, the date above changes with it, and a
-            change to what is shared will be in the app before it happens.
+            .
           </p>
         </section>
       </article>

@@ -6,9 +6,6 @@ game is meant to become, and the record of the decisions behind
 
 ## The intent, as the owner set it
 
-Three corrections on 2026-10-10 got here. Each one removed a restriction this
-document had invented, so read them as the design, not as exceptions to it.
-
 - **Adult players can see the players near them.** In the owner's words: _"best
   game dynamics all players 'would' have the ability to see other players they are
   near unless cloaked or 'fog of war' but at privacy level best game play dynamics
@@ -22,16 +19,14 @@ document had invented, so read them as the design, not as exceptions to it.
   complete accuracy, you should know your game master."_
 - **Only while playing.** Positions are not kept as history.
 - **Adults and minors play different versions.** Under-18s play solo only.
-- **The first published policy describes this intended game**, marked clearly as
-  not yet in the app, rather than describing only today's build.
+- **The policy describes the game as designed**, in its two modes, not the history of
+  the build.
 
-The rule underneath is the owner's, from 2026-10-04: _"we still have to know where
-the player or at least their device is, but we can't let that leak."_ **A leak is a
-position reaching someone the game does not mean to show it to**, or being kept after
-play. It is not "anything leaving the phone". Being seen by the players near you is
-the game working, and the player can turn it off, block players, or keep it within
-one game master's game. The mistake to avoid is coarsening or hiding what the game
-means to show.
+The rule underneath is the owner's: _"we still have to know where the player or at
+least their device is, but we can't let that leak."_ **A leak is a position reaching
+someone the game does not mean to show it to**, or being kept after play. Being seen
+by the players near you is the game working, and the player can turn it off, block
+players, or keep it within one game master's game.
 
 ## The design the policy states
 

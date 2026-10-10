@@ -33,9 +33,13 @@ describe('/app-privacy/', () => {
       'Your exact position is never stored, shown or sent.',
     ],
     ['foreground only', 'never uses your location in the background'],
-    ['nothing sent today', 'This version makes no network requests.'],
+    [
+      'solo sends nothing',
+      'Nothing about you, your character or your location is sent to us or to anyone else.',
+    ],
     // Playing with others, as intended.
-    ['marked as not built', 'Playing with others (coming in a later version)'],
+    ['two modes: solo', 'Playing solo'],
+    ['two modes: with others', 'Playing with others'],
     ['adults only', 'It is for adults, 18 and over.'],
     [
       'minors stay solo',
@@ -61,6 +65,14 @@ describe('/app-privacy/', () => {
     ['never sold', 'We do not sell it, use it for advertising'],
   ])('promises: %s', (_what, sentence) => {
     expect(text()).toContain(sentence);
+  });
+
+  it('describes the game, not its release history', () => {
+    // The owner: "who cares what it was before the game was released". No
+    // "last updated" date, no "this version", no "coming later".
+    expect(text()).not.toMatch(
+      /last updated|this version|later version|coming in|before it happens/i
+    );
   });
 
   it('never says "no tracking": the game reads location, so say what for instead', () => {
