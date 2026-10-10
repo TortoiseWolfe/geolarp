@@ -76,39 +76,39 @@ of your street holds the same thing for you as for the person who walks past an
 hour later, because it is derived from the place, not handed out. That is what
 makes it a shared world rather than a private one.
 
-**It works with nothing behind it.** No matchmaking, no world state, no database
-of what is where. Your device can generate the 3×3 grid of cells around you while
-completely offline, from map tiles it cached earlier.
+**Solo, it works with nothing behind it.** No matchmaking, no world state, no
+database of what is where. Your device can generate the 3×3 grid of cells around
+you while completely offline, from map tiles it cached earlier.
 
 ## 🔒 The privacy design is the same design
 
-This is the part I am most pleased with, so I want to be exact about it.
+Solo play first, the part I am most pleased with, so I want to be exact about it.
 
 Location is rounded to **100 metres before anything is done with it** — and that
 rounding is not a privacy feature bolted on afterwards. It is the grid. The
 coarseness that makes encounters stable is the same coarseness that means the game
 never knows which building you are in.
 
-So there is no tracking to switch off, and no location history to leak, because
-none is collected. Deny the permission entirely and it still plays: pick a zone by
-hand, or use grid movement and play the whole game with no GPS at all.
+So playing solo there is nothing to switch off, and no location history to leak,
+because none is collected. Deny the permission entirely and it still plays: pick a
+zone by hand, or use grid movement and play the whole game with no GPS at all.
 
 ## 🚶 What playing actually looks like
 
 You generate a character in well under a minute — the target is ten seconds — and
 it lives in your browser's storage. You can export it as a file or a QR code and
-carry it to another device. Nothing about you goes to a server, which is also why
+carry it to another device. Solo, nothing about you goes to a server, which is also why
 **you** are responsible for that export; clearing your browser data clears your
 character, and the game will warn you rather than quietly lose it.
 
-> 🔒 **Update (October 2026):** everything above is still exactly what the game does
-> today. One thing coming will change it: playing with others. Adult players will be
-> able to see the players near them, on a radar when they are close, and a game
-> master will see exactly where the players in their game are. You will be able to
-> turn that off, block players, or share only within one game master's game, and the
-> game itself can hide you, with cloaking and fog of war. Positions are shared only
-> while you play and are never kept. Players under 18 play solo, with nothing shared
-> at all. The details are on the [App Privacy](https://geolarp.com/app-privacy/) page.
+Play with others and the street fills up. Adults playing together see the players
+near them on a radar when they are close: the people around you can, or might, know
+you are there. A game master running a game sees exactly where its players are, so
+know your game master. You can turn your own visibility off, block players, or share
+only within one game master's game, and the game can hide you too, with cloaking and
+fog of war. Positions are shared only while you play and are never kept. Players
+under 18 play solo. The details are on the [App Privacy](https://geolarp.com/app-privacy/)
+page.
 
 Then you go outside. Quests are built around real distance — walk a quarter mile
 and see what is at the other end. The design target is about half a mile of actual
@@ -143,9 +143,9 @@ sketch alone. Some questions I genuinely have not answered:
    this fantasy laid over the real street, near-future, folk-horror, something with
    no combat in it at all? The encounter types — monster, trader, cache, shrine,
    trap — are placeholders wearing familiar clothes.
-2. **What happens when two players are in the same cell?** Right now the design is
-   single-player-shaped with a shared world. Co-op, competition, or simply
-   knowing someone else has been here — each pulls the design somewhere different.
+2. **What happens when two players meet?** They can see each other on the radar;
+   what they do then is open. Co-op, competition, or simply knowing someone else
+   has been here — each pulls the design somewhere different.
 3. **How much walking is too much?** Half a mile a session is a guess. It is the
    difference between a game you play on a commute and one you make a trip for,
    and I do not know which this should be.
