@@ -76,36 +76,33 @@ export default function AppPrivacyPage() {
             know where the players in their game are in order to run it. When
             these games arrive:
           </p>
-          <ul>
-            <li>
-              <strong>They are for adults, 18 and over.</strong> If you are
-              under 18, you play solo, and your position never leaves your
-              phone.
-            </li>
-            <li>
-              <strong>What is shared is your current 100-metre square</strong>,
-              never your exact position, and only with the game master of a game
-              you chose to join. Other players do not see it.
-            </li>
-            <li>
-              <strong>It is kept only while the game runs.</strong> When you
-              leave the game or it ends, the server forgets your position. No
-              history of where you went is kept.
-            </li>
-            <li>
-              <strong>Joining needs a geoLARP account</strong>, so the game
-              master knows who is who. Deleting your account removes what is
-              tied to it; see the{' '}
-              <Link href="/privacy" className="link-hover link">
-                Privacy Policy
-              </Link>
-              .
-            </li>
-            <li>
-              Nothing is shared until you join a game yourself, and you can
-              leave at any time.
-            </li>
-          </ul>
+          <p>
+            <strong>They are for adults, 18 and over.</strong> If you are under
+            18, you play solo, and your position never leaves your phone.
+          </p>
+          <p>
+            <strong>What is shared is your current 100-metre square</strong>,
+            never your exact position, and only with the game master of a game
+            you chose to join. Other players do not see it.
+          </p>
+          <p>
+            <strong>It is kept only while the game runs.</strong> When you leave
+            the game or it ends, the server forgets your position. No history of
+            where you went is kept.
+          </p>
+          <p>
+            <strong>Joining needs a geoLARP account</strong>, so the game master
+            knows who is who. Deleting your account removes what is tied to it;
+            see the{' '}
+            <Link href="/privacy" className="link-hover link">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+          <p>
+            Nothing is shared until you join a game yourself, and you can leave
+            at any time.
+          </p>
           <p>
             The App Store lists this as &ldquo;Precise Location&rdquo;. A
             100-metre square is about as fine as the line Apple draws for that
