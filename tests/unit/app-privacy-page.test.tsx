@@ -42,8 +42,12 @@ describe('/app-privacy/', () => {
       'If you are under 18, you play solo, and your position never leaves your phone.',
     ],
     [
-      'the cell, never finer',
-      'your current 100-metre square, never your exact position',
+      'exact, to the game master only',
+      'Your exact position is shared with the game master of a game you chose to join, and with no one else.',
+    ],
+    [
+      'know your game master',
+      'Know your game master. They see exactly where you are for as long as the game runs',
     ],
     ['the game master only', 'Other players do not see it.'],
     ['live only', 'It is kept only while the game runs.'],

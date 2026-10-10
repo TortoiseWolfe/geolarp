@@ -17,7 +17,10 @@ export const metadata: Metadata = {
  * Every claim here is a claim about code in another repo or a decision recorded
  * in docs/privacy/location-intent.md, which lists the source for each one. It
  * describes the game as intended, game-master games included, because the owner
- * chose that on 2026-10-10; the part not yet built says so in its heading.
+ * chose that on 2026-10-10; the part not yet built says so in its heading. Adults
+ * in a game-master game share their EXACT position with that game master, by the
+ * owner's decision the same day: the game master is someone the players know and
+ * trust, and needs complete accuracy to run the game.
  * tests/unit/app-privacy-page.test.tsx pins the promises.
  */
 export default function AppPrivacyPage() {
@@ -73,17 +76,22 @@ export default function AppPrivacyPage() {
           <h2>Game-master games (coming in a later version)</h2>
           <p>
             A game-master game is run by a person, the game master, who needs to
-            know where the players in their game are in order to run it. When
-            these games arrive:
+            know exactly where the players in their game are in order to run it.
+            When these games arrive:
           </p>
           <p>
             <strong>They are for adults, 18 and over.</strong> If you are under
             18, you play solo, and your position never leaves your phone.
           </p>
           <p>
-            <strong>What is shared is your current 100-metre square</strong>,
-            never your exact position, and only with the game master of a game
-            you chose to join. Other players do not see it.
+            <strong>Your exact position is shared with the game master</strong>{' '}
+            of a game you chose to join, and with no one else. Other players do
+            not see it.
+          </p>
+          <p>
+            <strong>Know your game master.</strong> They see exactly where you
+            are for as long as the game runs, so join only games run by someone
+            you know and trust.
           </p>
           <p>
             <strong>It is kept only while the game runs.</strong> When you leave
@@ -104,9 +112,8 @@ export default function AppPrivacyPage() {
             at any time.
           </p>
           <p>
-            The App Store lists this as &ldquo;Precise Location&rdquo;. A
-            100-metre square is about as fine as the line Apple draws for that
-            label, so we use it, even though an exact position is never sent.
+            The App Store lists this as &ldquo;Precise Location&rdquo;, because
+            that is what a game master sees.
           </p>
         </section>
 
