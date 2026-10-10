@@ -80,18 +80,18 @@ makes it a shared world rather than a private one.
 database of what is where. Your device can generate the 3×3 grid of cells around
 you while completely offline, from map tiles it cached earlier.
 
-## 🔒 The privacy design is the same design
+## 🔒 Where you are, and who knows it
 
-Solo play first, the part I am most pleased with, so I want to be exact about it.
+Your phone knows exactly where you are, and the game uses all of it.
 
-Location is rounded to **100 metres before anything is done with it** — and that
-rounding is not a privacy feature bolted on afterwards. It is the grid. The
-coarseness that makes encounters stable is the same coarseness that means the game
-never knows which building you are in.
+The **100-metre grid** is what encounters are built from, so the same square holds
+the same thing for everyone standing in it. Your place inside that square is not
+rounded or blurred: the game works from the most precise position your phone can
+give, because a game played on real streets needs to know where you really are.
 
-So playing solo there is nothing to switch off, and no location history to leak,
-because none is collected. Deny the permission entirely and it still plays: pick a
-zone by hand, or use grid movement and play the whole game with no GPS at all.
+Playing solo, that position never leaves your phone, and there is no location history
+to leak, because none is collected. Deny the permission entirely and it still plays:
+pick a zone by hand, or use grid movement and play the whole game with no GPS at all.
 
 ## 🚶 What playing actually looks like
 

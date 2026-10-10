@@ -22,20 +22,16 @@ describe('/app-privacy/', () => {
   });
 
   it.each([
-    // This version of the app.
-    ['location only on request', 'asks for your location only when you press'],
+    // Playing solo.
     [
-      'rounded on the phone',
-      'on your phone, straight away, rounds it to the 100-metre square',
+      'exact location',
+      'the app asks your phone for the most precise position it can give, and the game uses all of it',
     ],
-    [
-      'exact position stays put',
-      'Your exact position is never stored, shown or sent.',
-    ],
+    ['on request', 'When you press'],
     ['foreground only', 'never uses your location in the background'],
     [
       'solo sends nothing',
-      'Nothing about you, your character or your location is sent to us or to anyone else.',
+      'Playing solo, your position never leaves your phone',
     ],
     // Playing with others, as intended.
     ['two modes: solo', 'Playing solo'],
@@ -65,6 +61,15 @@ describe('/app-privacy/', () => {
     ['never sold', 'We do not sell it, use it for advertising'],
   ])('promises: %s', (_what, sentence) => {
     expect(text()).toContain(sentence);
+  });
+
+  it('never promises to blur the position: precision on the phone is the design', () => {
+    // The owner: "solo play your phone still needs precision of where you are, no
+    // rounding or vaguing, as accurate as we can get". The 100-metre square is what
+    // encounters are built from, not a cap on what the phone knows.
+    expect(text()).not.toMatch(
+      /rounds? (it|your location)|approximate|coarse|never stored, shown or sent/i
+    );
   });
 
   it('describes the game, not its release history', () => {

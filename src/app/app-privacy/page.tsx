@@ -45,17 +45,17 @@ export default function AppPrivacyPage() {
         <section className="mb-8">
           <h2>Playing solo</h2>
           <p>
-            <strong>Location, only when you ask.</strong> The app asks for your
-            location only when you press &ldquo;Find my cell&rdquo;. It takes
-            one reading, and on your phone, straight away, rounds it to the
-            100-metre square it falls in. The game uses that square to decide
-            what is there. Your exact position is never stored, shown or sent.
-            The app never uses your location in the background.
+            <strong>Your exact location, when you ask.</strong> When you press
+            &ldquo;Find my cell&rdquo;, the app asks your phone for the most
+            precise position it can give, and the game uses all of it. What is
+            there comes from the 100-metre square you are standing in; where you
+            are within it is exact. The app never uses your location in the
+            background.
           </p>
           <p>
-            <strong>Nothing is sent.</strong> Nothing about you, your character
-            or your location is sent to us or to anyone else. Tapping a link
-            opens it in your browser.
+            <strong>Nothing is sent.</strong> Playing solo, your position never
+            leaves your phone, and nothing about you or your character is sent
+            to us or to anyone else. Tapping a link opens it in your browser.
           </p>
           <p>
             <strong>What stays on your phone.</strong> Your character and your
@@ -118,9 +118,9 @@ export default function AppPrivacyPage() {
         <section className="mb-8">
           <h2>Playing on this website</h2>
           <p>
-            The game rounds your location the same way in your browser, and the
-            square is not sent to us. The map page loads map pictures from a map
-            provider (OpenStreetMap or CARTO), which sees the area you are
+            In your browser the game uses your location to play, and your
+            position is not sent to us. The map page loads map pictures from a
+            map provider (OpenStreetMap or CARTO), which sees the area you are
             looking at, as any online map does.
           </p>
         </section>
