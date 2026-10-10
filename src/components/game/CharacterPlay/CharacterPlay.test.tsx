@@ -8,12 +8,18 @@ import { cellOf } from '@/lib/geolarp/cell';
 import { placeName } from '@/lib/geolarp/place';
 import { ZONES } from './useCharacterPlay';
 
+// These tests cover the archived zone and grid modes as well as location play, so
+// they run with the archive switched on; CharacterPlay.archived.test.tsx covers
+// what players get by default.
+vi.mock('./playModes', () => ({ LOCATION_FREE_MODES: true }));
+
 const today = new Date('2026-08-26T12:00:00Z');
 
 const mockGeo = vi.hoisted(() => ({
   fix: null as DeviceFix | null,
   accuracy: null as number | null,
   error: null as GeolocationPositionError | null,
+  loading: false,
   getCurrentPosition: vi.fn(),
 }));
 
@@ -23,7 +29,6 @@ vi.mock('@/hooks/useGeolocation', () => ({
     permission: 'prompt',
     isSupported: true,
     clearWatch: vi.fn(),
-    loading: false,
   }),
 }));
 
@@ -33,6 +38,7 @@ describe('CharacterPlay', () => {
     mockGeo.fix = null;
     mockGeo.accuracy = null;
     mockGeo.error = null;
+    mockGeo.loading = false;
     mockGeo.getCurrentPosition = vi.fn();
     window.matchMedia = vi.fn().mockImplementation((q: string) => ({
       matches: q.includes('prefers-reduced-motion'),
@@ -294,8 +300,13 @@ describe('CharacterPlay', () => {
     );
   });
 
-  it('asks for a fix only when the player picks GPS, and quantises it', async () => {
+  it('asks for a fix only when the player picks GPS', async () => {
+    // The real hook reports loading while it waits for the device.
+    mockGeo.getCurrentPosition = vi.fn(() => {
+      mockGeo.loading = true;
+    });
     const user = await begin();
+    expect(mockGeo.getCurrentPosition).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Use my location' }));
     expect(mockGeo.getCurrentPosition).toHaveBeenCalled();
     expect(

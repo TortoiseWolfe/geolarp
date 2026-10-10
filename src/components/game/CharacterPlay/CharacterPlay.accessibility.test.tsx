@@ -8,6 +8,11 @@ expect.extend(toHaveNoViolations);
 
 const today = new Date('2026-08-26T12:00:00Z');
 
+// These tests cover the archived zone and grid modes as well as location play, so
+// they run with the archive switched on; CharacterPlay.archived.test.tsx covers
+// what players get by default.
+vi.mock('./playModes', () => ({ LOCATION_FREE_MODES: true }));
+
 vi.mock('@/hooks/useGeolocation', () => ({
   useGeolocation: () => ({
     fix: null,
