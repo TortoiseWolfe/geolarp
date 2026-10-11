@@ -131,7 +131,7 @@ describe('CharacterPlay', () => {
     // so a copy edit does not fail this but a deletion does.
     expect(after.textContent).toMatch(/traffic/i);
     expect(after.textContent).toMatch(/private property/i);
-    expect(after.textContent).toMatch(/13 and over/i);
+    expect(after.textContent).toMatch(/18 and over/i);
     // And the route to the binding version of all of it.
     expect(
       within(after).getByRole('link', { name: /terms/i })
