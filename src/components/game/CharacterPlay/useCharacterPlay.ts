@@ -97,17 +97,25 @@ export interface UseCharacterPlayReturn {
 /**
  * Everything the play surface needs, and nothing it does not.
  *
- * The RAW FIX NEVER ENTERS STATE. `setCellFromFix` quantises on the way in and
- * stores only the cell, so no later render, log or export can leak a precise
- * position — the promise at `:87-90` is structural rather than a habit.
+ * `setCellFromFix` stores the cell a fix falls in, which is what the encounter is
+ * built from. The exact reading itself is the location hook's `fix` (#183).
  */
 export function useCharacterPlay(
-  today: Date = new Date()
+  today: Date = new Date(),
+  {
+    locationFreeModes = false,
+  }: {
+    /** Offer the archived zone and grid modes (see playModes.ts). */
+    locationFreeModes?: boolean;
+  } = {}
 ): UseCharacterPlayReturn {
   const [character, setCharacter] = useState<Character | null>(null);
   const [ready, setReady] = useState(false);
   const [cell, setCell] = useState<Cell | null>(null);
-  const [mode, setModeState] = useState<LocationMode>('zone');
+  // With the zone and grid modes archived, the game starts on the device's location.
+  const [mode, setModeState] = useState<LocationMode>(
+    locationFreeModes ? 'zone' : 'gps'
+  );
   const [zoneId, setZoneId] = useState<string>(ZONES[1].id);
   const [origin, setOrigin] = useState<Cell | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<SkillName | null>(null);

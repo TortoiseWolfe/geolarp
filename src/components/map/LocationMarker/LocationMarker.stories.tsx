@@ -1,28 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { LocationMarker } from './LocationMarker';
 import { MapContainer, TileLayer } from 'react-leaflet';
-import { cellOf, cellCentre } from '@/lib/geolarp/cell';
-import type { CoarseFix } from '@/lib/geolarp/coarseFix';
+import { deviceFixFrom, type DeviceFix } from '@/lib/geolarp/deviceFix';
 import 'leaflet/dist/leaflet.css';
 
 /**
  * FIXED SAMPLE READINGS, never the viewer's own (#113).
  *
  * Storybook is published by `deploy.yml`, so anything these stories can do, a
- * visitor to the gallery can do. They are built from constants and the real
- * quantiser, which is also the point of the demonstration: what the component
- * receives is a cell centre, and the coordinate it came from is already gone.
+ * visitor to the gallery can do. They are built from constants, through the real
+ * socket.
  */
-function sampleFix(lat: number, lon: number, accuracy: number): CoarseFix {
-  const cell = cellOf(lat, lon);
-  const centre = cellCentre(cell);
-  return {
-    cell,
-    lat: centre.lat,
-    lon: centre.lon,
-    accuracy,
+function sampleFix(lat: number, lon: number, accuracy: number): DeviceFix {
+  return deviceFixFrom({
+    coords: { latitude: lat, longitude: lon, accuracy },
     timestamp: 1_757_000_000_000,
-  };
+  } as GeolocationPosition);
 }
 
 const LONDON = (accuracy: number) => sampleFix(51.505, -0.09, accuracy);
@@ -55,7 +48,7 @@ const meta = {
     fix: {
       control: 'object',
       description:
-        'A CoarseFix: the cell, its centre, and the device error radius. Never a raw coordinate.',
+        'A DeviceFix: the exact reading, its cell, and the device error radius.',
     },
     showAccuracy: {
       control: 'boolean',
@@ -83,11 +76,7 @@ export const NoAccuracy: Story = {
   args: { fix: LONDON(50), showAccuracy: false },
 };
 
-/**
- * The circle is the device error PLUS the distance to the cell centre, so even
- * a 10 m fix draws a circle around 81 m wide. That is the honest figure: the
- * dot is the cell centre, and the reader can be most of a cell away from it.
- */
+/** The circle is the device's own error radius around the exact position. */
 export const HighAccuracy: Story = {
   args: { fix: LONDON(10), showAccuracy: true },
 };

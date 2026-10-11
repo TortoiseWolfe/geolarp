@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { GRID_POSITION_OPTIONS } from '@/lib/geolarp/coarseFix';
+import { GRID_POSITION_OPTIONS } from '@/lib/geolarp/deviceFix';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useGeolocation } from './useGeolocation';
 
@@ -91,18 +91,16 @@ describe('useGeolocation', () => {
     expect(result.current.loading).toBe(true);
 
     await waitFor(() => {
-      // THE CELL, NOT THE READING (#39). Hardcoded rather than re-derived from
-      // cellOf/cellCentre: an expectation computed by the code under test cannot
-      // detect that code changing. 51.505/-0.09 lands in cell {r:66205, q:-63},
-      // whose centre is 51.505250512262535 / -0.0894785551339524.
+      // THE EXACT READING, AND ITS CELL (#183). The cell is hardcoded rather than
+      // re-derived from cellOf: an expectation computed by the code under test
+      // cannot detect that code changing. 51.505/-0.09 lands in cell {r:66205, q:-63}.
       expect(result.current.fix).toEqual({
         cell: { r: 66205, q: -63 },
-        lat: 51.505250512262535,
-        lon: -0.0894785551339524,
+        lat: 51.505,
+        lon: -0.09,
         accuracy: 10,
         timestamp: mockPosition.timestamp,
       });
-      // The raw pair must be absent, not merely unused.
       expect(Object.keys(result.current.fix!).sort()).toEqual([
         'accuracy',
         'cell',
@@ -237,18 +235,6 @@ describe('useGeolocation', () => {
 
     expect(mockGeolocation.clearWatch).toHaveBeenCalledWith(watchId);
   });
-
-  /*
-   * `distanceFrom` and its test are GONE (#39).
-   *
-   * The test computed haversine metres between the raw fix and a target — which
-   * required the hook to hold the raw pair, the one thing this change exists to
-   * stop. It was also a probe that could not fail: its assertions sat inside a
-   * `waitFor` callback whose returned promise was never awaited, so the block
-   * never ran. cell.ts refuses this calculation on purpose ("a metre figure
-   * derived from cell centres would imply a precision the grid does not carry");
-   * `offsetMetres` is the grid-aware answer if one is ever wanted.
-   */
 
   it('should handle missing geolocation API', () => {
     // Save original geolocation

@@ -3,72 +3,30 @@
 import React, { useEffect } from 'react';
 import { Marker, Circle, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { cellOf, CELL_METRES, type Cell } from '@/lib/geolarp/cell';
-import type { CoarseFix } from '@/lib/geolarp/coarseFix';
+import { cellOf, type Cell } from '@/lib/geolarp/cell';
+import type { DeviceFix } from '@/lib/geolarp/deviceFix';
 import { useEmbedThemeColor } from '@/hooks/useEmbedThemeColor';
 
 /**
- * The user's position on a map, at the only precision this product holds (#113).
+ * The player's position on a map: exactly where the device says it is (#183).
  *
- * THIS COMPONENT USED TO BE A #39 RELAPSE WAITING FOR AN IMPORT. It took a raw
- * `LatLngTuple`, and then published it three ways: `data-position` carried the
- * serialised pair into the rendered markup, the popup printed
- * `Lat: {position[0].toFixed(4)}` — ~11 m, the exact display defect #39 removed
- * from `/map` — and `onDragEnd` handed a raw pair back to its consumer.
- *
- * Nothing imported it, which is why none of that was live. It is also why the
- * defect would have returned silently: #39's gate asserts who may CALL the
- * platform, not who may HOLD a coordinate, so an import of this file would have
- * passed every check in the repo.
- *
- * The fix is the type. `CoarseFix` is already "a device reading with the position
- * gone", and taking it makes TypeScript the enforcement rather than a reviewer's
- * memory — a raw pair no longer compiles.
+ * It takes a `DeviceFix`, the one shape a reading has after the socket in
+ * `lib/geolarp/deviceFix.ts`, and draws the dot at the reading with a circle of the
+ * device's own error radius. (Under #39 it drew a cell centre with a circle widened
+ * to cover the whole cell; the owner wants the exact position, #183.)
  */
 export interface LocationMarkerProps {
-  /**
-   * A reading with the position already rounded away. `fix.lat`/`fix.lon` are
-   * the CELL CENTRE; the device's own coordinate cannot be recovered from them.
-   */
-  fix: CoarseFix;
-  /** Draw the uncertainty circle. */
+  /** The device's exact reading and its cell. */
+  fix: DeviceFix;
+  /** Draw the device's error circle. */
   showAccuracy?: boolean;
   popup?: string;
   /** Allow the player to place themselves by hand — see `onDragEnd`. */
   draggable?: boolean;
-  /**
-   * Emits a CELL, never a coordinate.
-   *
-   * Dragging is how a player picks a zone by hand, which the published post
-   * offers as the no-GPS path. It used to emit a `LatLngTuple` — the drop point
-   * at full precision, which is a coordinate the product is not supposed to
-   * hold, and worse, one the USER produced rather than the device. Quantising
-   * here keeps the same capability and gives it the same resolution as
-   * everything else.
-   */
+  /** Emits the CELL the marker was dropped in: picking a zone by hand. */
   onDragEnd?: (cell: Cell) => void;
   testId?: string;
 }
-
-/**
- * The furthest any point in a cell can be from that cell's centre, in metres.
- *
- * NOT THE HEX CIRCUMRADIUS, and getting that wrong is the reason this comment is
- * long. A pointy-top hexagon of flat-to-flat width `CELL_METRES` has circumradius
- * `CELL_METRES / √3` ≈ 57.7 m, which is what this constant said first — and a
- * sweep of 400,000 real coordinates measured **66.14 m**, at the equator near
- * λ = 45. The lattice is not a regular hexagon on the ground: each row indexes
- * its columns from the prime meridian using its own longitude quantum, so the
- * cells shear with grid convergence (#87). `cell.test.ts` records making exactly
- * this mistake once — "comparing a sheared lattice against an unsheared ideal" —
- * and the ideal is wrong in the UNSAFE direction here, drawing a circle that
- * excludes places the reader can actually be.
- *
- * `CELL_METRES / √2` ≈ 70.7 m is used instead: it clears the measured 66.14 with
- * margin, and it is already the repo's bound for this quantity —
- * `coarse-fix.test.ts` asserts the same sweep stays under 71 m.
- */
-export const CELL_CENTRE_UNCERTAINTY_M = CELL_METRES / Math.SQRT2;
 
 // Custom blue marker icon for user location
 const userLocationIcon =
@@ -103,7 +61,6 @@ export const LocationMarker: React.FC<LocationMarkerProps> = ({
   const { hexWithHash: themeColor } = useEmbedThemeColor('p');
 
   useEffect(() => {
-    // Pan to the CELL, not the reader.
     map.setView(position, map.getZoom());
     // `fix.lat`/`fix.lon` rather than the array, which is a new identity each
     // render and would re-pan the map on every parent update.
@@ -112,31 +69,15 @@ export const LocationMarker: React.FC<LocationMarkerProps> = ({
   const handleDragEnd = (event: L.DragEndEvent) => {
     if (!onDragEnd) return;
     const dropped = event.target.getLatLng();
-    // Quantise at the boundary. The drop point dies here the same way a device
-    // reading dies inside `coarseFixFrom`.
     onDragEnd(cellOf(dropped.lat, dropped.lng));
   };
-
-  /**
-   * WHAT THE CIRCLE HONESTLY CLAIMS.
-   *
-   * It used to be `radius={accuracy}` around `position`, which read as "the
-   * reader is within ±accuracy of this dot". Once `position` became a cell
-   * centre that was a FALSE statement rather than a coarse one: the true reading
-   * can be most of a cell away from the centre, so a ±10 m circle drawn around a
-   * cell centre excludes the very place the reader actually is.
-   *
-   * The circle now covers both terms — the device's own error, plus how far the
-   * centre can be from the reading — so the reader is inside it by construction.
-   */
-  const uncertaintyRadius = fix.accuracy + CELL_CENTRE_UNCERTAINTY_M;
 
   return (
     <>
       {showAccuracy && (
         <Circle
           center={position}
-          radius={uncertaintyRadius}
+          radius={fix.accuracy}
           pathOptions={{
             color: themeColor,
             fillColor: themeColor,
@@ -156,25 +97,13 @@ export const LocationMarker: React.FC<LocationMarkerProps> = ({
         }}
       >
         <Popup>
-          {/*
-            NO `data-position`. It used to carry `JSON.stringify(position)` into
-            the markup, where it survives in `page.content()` and a text-only
-            assertion would miss it. The cell id is the coarsest honest handle
-            and is what a test should be keying on anyway.
-          */}
           <div data-testid={testId} data-cell={`${fix.cell.q}:${fix.cell.r}`}>
             {popup ?? (
               <>
-                <strong>Your cell</strong>
+                <strong>You are here</strong>
                 <br />
-                {/*
-                  The CELL, not `toFixed(4)` of a coordinate. Four decimal places
-                  is ~11 m — finer than the 100 m the product promises, and the
-                  precise defect #39 removed from `/map`.
-                */}
                 Cell {fix.cell.q}:{fix.cell.r}
-                <br />
-                Within ~{Math.round(uncertaintyRadius)} m
+                <br />±{Math.round(fix.accuracy)} m
               </>
             )}
           </div>

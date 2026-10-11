@@ -64,15 +64,10 @@ const ROWS: ReadonlyArray<number> = [2, 3, 2];
 /**
  * The six cells around you, and the six ways to walk between them.
  *
- * WHY A GRID AND NOT A MAP. A real map was rejected on privacy, not on cost:
- * every tile fetch sends position-derived z/x/y to a third-party CDN on every
- * pan, which would make the privacy page's central claim false. And this app
- * *cannot* draw a position dot even if it wanted to — the raw fix dies inside
- * `setCellFromFix` and never enters React state.
- *
- * So it draws a highlighted 100-metre cell WITH NO DOT IN IT. Every mapping
- * UI in the world puts a dot on you; the absence here is the privacy promise
- * made visible, rather than asked for on faith.
+ * WHY A GRID AND NOT A MAP. Every tile fetch sends position-derived z/x/y to a
+ * third-party tile server on every pan, and the grid needs none. It draws the cell
+ * you are in, highlighted. A dot for the player's exact position (#183 keeps the
+ * reading) is a design choice for later, no longer ruled out on privacy.
  *
  * DIFFICULTY IS PIPS, NOT A WORD AND NOT A COLOUR. The measured budget is 82px
  * per tile at 320px (320 − px-4 32 − p-4 32 − gaps 8): "Monster" fits at

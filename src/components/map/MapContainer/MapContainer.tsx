@@ -6,7 +6,7 @@ import type { Map as LeafletMap, LatLngTuple } from 'leaflet';
 import { fixLeafletIconPaths, DEFAULT_MAP_CONFIG } from '@/utils/map-utils';
 import { LocationButton } from '@/components/map/LocationButton';
 import 'leaflet/dist/leaflet.css';
-import { getCoarseFix, type CoarseFix } from '@/lib/geolarp/coarseFix';
+import { getDeviceFix, type DeviceFix } from '@/lib/geolarp/deviceFix';
 
 export interface MapContainerProps {
   center?: LatLngTuple;
@@ -19,15 +19,8 @@ export interface MapContainerProps {
     popup?: string;
     id: string;
   }>;
-  /**
-   * BREAKING: emits a `CoarseFix`, not a `GeolocationPosition` (#39).
-   *
-   * A deliberate change to a published template API. A fork that genuinely wants
-   * raw coordinates must now write its own `navigator.geolocation` call, which is
-   * the loud failure rather than the quiet one — the previous signature let a
-   * consumer receive a full-precision reading and look correct doing it.
-   */
-  onLocationFound?: (fix: CoarseFix) => void;
+  /** Emits a `DeviceFix`: the exact reading and its cell, through the one socket. */
+  onLocationFound?: (fix: DeviceFix) => void;
   onLocationError?: (error: GeolocationPositionError) => void;
   onMapReady?: (map: LeafletMap) => void;
   className?: string;
@@ -135,20 +128,17 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       return;
     }
 
-    // Through the socket (#39). This component had its OWN `navigator.geolocation`
-    // call with a hardcoded `enableHighAccuracy: true`, so quantising inside
-    // `useGeolocation` — which is what the ticket proposed — would have left it
-    // untouched. Both sinks below now receive a cell centre: the callback the
-    // consumer sees, and the `setView` that drives position-derived tile requests
-    // to a third-party CDN.
-    getCoarseFix(
+    // Through the one socket (#39): this component used to have its own
+    // `navigator.geolocation` call with its own options. Centring on the exact
+    // reading (#183) means the tile requests that follow tell the map provider
+    // where the player is, to tile precision. /map's consent prompt and
+    // /app-privacy both say so; a consumer that shows a map must too.
+    getDeviceFix(
       (fix) => {
         setLocationLoading(false);
         if (onLocationFound) {
           onLocationFound(fix);
         }
-        // Pan map to the cell, not the reader. At z=16 a cell centre is off by at
-        // most ~48px on a 600px map; the marker icon alone is 25x41.
         if (mapRef.current) {
           mapRef.current.setView([fix.lat, fix.lon], 16);
         }

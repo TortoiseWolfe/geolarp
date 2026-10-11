@@ -1,24 +1,22 @@
 /**
- * The 100-metre rounding, and the boundary that keeps it true (#39).
+ * The one door to the device's location, and what comes through it (#183).
  *
- * WHAT THIS IS DEFENDING. `public/blog/the-world-is-the-board.md:87` is live and
- * says location is "rounded to 100 metres before anything is done with it". The
- * product also says it to the player directly, at CharacterPlay.tsx:310: "Location
- * rounded to a 100-metre cell. The precise fix was discarded." Both were false: the
- * hook stored the raw `GeolocationPosition` and handed it to every consumer.
+ * The owner, 2026-10-10: the device needs "precision of where you are, no rounding or
+ * vaguing, as accurate as we can get". So a fix carries the exact reading with its
+ * cell. This file used to defend the opposite (#39: round to the cell, drop the
+ * reading); what it still defends from #39 is the single door.
  *
- * WHY A SOURCE SCAN AND NOT ONLY BEHAVIOUR TESTS. The defect was never in one
- * function — it was in there being FOUR places that reached for the platform, one
- * of which (`map.locate`) nobody had counted because it does not contain the string
- * `navigator.geolocation`. Behavioural tests would have passed on three of them. The
- * only durable form of "rounded before anything is done with it" is "there is one
- * door, and this is it".
+ * WHY A SOURCE SCAN AND NOT ONLY BEHAVIOUR TESTS. #39 found FOUR places that reached
+ * for the platform, one of which (`map.locate`) nobody had counted because it does not
+ * contain the string `navigator.geolocation`. Each asked for something different. The
+ * only durable form of "one answer to what this app asks of a device" is "there is
+ * one door, and this is it".
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { cellCentre, cellOf } from '@/lib/geolarp/cell';
-import { coarseFixFrom, GRID_POSITION_OPTIONS } from '@/lib/geolarp/coarseFix';
+import { cellOf } from '@/lib/geolarp/cell';
+import { deviceFixFrom, GRID_POSITION_OPTIONS } from '@/lib/geolarp/deviceFix';
 
 const SRC = join(process.cwd(), 'src');
 
@@ -41,7 +39,7 @@ function sourceFiles(dir: string = SRC): string[] {
 const FILES = sourceFiles();
 
 /** The one file allowed to touch the platform. */
-const SOCKET = 'lib/geolarp/coarseFix.ts';
+const SOCKET = 'lib/geolarp/deviceFix.ts';
 
 /**
  * Comments are prose, not calls.
@@ -73,7 +71,7 @@ describe('the device-location boundary', () => {
     // Without this the assertions below are green when the walker breaks, which is
     // the exact shape of failure this file exists to prevent (#396).
     expect(FILES.length).toBeGreaterThan(200);
-    expect(grep(/cellCentre/).length).toBeGreaterThan(0);
+    expect(grep(/cellOf/).length).toBeGreaterThan(0);
   });
 
   /**
@@ -109,15 +107,15 @@ describe('the device-location boundary', () => {
    * the assertion that the socket is actually used, rather than merely being the
    * only file allowed to exist.
    */
-  it('every file that handles a fix imports the quantiser', () => {
-    const handlers = grep(/coarseFixFrom|getCoarseFix|watchCoarseFix/);
+  it('every file that handles a fix imports the socket', () => {
+    const handlers = grep(/deviceFixFrom|getDeviceFix|watchDeviceFix/);
     expect(handlers).toContain(SOCKET);
     expect(handlers.length).toBeGreaterThanOrEqual(2);
     for (const f of handlers) {
       const body = readFileSync(join(SRC, f), 'utf8');
       if (f === SOCKET) continue;
       expect(body, `${f} uses the socket without importing it`).toMatch(
-        /from '@\/lib\/geolarp\/coarseFix'/
+        /from '@\/lib\/geolarp\/deviceFix'/
       );
     }
   });
@@ -146,10 +144,9 @@ describe('the device-location boundary', () => {
  * every E2E lane.
  *
  * `MapContainer.stories.tsx` set `showUserLocation: true`, which renders a
- * `LocationButton`; pressing it calls the platform through `getCoarseFix`. It did
+ * `LocationButton`; pressing it calls the platform through `getDeviceFix`. It did
  * not fire on mount, so nothing prompted a passing reader — it simply handed any
- * visitor a button that would. The stories use fixed sample fixes now, which also
- * demonstrates the component better: what it receives is a cell centre.
+ * visitor a button that would. The stories use fixed sample fixes instead.
  */
 describe('the published gallery does not ask the visitor where they are', () => {
   const STORIES = (function walk(dir: string): string[] {
@@ -187,28 +184,33 @@ describe('the published gallery does not ask the visitor where they are', () => 
   });
 });
 
-describe('coarseFixFrom', () => {
+describe('deviceFixFrom', () => {
   const raw = (lat: number, lon: number, accuracy = 5): GeolocationPosition =>
     ({
       coords: { latitude: lat, longitude: lon, accuracy },
       timestamp: 1_757_000_000_000,
     }) as GeolocationPosition;
 
-  it('returns the cell centre, never the reading', () => {
-    const fix = coarseFixFrom(raw(35.045612345, -85.309787654));
-    expect(fix.lat).not.toBe(35.045612345);
-    expect(fix.lon).not.toBe(-85.309787654);
-    expect(fix.lat).toBe(cellCentre(cellOf(35.045612345, -85.309787654)).lat);
-    expect(fix.lon).toBe(cellCentre(cellOf(35.045612345, -85.309787654)).lon);
+  it('returns the exact reading, not a rounded one', () => {
+    const fix = deviceFixFrom(raw(35.045612345, -85.309787654));
+    expect(fix.lat).toBe(35.045612345);
+    expect(fix.lon).toBe(-85.309787654);
   });
 
-  /**
-   * The raw pair must be ABSENT, not merely unused. A field riding along — the
-   * original `GeolocationPosition` under some other key — is exactly the shape that
-   * makes a rounded value look safe while carrying the thing it replaced.
-   */
-  it('carries no other field', () => {
-    const fix = coarseFixFrom(raw(51.505, -0.09, 10));
+  it('names the cell the reading falls in: what encounters are built from', () => {
+    const fix = deviceFixFrom(raw(35.045612345, -85.309787654));
+    expect(fix.cell).toEqual(cellOf(35.045612345, -85.309787654));
+  });
+
+  it('keeps the device error radius and the time', () => {
+    const fix = deviceFixFrom(raw(51.505, -0.09, 37));
+    expect(fix.accuracy).toBe(37);
+    expect(fix.timestamp).toBe(1_757_000_000_000);
+  });
+
+  /** A DeviceFix, not the platform object: callers depend on this shape, not on `coords`. */
+  it('carries exactly these fields', () => {
+    const fix = deviceFixFrom(raw(51.505, -0.09, 10));
     expect(Object.keys(fix).sort()).toEqual([
       'accuracy',
       'cell',
@@ -216,40 +218,5 @@ describe('coarseFixFrom', () => {
       'lon',
       'timestamp',
     ]);
-    expect(JSON.stringify(fix)).not.toContain('coords');
-  });
-
-  it('keeps the accuracy radius, which carries no position', () => {
-    expect(coarseFixFrom(raw(51.505, -0.09, 37)).accuracy).toBe(37);
-  });
-
-  /**
-   * THE PROPERTY THAT MAKES THIS SAFE FOR THE GAME. Feeding the cell centre back
-   * through `cellOf` must land in the same cell, or quantising at the boundary
-   * would change which encounter a player meets. It is a fixed point.
-   */
-  it('is a fixed point: rounding the centre gives the same cell', () => {
-    let checked = 0;
-    let worst = 0;
-    for (let i = 0; i < 4000; i++) {
-      // Deterministic sweep rather than random: a seeded spiral over the globe,
-      // avoiding the poles where the longitude quantum degenerates.
-      const lat = -75 + (i * 150) / 4000;
-      const lon = -180 + ((i * 227) % 360);
-      const cell = cellOf(lat, lon);
-      const centre = cellCentre(cell);
-      const round2 = cellOf(centre.lat, centre.lon);
-      expect(round2).toEqual(cell);
-      const fix = coarseFixFrom(raw(lat, lon));
-      expect(fix.cell).toEqual(cell);
-      const dLat = Math.abs(centre.lat - lat) * 111_320;
-      const dLon =
-        Math.abs(centre.lon - lon) * 111_320 * Math.cos((lat * Math.PI) / 180);
-      worst = Math.max(worst, Math.hypot(dLat, dLon));
-      checked += 1;
-    }
-    expect(checked).toBe(4000);
-    // Half a diagonal of a 100m cell is ~70.7m; nothing may exceed it.
-    expect(worst).toBeLessThan(71);
   });
 });

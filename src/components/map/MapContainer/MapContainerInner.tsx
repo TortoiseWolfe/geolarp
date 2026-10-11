@@ -53,8 +53,8 @@ const MapCenterUpdater: React.FC<{ center: LatLngTuple }> = ({ center }) => {
  * while still centring the map correctly — so it would have looked fixed.
  *
  * Deleted rather than quantised: the legitimate trigger is the LocationButton in
- * MapContainer, which is a user gesture and now routes through the socket in
- * lib/geolarp/coarseFix.ts. Removing an entry point is worth more than rounding one.
+ * MapContainer, which is a user gesture and routes through the socket in
+ * lib/geolarp/deviceFix.ts.
  * `<MapContainer showUserLocation>` therefore no longer auto-centres on mount; it
  * still renders the button that does.
  */
