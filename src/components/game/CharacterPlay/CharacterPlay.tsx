@@ -120,7 +120,7 @@ export default function CharacterPlay({
    * `traffic` string existed anywhere under src/app/{character,map,game} or
    * src/components/game.
    *
-   * It STATES "13 and over" rather than gating on an age. The minimum is binding
+   * It STATES "18 and over" rather than gating on an age. The minimum is binding
    * in the terms, and there is no account, birthdate or profile here to check one
    * against — an input asking a child to type a number is not a gate, it is a
    * prompt to type a different number.
@@ -140,7 +140,7 @@ export default function CharacterPlay({
           game.{' '}
         </>
       )}
-      For players 13 and over; see the{' '}
+      For adults, 18 and over; see the{' '}
       <Link href="/terms" className="link-hover link">
         terms
       </Link>
