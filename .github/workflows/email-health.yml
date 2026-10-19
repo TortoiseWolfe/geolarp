@@ -30,10 +30,10 @@
 name: Email Health
 
 on:
-  schedule:
-    # Daily. This is the point of the gate — it catches damage that accumulates
-    # with no repo change at all, which is exactly how #361 went unnoticed.
-    - cron: '40 15 * * *'
+  # PAUSED 2026-10-19: no RESEND_API_KEY secret, so every daily run fails.
+  # See https://github.com/TortoiseWolfe/geolarp/issues/185. When one manual run is green, restore:
+  #   schedule:
+  #     - cron: '40 15 * * *'
   push:
     branches: [main]
     paths:
