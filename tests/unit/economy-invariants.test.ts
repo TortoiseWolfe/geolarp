@@ -2,20 +2,30 @@ import { describe, it, expect } from 'vitest';
 import { successChance } from '@/lib/geolarp/odds';
 import { LADDER, Difficulty } from '@/lib/geolarp/ladder';
 import { REWARD_BY_BAND, DAILY_EARN_CAP } from '@/lib/geolarp/reward';
+import { DIFFICULTY_WEIGHTS } from '@/lib/geolarp/encounter';
 
 /**
  * The economy's stated invariants, enumerated rather than sampled.
  *
  * WHY THIS FILE EXISTS. `resolution.md` asserted "**No stake is farming-positive**"
- * and cited one case — 0.55 gross at a stake of 2. The sentence was written from
- * that sample, not from the space, and it is false: at `5d7` and above against a
- * Very Difficult cell, a stake of 1 has positive expected value.
+ * and cited one case. That sentence was written from a sample, not from the
+ * space, and it was false. Character Points are a sink funded by walking
+ * rather than something a stationary player can grind; that is why a daily CAP
+ * was chosen over a daily stipend, so the claim has to be stated as measured
+ * and owned by a test.
  *
- * That claim is load-bearing. The economy section uses it to argue Character
- * Points are a sink funded by walking rather than something a stationary player
- * can grind, which is the reason a daily CAP was chosen over a daily stipend.
- * A premise that fails at the top of the pool range needs to be stated as
- * measured, and then owned by a test so it cannot drift back into a slogan.
+ * THE RULE IT MEASURES (Jonathan's ruling, 4 Nov 2026). A Character Point is
+ * spent AFTER the roll, only on a miss, to buy an extra die or a reroll, and
+ * the payout is for the first WIN. So a point costs nothing on a roll that
+ * already won, and what one point buys is the chance to turn a miss into a win:
+ *
+ *   spent per roll   = P(miss)
+ *   die    gains     = reward with one more ordinary die  - reward as rolled
+ *   reroll gains     = P(miss) x reward of a fresh roll
+ *
+ * "Return" below is reward gained per point spent, weighed by how often the
+ * world serves each band (`DIFFICULTY_WEIGHTS`). A return above 1 would mean a
+ * point pays for itself.
  */
 
 /**
@@ -41,6 +51,7 @@ function ordinaryAtLeast(n: number, need: number): number {
 
 /**
  * Expected Character Points from one roll, CONDITIONED ON THE WILD DIE'S FIRST FACE.
+ * `bought` is the number of extra ordinary dice added to the pool.
  *
  * The conditioning is not a refinement, it is the difference between right and
  * wrong. A critical explodes, so it RAISES the total, so success and "the wild
@@ -57,11 +68,11 @@ function expectedReward(
   dice: number,
   pips: number,
   band: Difficulty,
-  stake: number
+  bought: number
 ): number {
   const target = LADDER.find((b) => b.id === band)!.floor;
   const base = REWARD_BY_BAND[band];
-  const ordinary = dice + stake - 1;
+  const ordinary = dice + bought - 1;
 
   let ev = 0;
   for (let face = 1; face <= 6; face += 1) {
@@ -70,13 +81,40 @@ function expectedReward(
   }
   // First face 7: the die explodes, so the rest of the pool needs only
   // `target - 7`, and what follows is another full wild draw.
-  const pCritical = successChance({ dice, pips }, target - 7, stake);
+  const pCritical = successChance({ dice, pips }, target - 7, bought);
   ev += (1 / 7) * pCritical * (base > 0 ? base + 1 : 0);
   return ev;
 }
 
 const POOLS = [2, 3, 4, 5, 6];
-const STAKES = [1, 2, 3, 4, 5];
+const PAID_BANDS = LADDER.filter((b) => REWARD_BY_BAND[b.id] > 0);
+
+/** What buying after a miss gains, and how often a point is spent at all. */
+function purchase(dice: number, band: Difficulty) {
+  const target = LADDER.find((b) => b.id === band)!.floor;
+  const missed = 1 - successChance({ dice, pips: 0 }, target);
+  const asRolled = expectedReward(dice, 0, band, 0);
+  return {
+    missed,
+    dieGain: expectedReward(dice, 0, band, 1) - asRolled,
+    rerollGain: missed * asRolled,
+  };
+}
+
+/** Reward back per point spent, over the world's band mix (Moderate and up). */
+function mixedReturn(dice: number): { die: number; reroll: number } {
+  let spent = 0;
+  let die = 0;
+  let reroll = 0;
+  for (const [band, weight] of DIFFICULTY_WEIGHTS) {
+    if (REWARD_BY_BAND[band] === 0) continue;
+    const p = purchase(dice, band);
+    spent += weight * p.missed;
+    die += weight * p.dieGain;
+    reroll += weight * p.rerollGain;
+  }
+  return { die: die / spent, reroll: reroll / spent };
+}
 
 describe('the economy invariants, enumerated', () => {
   it('reconstructs successChance from the wild die outward', () => {
@@ -96,55 +134,72 @@ describe('the economy invariants, enumerated', () => {
     }
   });
 
-  it('finds farming-positive stakes ONLY at 5d7 and above against Very Difficult', () => {
-    // The corrected invariant, stated as measured. `resolution.md:142` used to
-    // say "no stake is farming-positive" full stop, which is false.
+  it('returns less than a point per point over the whole world, at every pool', () => {
+    // The council's figures (reward back per point, die / reroll):
+    //   3d7 0.34 / 0.29    4d7 0.43 / 0.44    5d7 0.56 / 0.62
+    // A player who spends every point they hold on every miss loses points.
+    const expected: Array<[number, number, number]> = [
+      [3, 0.335, 0.293],
+      [4, 0.429, 0.435],
+      [5, 0.557, 0.617],
+    ];
+    for (const [dice, die, reroll] of expected) {
+      const r = mixedReturn(dice);
+      expect(r.die).toBeCloseTo(die, 2);
+      expect(r.reroll).toBeCloseTo(reroll, 2);
+    }
+    for (const dice of POOLS) {
+      const r = mixedReturn(dice);
+      expect(r.die).toBeLessThan(1);
+      expect(r.reroll).toBeLessThan(1);
+    }
+  });
+
+  it('finds one purchase that pays for itself: a 6d7 reroll against Very Difficult', () => {
+    // The corrected invariant, stated as measured. Walking the whole grid (pools
+    // 2 to 6, every paying band, both options) exactly one cell returns more
+    // than the point it costs. `resolution.md` used to say no stake farms.
     const positive: string[] = [];
     for (const dice of POOLS) {
-      for (const band of LADDER) {
-        if (REWARD_BY_BAND[band.id] === 0) continue;
-        for (const stake of STAKES) {
-          const net = expectedReward(dice, 0, band.id, stake) - stake;
-          if (net > 0) positive.push(`${dice}d7|${band.id}|${stake}`);
+      for (const band of PAID_BANDS) {
+        const p = purchase(dice, band.id);
+        if (p.dieGain / p.missed > 1) positive.push(`${dice}d7|${band.id}|die`);
+        if (p.rerollGain / p.missed > 1) {
+          positive.push(`${dice}d7|${band.id}|reroll`);
         }
       }
     }
-    expect(positive.sort()).toEqual([
-      '5d7|very-difficult|1',
-      '6d7|very-difficult|1',
-    ]);
+    expect(positive).toEqual(['6d7|very-difficult|reroll']);
   });
 
   it('prices that edge, so a change to any input is visible here', () => {
-    expect(expectedReward(5, 0, 'very-difficult', 1) - 1).toBeCloseTo(0.175, 2);
-    expect(expectedReward(6, 0, 'very-difficult', 1) - 1).toBeCloseTo(0.576, 2);
+    const p = purchase(6, 'very-difficult');
+    expect(p.rerollGain / p.missed).toBeCloseTo(1.175, 2);
+    expect(p.dieGain / p.missed).toBeCloseTo(0.917, 2);
   });
 
   it('keeps the edge unreachable at creation, which is what bounds it', () => {
     // 6d7 is the best a starting sheet can reach (4d7 attribute + a 2D focus),
-    // and only on one skill. A 5d7+ pool needs a trained skill on a high
-    // attribute, Very Difficult is 12% of cells, and DAILY_EARN_CAP closes the
-    // loop: even a player who found the edge cannot bank more than five a day.
+    // and only on one skill; Very Difficult is 12% of cells; and two points at
+    // most go on any one roll. DAILY_EARN_CAP closes the loop: even a player
+    // who found the edge cannot bank more than five a day.
     expect(DAILY_EARN_CAP).toBe(5);
-    // Everything below 5d7 is strictly negative at every stake.
-    for (const dice of [2, 3, 4]) {
-      for (const band of LADDER) {
-        if (REWARD_BY_BAND[band.id] === 0) continue;
-        for (const stake of STAKES) {
-          expect(expectedReward(dice, 0, band.id, stake) - stake).toBeLessThan(
-            0
-          );
-        }
+    // Everything below 6d7 is strictly under one at every paying band.
+    for (const dice of [2, 3, 4, 5]) {
+      for (const band of PAID_BANDS) {
+        const p = purchase(dice, band.id);
+        expect(p.dieGain / p.missed).toBeLessThan(1);
+        expect(p.rerollGain / p.missed).toBeLessThan(1);
       }
     }
   });
 
-  it('never pays for a trivial cell, at any stake', () => {
+  it('never pays for a trivial cell, however many points are bought', () => {
     // The gate that stops a third of the map being a slot machine.
     for (const dice of POOLS) {
-      for (const stake of STAKES) {
-        expect(expectedReward(dice, 0, 'very-easy', stake)).toBe(0);
-        expect(expectedReward(dice, 0, 'easy', stake)).toBe(0);
+      for (const bought of [0, 1, 2]) {
+        expect(expectedReward(dice, 0, 'very-easy', bought)).toBe(0);
+        expect(expectedReward(dice, 0, 'easy', bought)).toBe(0);
       }
     }
   });
