@@ -77,7 +77,7 @@ hour later, because it is derived from the place, not handed out. That is what
 makes it a shared world rather than a private one.
 
 **Encounters need nothing behind them.** No matchmaking and no database of what
-is where: your device can generate the 3×3 grid of cells around you while
+is where: your device can generate the seven-cell flower around you (the cell you stand in and its six neighbours) while
 completely offline, from map tiles it cached earlier.
 
 ## 🔒 Where you are, and who knows it
