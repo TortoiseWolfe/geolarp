@@ -115,7 +115,7 @@ export default function Home() {
           margin: 0 0 18px; max-width: 62ch; }
         .gl-foot { font-family: Spectral, Georgia, serif; font-size: 15px; line-height: 1.6;
           padding-top: 24px; border-top: 1px solid #8A6A2666; }
-        .gl-foot a { color: #E3C688; text-underline-offset: 3px; }
+        .gl-foot a { color: #E3C688; text-decoration: underline; text-underline-offset: 3px; }
         .gl-mark-small { width: 108px; height: 108px; flex: none; }
         .gl-top { display: flex; align-items: center; gap: 18px; margin-bottom: 26px; }
         .gl-top .gl-wordmark { font-size: 40px; animation: none; }
@@ -505,13 +505,13 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="gl-foot">
+        <div className="gl-foot">
           <p style={{ margin: 0 }}>
             No account, no sign-in and no location. Your characters stay in this
             browser, and you can save each one as a file.{' '}
             <Link href="/app-privacy">Read the privacy promise</Link>.
           </p>
-        </footer>
+        </div>
       </div>
     </main>
   );
