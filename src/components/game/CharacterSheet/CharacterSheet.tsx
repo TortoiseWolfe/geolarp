@@ -35,6 +35,19 @@ export interface CharacterSheetProps {
   onExport?: () => void;
   /** Discard and roll a new character. */
   onRegenerate?: () => void;
+  /**
+   * `columns` (the default) packs each attribute's four skills two to a row,
+   * which halved the sheet's length on a phone (#59). `list` is the MVP play
+   * sheet: all twenty skills full-length, one skill per line, because a player
+   * reading the whole sheet to decide what to roll wants a column, not a grid.
+   */
+  layout?: 'columns' | 'list';
+  /**
+   * A demonstration character shown to visitors (the home page). The "lives in
+   * this browser, never exported" notes describe a saved sheet, and a sample
+   * is not saved anywhere, so it says so instead of saying something untrue.
+   */
+  sample?: boolean;
   className?: string;
 }
 
@@ -66,6 +79,8 @@ export default function CharacterSheet({
   renderExpanded,
   onExport,
   onRegenerate,
+  layout = 'columns',
+  sample = false,
   className = '',
 }: CharacterSheetProps) {
   const [confirmingNew, setConfirmingNew] = useState(false);
@@ -105,6 +120,12 @@ export default function CharacterSheet({
           </p>
         </header>
 
+        {character.concept && (
+          <p className="text-base-content -mt-2 text-sm italic">
+            {character.concept}
+          </p>
+        )}
+
         <div className="grid gap-4 sm:grid-cols-2">
           {ATTRIBUTES.map((attr) => (
             <section
@@ -136,7 +157,13 @@ export default function CharacterSheet({
                 fit (#396). So this halves the row COUNT instead: four skills
                 per attribute become two rows of two, at the same height.
               */}
-              <ul className="mt-2 grid grid-cols-2 gap-1">
+              <ul
+                className={
+                  layout === 'list'
+                    ? 'mt-2 flex flex-col gap-1'
+                    : 'mt-2 grid grid-cols-2 gap-1'
+                }
+              >
                 {grouped[attr].map((skill) => {
                   // THROUGH `skillRating`, NOT AN INLINE LOOKUP.
                   //
@@ -195,7 +222,11 @@ export default function CharacterSheet({
                         that caught it was the unit test asserting `li.col-span-2`
                         exists. Keep both branches as complete literals.
                       */
-                      className={open ? 'col-span-2 min-w-0' : 'min-w-0'}
+                      className={
+                        open && layout === 'columns'
+                          ? 'col-span-2 min-w-0'
+                          : 'min-w-0'
+                      }
                     >
                       {onRoll ? (
                         <button
@@ -249,13 +280,20 @@ export default function CharacterSheet({
             "you have never exported this character" is a different sentence
             from "export a copy to keep it", and only one of them is about the
             character in front of you. */}
-        <p className="text-base-content text-sm">
-          This character lives in this browser only. Clearing your browser data
-          deletes it.{' '}
-          {character.exportedAt
-            ? `Last exported ${new Date(character.exportedAt).toLocaleDateString()}.`
-            : 'You have never exported it.'}
-        </p>
+        {sample ? (
+          <p className="text-base-content text-sm">
+            This is a sample character. It is not saved anywhere. Make your own
+            and it stays in your browser, and you can export it as a file.
+          </p>
+        ) : (
+          <p className="text-base-content text-sm">
+            This character lives in this browser only. Clearing your browser
+            data deletes it.{' '}
+            {character.exportedAt
+              ? `Last exported ${new Date(character.exportedAt).toLocaleDateString()}.`
+              : 'You have never exported it.'}
+          </p>
+        )}
 
         {/*
           One sentence, because a playtester asked for a "profile picture" and
