@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { successChance, describeChance } from '@/lib/geolarp/odds';
-import { MAX_POINTS_PER_ROLL, roll } from '@/lib/geolarp/dice';
+import { roll } from '@/lib/geolarp/dice';
 import { Rng } from '@/lib/geolarp/rng';
 import { bandOf } from '@/lib/geolarp/ladder';
 
@@ -60,35 +60,36 @@ describe('successChance', () => {
     expect(p).toBeLessThan(0.48);
   });
 
-  it('prices the session this whole change exists for, under the two-point cap', () => {
-    // THIS CORRECTED THE PREMISE IT WAS WRITTEN TO CONFIRM, AND THEN THE RULES
-    // CHANGED UNDER IT.
+  it('prices the session this whole change exists for', () => {
+    // THIS CORRECTED THE PREMISE IT WAS WRITTEN TO CONFIRM.
     //
     // The plan, and the ticket, both said a Heroic cell was "unreachable by a
-    // 3d7 starting sheet". At zero extra dice that is true: one in a thousand.
-    // Under the old stake-before-roll rule five points made it 43%, and the
-    // playtester who "used all my rerolls" on one was taking a coin-flip nobody
-    // had shown them.
+    // 3d7 starting sheet". At zero stake that is true — one in a thousand. At
+    // full stake it is 43%, and the playtester who "used all my rerolls" on
+    // one was not hitting a wall: they were taking a coin-flip nobody had
+    // shown them, and losing it.
     //
-    // Under the ruling of 4 Nov 2026 (points are bought after the roll, two at
-    // most on one roll) the same sheet gets at most two extra dice, and that
-    // is 1.8%. Heroic is now a cell a starting sheet walks past; it is for a
-    // trained character. Pinned so the change is a decision, not a surprise.
+    // So the economy is not the defect. The silence was. Spending five points
+    // really does turn 0.1% into 43%, which is the sink working exactly as
+    // designed — and a player who could see that would have been making a
+    // decision instead of a wish.
     const starting = { dice: 3, pips: 1 };
     const heroic = bandOf('heroic').floor;
     expect(successChance(starting, heroic, 0)).toBeLessThan(0.005);
-    expect(successChance(starting, heroic, 2)).toBeGreaterThan(0.015);
-    expect(successChance(starting, heroic, 2)).toBeLessThan(0.02);
+    expect(successChance(starting, heroic, 5)).toBeGreaterThan(0.4);
+    expect(successChance(starting, heroic, 5)).toBeLessThan(0.46);
     expect(describeChance(successChance(starting, heroic, 0))).toBe(
       'almost never'
+    );
+    expect(describeChance(successChance(starting, heroic, 5))).toBe(
+      'about 43%'
     );
   });
 
   it('prices the whole ladder for a starting sheet, so the table cannot drift', () => {
     // Pinned because these six numbers are the argument that the ladder is
-    // tuned: every band is winnable, and each costs more than the last.
-    // (Heroic with five bought dice, 43%, was the old stake-before-roll figure;
-    // the two-point cap makes the reachable figure 1.8%, pinned above.) A change to the dice, the ladder or the
+    // tuned: every band is winnable, each costs more than the last, and only
+    // Heroic needs the entire purse. A change to the dice, the ladder or the
     // wild die that moved these would be a change to the game's difficulty
     // curve, and it should not be possible to make it silently.
     const starting = { dice: 3, pips: 1 };
@@ -99,14 +100,14 @@ describe('successChance', () => {
     expect(pct('difficult', 0)).toBeCloseTo(16.7, 1);
     expect(pct('very-difficult', 0)).toBeCloseTo(3.2, 1);
     expect(pct('heroic', 0)).toBeCloseTo(0.1, 1);
-    expect(pct('heroic', 2)).toBeCloseTo(1.8, 1);
+    expect(pct('heroic', 5)).toBeCloseTo(43.0, 1);
   });
 
-  it('rises with every die bought, so a purchase always helps', () => {
+  it('rises with every die bought, so the spend control means something', () => {
     const code = { dice: 3, pips: 1 };
     const target = bandOf('difficult').floor;
     let prev = -1;
-    for (let bonus = 0; bonus <= MAX_POINTS_PER_ROLL; bonus += 1) {
+    for (let bonus = 0; bonus <= 5; bonus += 1) {
       const p = successChance(code, target, bonus);
       expect(p).toBeGreaterThan(prev);
       prev = p;

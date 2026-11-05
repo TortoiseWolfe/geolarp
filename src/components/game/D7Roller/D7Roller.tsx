@@ -1,27 +1,14 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   DiceCode,
-  MAX_POINTS_PER_ROLL,
-  PURCHASE_COST,
-  Purchase,
-  RollResult,
-  buy,
   formatCode,
-  pointsSpent,
-  purchaseRefusal,
-  purchaseSeed,
-  replayPurchases,
+  RollResult,
   roll as rollDice,
 } from '@/lib/geolarp/dice';
 import { Difficulty, bandOf, formatTarget } from '@/lib/geolarp/ladder';
-import {
-  dieRescueChance,
-  rerollRescueChance,
-  successChance,
-  describeChance,
-} from '@/lib/geolarp/odds';
+import { successChance, describeChance } from '@/lib/geolarp/odds';
 import { Rng } from '@/lib/geolarp/rng';
 
 export interface D7RollerProps {
@@ -31,14 +18,9 @@ export interface D7RollerProps {
   rating: DiceCode;
   /** Optional target. Without one the roller just reports a total. */
   difficulty?: Difficulty;
-  /** Character Points the player holds. Each buys an extra die or a reroll. */
+  /** Character Points the player may spend, one die each. */
   availablePoints?: number;
-  /**
-   * Called with the result and the points spent on THIS roll so far (a running
-   * total, not the increment), first with 0 for the dice as rolled and again
-   * after each purchase. The caller bills the difference, so a replay of the
-   * same state costs nothing.
-   */
+  /** Called with the result and the points actually spent. */
   onResult?: (result: RollResult, pointsSpent: number) => void;
   /**
    * An outcome already rolled for this cell and skill, restored on mount.
@@ -63,9 +45,10 @@ export interface D7RollerProps {
    * record of what you have already tried.
    *
    * The caller composes the cell, the character and the skill into this. The
-   * first roll is the same for everyone who holds that seed, and so are the
-   * purchases made after it (`purchaseSeed`). Points never change the first
-   * roll: they buy a second chance, at one point each and two at most.
+   * STAKE is added here, deliberately: without it a free failure would tell
+   * you your exact deficit, so you would buy precisely the dice needed and
+   * never waste a point — the sink would be a vending machine. With it, each
+   * stake is an independent roll and raising one is a bet.
    */
   seed?: string;
   className?: string;
@@ -98,6 +81,7 @@ export default function D7Roller({
   const [result, setResult] = useState<RollResult | null>(restoredResult);
   const [rolling, setRolling] = useState(false);
   const [tumble, setTumble] = useState<number[]>([]);
+  const [spend, setSpend] = useState(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
@@ -127,33 +111,41 @@ export default function D7Roller({
 
   const target = difficulty ? bandOf(difficulty).floor : undefined;
 
-  /** The injected rng keeps precedence so tests stay deterministic. */
-  const baseRng = () =>
-    rng ?? (seed ? new Rng(`${seed}|0`) : new Rng(makeSeed()));
-
   /**
-   * BUYING IS ONE ACT PER POINT, AND IT HAPPENS AFTER THE DICE ARE DOWN.
+   * THE STAKE CAN NEVER EXCEED THE BALANCE, not even for one render.
    *
-   * It used to be a stake set before the roll. That made the choice blind, and
-   * it let a player who changed the stake roll fresh dice on the same cell,
-   * which is why the stake went into the seed at all. Buying after the roll
-   * needs neither: the choice is made looking at the dice, and the first roll
-   * never changes.
+   * `spend` is component state and `availablePoints` is a prop, and nothing
+   * reconciled them. A roll that emptied the purse left a stale stake behind:
+   * the fieldset below unmounts at zero, the Roll button stays enabled, and the
+   * next press asked the model to spend points that were already gone —
+   * `spendCharacterPoints` throws, from inside a setState updater, which is a
+   * white screen on the route that holds the player's character.
+   *
+   * Derived on read rather than corrected in an effect: an effect would have an
+   * ordering hazard against the prop change, and this has none.
    */
-  const handleBuy = (kind: Purchase) => {
-    if (!result || purchaseRefusal(result, availablePoints)) return;
-    const n = (result.purchases?.length ?? 0) + 1;
-    const source =
-      rng ?? new Rng(purchaseSeed(seed ?? `${makeSeed()}`, kind, n));
-    const outcome = buy(rating, result, kind, source, target);
-    setResult(outcome);
-    onResult?.(outcome, pointsSpent(outcome));
-  };
+  const staked = Math.min(spend, availablePoints);
 
-  const commitWithMotion = (outcome: RollResult) => {
+  const handleRoll = useCallback(() => {
+    const stake = staked;
+    // The injected rng keeps precedence so tests stay deterministic; then the
+    // cell seed; then chance, for a roller with no cell behind it.
+    const source =
+      rng ?? (seed ? new Rng(`${seed}|${stake}`) : new Rng(makeSeed()));
+    const outcome = rollDice(rating, source, target, stake);
+
+    /**
+     * A STAKE IS PER ROLL, AND COMMITTING IT IS ONE ACT.
+     *
+     * Nothing reset `spend` after a roll, so pressing Roll a second time
+     * charged again for the same encounter — one roll, two payments. Both the
+     * reduced-motion path and the animated path commit through this single
+     * closure so they cannot drift apart.
+     */
     const commit = () => {
       setResult(outcome);
-      onResult?.(outcome, pointsSpent(outcome));
+      setSpend(0);
+      onResult?.(outcome, stake);
     };
 
     const reduced =
@@ -183,25 +175,7 @@ export default function D7Roller({
         commit();
       }, ROLL_MS)
     );
-  };
-
-  /**
-   * Roll the pool. With a cell seed, a second press replays the roll AND what
-   * was bought on it, rather than selling it again: the dice are a function of
-   * the cell, and so are the purchases.
-   *
-   * Without a seed (or with an injected rng) a press is a fresh roll, and the
-   * purchases belong to the roll they were made on, so they start again.
-   */
-  const handleRoll = () => {
-    const first = rollDice(rating, baseRng(), target, 0);
-    const replay = seed && !rng ? (result?.purchases ?? []) : [];
-    const outcome = replayPurchases(rating, first, seed ?? '', replay, target);
-    commitWithMotion(outcome);
-  };
-
-  const refusal = purchaseRefusal(result, availablePoints);
-  const spent = result ? pointsSpent(result) : 0;
+  }, [rating, rng, seed, target, staked, onResult]);
 
   const faces = rolling ? tumble : (result?.faces ?? []);
 
@@ -220,28 +194,30 @@ export default function D7Roller({
           </h3>
           <p className="text-base-content font-mono text-sm">
             {formatCode(rating)}
-            {result && result.bonusDice > 0 ? ` + ${result.bonusDice}d7` : ''}
+            {staked > 0 ? ` + ${staked}d7` : ''}
           </p>
         </div>
 
         {/*
-          THE ODDS, BEFORE THE DICE ARE DOWN.
+          WHAT THE STAKE BUYS, WHILE THERE IS STILL TIME TO CHANGE IT.
 
           A playtester spent all five Character Points on a Heroic cell and
           lost. The premise everyone worked from — including the ticket — was
-          that a starting sheet simply cannot beat Heroic. It can: 0.1% as
-          rated, 43% with five dice bought. They were not hitting a wall, they
-          were taking a coin-flip nobody had shown them.
+          that a starting sheet simply cannot beat Heroic. It can: 0.1% at zero
+          stake, 43% at five. They were not hitting a wall, they were taking a
+          coin-flip nobody had shown them.
 
-          So the economy was never the defect; the silence was. This line is the
-          chance on the roll as rated. After a miss, the two buttons below each
-          carry their own chance from where the dice lie, so the decision to buy
-          is made looking at both numbers.
+          So the economy was never the defect; the silence was. This line moves
+          with the ± buttons, so a player watching 0.1% become 43% is making a
+          decision instead of a wish — and one watching 16.7% become 47.9%
+          against a Difficult cell can see what a point is actually worth.
         */}
         {difficulty && target !== undefined && (
           <p className="text-base-content text-sm">
-            Chance on this roll:{' '}
-            <strong>{describeChance(successChance(rating, target))}</strong>
+            Chance at this stake:{' '}
+            <strong>
+              {describeChance(successChance(rating, target, staked))}
+            </strong>
           </p>
         )}
 
@@ -253,6 +229,49 @@ export default function D7Roller({
             Needs {formatTarget(difficulty)} · {bandOf(difficulty).label}
           </p>
         )}
+
+        {/*
+          RENDERED AT ZERO, DISABLED, WITH A REASON.
+
+          This whole fieldset used to unmount when the balance hit zero, which
+          is precisely what a playtester hit: they spent five points against a
+          Heroic cell, lost, and the control simply vanished. Nothing said the
+          points were gone, nothing said they could come back, and the obvious
+          reading — "the game is broken" — was the reasonable one.
+
+          A missing control cannot answer a question. A disabled one can.
+        */}
+        <fieldset className="flex flex-wrap items-center gap-2">
+          <legend className="text-base-content mb-1 text-sm">
+            {availablePoints > 0
+              ? 'Spend Character Points — each buys one die'
+              : 'No Character Points. Beat a Moderate cell or harder to earn one.'}
+          </legend>
+          <button
+            type="button"
+            className="btn btn-sm min-h-11 min-w-11"
+            onClick={() => setSpend((n) => Math.max(0, n - 1))}
+            disabled={staked === 0 || rolling}
+            aria-label="Spend one fewer Character Point"
+          >
+            −
+          </button>
+          <output
+            className="text-base-content min-w-11 text-center font-mono"
+            aria-label={`${staked} of ${availablePoints} Character Points`}
+          >
+            {staked} / {availablePoints}
+          </output>
+          <button
+            type="button"
+            className="btn btn-sm min-h-11 min-w-11"
+            onClick={() => setSpend((n) => Math.min(availablePoints, n + 1))}
+            disabled={staked >= availablePoints || rolling}
+            aria-label="Spend one more Character Point"
+          >
+            +
+          </button>
+        </fieldset>
 
         <button
           type="button"
@@ -300,61 +319,6 @@ export default function D7Roller({
         </p>
 
         {/*
-          BOUGHT AFTER THE ROLL, AND ONLY WHILE THE ROLL IS A MISS.
-
-          Rendered with a reason at every stage rather than unmounted: before
-          the roll it says when buying opens, at zero points it says how points
-          come back, at the cap it says why nothing more is on offer. This
-          control used to vanish when the balance hit zero, which a playtester
-          read, reasonably, as the game being broken. A missing control cannot
-          answer a question. A disabled one can.
-
-          A WIN HIDES IT. Nothing is left to fix, and a reroll could only lose
-          what the player already holds.
-        */}
-        {!result && !rolling && (
-          <p className="text-base-content text-sm">
-            {availablePoints > 0
-              ? `Roll first. Then you may spend Character Points on an extra die or a reroll: ${PURCHASE_COST} point each, ${MAX_POINTS_PER_ROLL} at most on one roll.`
-              : 'No Character Points. Beat a Moderate cell or harder to earn one.'}
-          </p>
-        )}
-
-        {result && !rolling && refusal !== 'won' && (
-          <fieldset className="flex flex-col gap-2">
-            <legend className="text-base-content mb-1 text-sm">
-              {refusal === 'broke'
-                ? 'No Character Points. Beat a Moderate cell or harder to earn one.'
-                : refusal === 'cap'
-                  ? `You have spent the ${MAX_POINTS_PER_ROLL} Character Points a roll allows.`
-                  : `Not enough? ${PURCHASE_COST} Character Point buys one of these (${spent} of ${MAX_POINTS_PER_ROLL} spent on this roll).`}
-            </legend>
-            <button
-              type="button"
-              className="btn btn-sm min-h-11 justify-start"
-              onClick={() => handleBuy('die')}
-              disabled={refusal !== null}
-            >
-              Buy an extra die — {PURCHASE_COST} Character Point
-              {target !== undefined
-                ? ` · ${describeChance(dieRescueChance(result.total, target))} to win from here`
-                : ''}
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm min-h-11 justify-start"
-              onClick={() => handleBuy('reroll')}
-              disabled={refusal !== null}
-            >
-              Buy a reroll — {PURCHASE_COST} Character Point
-              {target !== undefined
-                ? ` · ${describeChance(rerollRescueChance(rating, target, result.bonusDice))} to win from here`
-                : ''}
-            </button>
-          </fieldset>
-        )}
-
-        {/*
           "HOW LONG DOES A TURN LAST?" — asked in a playtest, and the honest
           answer is that there is no turn. The unit of play is the cell, and it
           holds until the date rolls over.
@@ -366,8 +330,8 @@ export default function D7Roller({
         */}
         {seed && result && !rolling && (
           <p className="text-base-content text-xs">
-            This cell&rsquo;s roll is fixed until midnight UTC. Character Points
-            buy a second chance on it, never a different first roll.
+            This cell&rsquo;s roll is fixed until midnight UTC. Spending
+            Character Points changes the pool, and so changes the roll.
           </p>
         )}
       </div>
