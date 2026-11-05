@@ -114,3 +114,49 @@ export function describeChance(p: number): string {
   if (p < 0.01) return 'almost never';
   return `about ${Math.round(p * 100)}%`;
 }
+
+/**
+ * What buying a Character Point is worth, in the two ways a player can ask.
+ *
+ * BEFORE THE ROLL, as a policy ("if I miss, I buy"): the chance of ending on a
+ * win. For a die that is exactly the chance of the pool with one more die,
+ * because the extra die only adds and so wins wherever the smaller pool did.
+ * For a reroll it is 1 - (1 - p)^2. These are the council's figures
+ * (`character-point-purchases.test.ts` pins them).
+ */
+export type PurchaseKind = 'die' | 'reroll';
+
+export function successChanceWithPurchase(
+  code: DiceCode,
+  target: number,
+  kind: PurchaseKind,
+  bonusDice = 0
+): number {
+  if (kind === 'die') return successChance(code, target, bonusDice + 1);
+  const p = successChance(code, target, bonusDice);
+  return 1 - (1 - p) * (1 - p);
+}
+
+/**
+ * AFTER A MISS, the chance that one purchase turns this exact roll into a win.
+ *
+ * A reroll is a fresh roll of the pool, so it wins at the pool's own chance
+ * whatever the miss looked like. An extra die lands on 1..7 with equal chance,
+ * so given the total already on the table it wins when the face reaches the
+ * shortfall: certain if one short, one face in seven if seven short, impossible
+ * beyond that. Both are exact.
+ */
+export function rerollRescueChance(
+  code: DiceCode,
+  target: number,
+  bonusDice = 0
+): number {
+  return successChance(code, target, bonusDice);
+}
+
+export function dieRescueChance(total: number, target: number): number {
+  const need = target - total;
+  if (need <= 1) return 1;
+  if (need > FACES) return 0;
+  return (FACES - need + 1) / FACES;
+}

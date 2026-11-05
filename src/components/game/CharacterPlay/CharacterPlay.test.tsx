@@ -358,35 +358,28 @@ describe('CharacterPlay', () => {
     );
   });
 
-  it('deducts spent Character Points and remembers the spend', async () => {
-    /*
-     * ITS OWN DAY, AND A ZERO-PAY ONE ON PURPOSE.
-     *
-     * This asserts that SPENDING deducts. On the shared fixture day the cell's
-     * encounter now pays 1 on success, so spend-one-earn-one nets to zero and the
-     * test passed 5 where it wanted 4 — measuring nothing while looking green.
-     * (The hex conversion moved every cell key, so which encounter sits here
-     * changed; the trap was always there and #87 merely walked into it.)
-     *
-     * 2026-08-07 puts an `easy` encounter on this cell, and `REWARD_BY_BAND` pays
-     * 0 for very-easy and easy — 35% of the world. So the only movement in the
-     * total is the spend, which is the thing under test.
-     */
+  it('offers no Character Point purchase before the roll, and no stake control', async () => {
     const user = await begin('Ada Wren', new Date('2026-08-07T12:00:00Z'));
     const sheet = screen
       .getByRole('heading', { name: 'Ada Wren', level: 2 })
       .closest('article') as HTMLElement;
-    expect(within(sheet).getByText('5')).toBeInTheDocument();
-
     await user.click(within(sheet).getByRole('button', { name: /^Search/ }));
-    await user.click(
-      await screen.findByRole('button', {
-        name: 'Spend one more Character Point',
-      })
-    );
+    await screen.findByRole('button', { name: 'Roll Search' });
+    expect(
+      screen.queryByRole('button', { name: 'Spend one more Character Point' })
+    ).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /Buy an extra die/ })
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: /Buy a reroll/ })).toBeNull();
+    // The roll itself costs nothing.
     await user.click(screen.getByRole('button', { name: 'Roll Search' }));
-
-    await waitFor(() => expect(loadCharacter()?.characterPoints).toBe(4));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('status', { name: 'Roll result' })
+      ).toHaveTextContent(/rolled/)
+    );
+    expect(loadCharacter()?.characterPoints).toBe(5);
   });
 
   it('replaces the character on request, keeping the name', async () => {

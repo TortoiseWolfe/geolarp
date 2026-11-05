@@ -32,8 +32,10 @@ A search of `features/` (000–051), `docs/prp-docs/` and `specs/` finds no char
 | Average roll     | 4.0                                                     | `:43`        |
 | Critical success | natural 7 — 14.3%                                       | `:44`, `:46` |
 | Complication     | natural 1, occurring "about as often as a 7 saves them" | `:49`        |
-| Advantage        | `2d7 keep highest`                                      | `:52`        |
-| Disadvantage     | `2d7 keep lowest`                                       | `:52`        |
+| Advantage        | ~~`2d7 keep highest`~~ withdrawn, see below             | `:52`        |
+| Disadvantage     | ~~`2d7 keep lowest`~~ withdrawn, see below              | `:52`        |
+
+**Corrected 4 November 2026.** Line numbers in this file are the post as first published on 22 August 2026. The post has since been corrected with a dated note (`public/blog/the-world-is-the-board.md`): it no longer promises advantage or disadvantage, because the game uses D6-style dice codes, which have no roll-two-keep-one. When circumstances exist, they will shift the difficulty number (about 3 for a minor one, 6 for a major one, applied by the encounter and shown before the roll), never the dice. The 14.3 percent critical is the wild die's first face showing 7, and the 4.0 average is for one ordinary die. The rows above stay as a record of what the post said.
 
 The post's wording is "a **natural 7**" (`:46`). It does not say what a natural 7 is contrasted against, and this document does not supply one.
 
@@ -41,7 +43,7 @@ The post's wording is "a **natural 7**" (`:46`). It does not say what a natural 
 
 ⚠️ **UNSPECIFIED:** what a roll is made _against_. No target numbers, difficulty ladder, or success/failure bands are published. "Challenge rating" appears once (`:70`) with no definition.
 
-> Still unspecified *by the post*, which is what this marker records. A design decision now fills it — see [`resolution.md`](resolution.md), which converts West End Games' D6 System to d7. That document is a choice; this one remains a transcription.
+> Still unspecified _by the post_, which is what this marker records. A design decision now fills it — see [`resolution.md`](resolution.md), which converts West End Games' D6 System to d7. That document is a choice; this one remains a transcription.
 
 ## 2. Attributes
 
@@ -49,7 +51,7 @@ Five, named (`:52-53`):
 
 **Strength · Agility · Intellect · Spirit · Luck**
 
-They sit on the **same 1–7 scale as the die**, "so a character sheet reads in the same units as the roll." The post calls that symmetry "most of why the system is worth the trouble" (`:53-55`).
+The post said they sit on the **same 1–7 scale as the die**, "so a character sheet reads in the same units as the roll" (`:53-55`). **That was wrong and is corrected (4 November 2026):** attributes are written as dice codes like 3d7+2, so the sheet reads in the same dice as the roll. See [`resolution.md`](resolution.md).
 
 ⚠️ **UNSPECIFIED:** how attribute values are produced (rolled, point-buy, template), whether modifiers exist at all, and whether anything other than the five attributes is on a character. No modifier range is published anywhere — a sheet that renders a modifier column is making a decision this document cannot supply.
 

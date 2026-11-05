@@ -42,6 +42,8 @@ export interface BlogPost {
   /** One entry per blockquote ELEMENT — consecutive `>` lines are one quote. */
   blockquotes: string[];
   codeBlocks: BlogCodeBlock[];
+  /** Inline `code` spans outside fences; each renders as a <code> element. */
+  codeSpans: number;
   hasFeaturedImage: boolean;
   headingCount: number;
   bodyLength: number;
@@ -106,6 +108,7 @@ function parse(slug: string, raw: string): BlogPost {
     tables,
     blockquotes,
     codeBlocks,
+    codeSpans: (withoutCode.match(/`[^`\n]+`/g) ?? []).length,
     hasFeaturedImage: /^featuredImage:\s*\S/m.test(front),
     headingCount: (withoutCode.match(/^#{2,3}\s/gm) ?? []).length,
     bodyLength: withoutCode.length,
@@ -135,6 +138,22 @@ export const postsWithCode = () =>
   blogCorpus().filter((p) => p.codeBlocks.length > 0);
 export const postsWithQuotes = () =>
   blogCorpus().filter((p) => p.blockquotes.length > 0);
+
+/**
+ * The post with the most `<pre>` and `<code>` elements: fenced blocks first, then
+ * inline spans. A spec that measures code elements must visit a post that has
+ * some. `richestPost` chases tables and quotes, and a content edit that drops a
+ * post's last inline span (the 4 Nov correction to the-world-is-the-board did)
+ * leaves it with nothing to measure — a zero-assertion green.
+ */
+export function mostCodePost(): BlogPost {
+  return [...blogCorpus()].sort(
+    (a, b) =>
+      b.codeBlocks.length - a.codeBlocks.length ||
+      b.codeSpans - a.codeSpans ||
+      b.bodyLength - a.bodyLength
+  )[0];
+}
 
 /** The longest and shortest posts — the long-title/short-title layout pair. */
 export function longestPost(): BlogPost {

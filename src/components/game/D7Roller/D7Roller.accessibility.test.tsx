@@ -14,6 +14,30 @@ expect.extend(toHaveNoViolations);
  */
 const rating = { dice: 3, pips: 1 };
 
+/**
+ * A Heroic cell against 3d7+1 with an injected seed, so the first roll misses
+ * and the after-the-roll purchases are on screen. Asserted, not assumed.
+ */
+async function missed() {
+  const user = userEvent.setup();
+  const view = render(
+    <D7Roller
+      label="Search"
+      rating={rating}
+      difficulty="heroic"
+      availablePoints={3}
+      rng={new Rng('heroic-miss')}
+    />
+  );
+  await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+  await waitFor(() =>
+    expect(
+      screen.getByRole('status', { name: 'Roll result' })
+    ).toHaveTextContent(/rolled/)
+  );
+  return view;
+}
+
 describe('D7Roller Accessibility', () => {
   beforeEach(() => {
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -35,10 +59,18 @@ describe('D7Roller Accessibility', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('has no violations with the Character Point control shown', async () => {
+  it('has no violations before the roll, with the purchase hint shown', async () => {
     const { container } = render(
       <D7Roller label="Search" rating={rating} availablePoints={3} />
     );
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it('has no violations with the Character Point purchases shown after a miss', async () => {
+    const { container } = await missed();
+    expect(
+      screen.getByRole('button', { name: /Buy an extra die/ })
+    ).toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
   });
 
@@ -72,12 +104,11 @@ describe('D7Roller Accessibility', () => {
     await waitFor(() => expect(status).toHaveTextContent(/rolled/));
   });
 
-  it('gives every control a 44px touch target', () => {
-    const { container } = render(
-      <D7Roller label="Search" rating={rating} availablePoints={2} />
-    );
+  it('gives every control a 44px touch target, purchases included', async () => {
+    const { container } = await missed();
     const buttons = container.querySelectorAll('button');
-    expect(buttons.length).toBeGreaterThan(2);
+    // Roll, buy an extra die, buy a reroll.
+    expect(buttons.length).toBeGreaterThanOrEqual(3);
     buttons.forEach((b) => expect(b.className).toContain('min-h-11'));
   });
 

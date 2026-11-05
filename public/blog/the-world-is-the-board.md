@@ -22,6 +22,13 @@ twitterCard: summary_large_image
 
 # 🎲 The World Is the Board: What geoLARP Actually Is
 
+> **Correction, 4 November 2026.** This post said characters get advantage and
+> disadvantage (roll two dice, keep the higher or the lower), and that attributes
+> sit "on the same 1–7 scale as the die". Neither is how the game is built. The
+> game uses dice codes, like 3d7+2, and has no roll-two-keep-one. The dice
+> section below is corrected, and the 14.3 percent critical and the 4.0 average
+> now say what they measure.
+
 There has been a domain, a mark, and a coming-soon page for a while now, and no
 explanation of what any of it is for. So here is the design, plainly, including
 the parts I have not settled.
@@ -43,16 +50,20 @@ calculate.
 | average roll     | 10.5 | 3.5   | **4.0**   |
 | critical success | 5%   | —     | **14.3%** |
 
-A natural 20 lands about once every twenty rolls. A **natural 7 lands about once
-every seven** — nearly three times as often. Criticals stop being a rare
-fireworks moment and become a texture you plan around. The same is true at the
-bottom: a natural 1 complicates things about as often as a 7 saves them, so the
-game keeps handing you both.
+The 4.0 average is for one ordinary die. The 14.3 percent critical is a different
+thing: a roll has one "wild" die, and when that die's first face shows a 7, the
+roll is a critical and the die explodes (you roll it again and add). Ordinary dice
+never explode.
 
-Advantage is `2d7 keep highest`; disadvantage keeps the lowest. Attributes —
-**Strength, Agility, Intellect, Spirit, Luck** — sit on the same 1–7 scale as the
-die, so a character sheet reads in the same units as the roll. That symmetry is
-most of why the system is worth the trouble.
+A natural 20 lands about once every twenty rolls. A **critical on the wild die
+lands about once every seven** — nearly three times as often. Criticals stop being
+a rare fireworks moment and become a texture you plan around. The same is true at
+the bottom: a 1 on the wild die complicates things about as often as a 7 saves
+them, so the game keeps handing you both.
+
+Attributes (Strength, Agility, Intellect, Spirit, Luck) are written as dice codes
+like 3d7+2, so a character sheet reads in the same dice as the roll; circumstances
+will shift the difficulty rather than change the dice.
 
 You may have noticed the site's mark is a seven-sided die. That is not
 decoration. It is the one design decision everything else is built on, so it may
@@ -77,7 +88,7 @@ hour later, because it is derived from the place, not handed out. That is what
 makes it a shared world rather than a private one.
 
 **Encounters need nothing behind them.** No matchmaking and no database of what
-is where: your device can generate the 3×3 grid of cells around you while
+is where: your device can generate the seven-cell flower around you (the cell you stand in and its six neighbours) while
 completely offline, from map tiles it cached earlier.
 
 ## 🔒 Where you are, and who knows it
