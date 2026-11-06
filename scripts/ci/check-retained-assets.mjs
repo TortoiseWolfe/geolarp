@@ -41,7 +41,17 @@ const BASE = (
 ).replace(/\/$/, '');
 const MANIFEST = `${BASE}/_next/static/ASSET_MANIFEST.txt`;
 const AGES = `${BASE}/_next/static/ASSET_AGES.txt`;
+const CHAIN = `${BASE}/_next/static/LEDGER_CHAIN.txt`;
 const CONCURRENCY = 12;
+
+/**
+ * When a missing chain stamp stops being the one-deploy ramp and becomes a failure
+ * (#157). A week is far more than the single deploy the ramp covers. Overridable only
+ * so a test can exercise the failure; nothing in CI sets it.
+ */
+const CHAIN_RAMP_ENDS = Date.parse(
+  process.env.CHAIN_RAMP_ENDS ?? '2026-11-13T00:00:00Z'
+);
 
 /** Must match `RETAIN_DAYS` in .github/workflows/deploy.yml (#751). */
 const RETAIN_DAYS = Number(process.env.RETAIN_DAYS ?? 14);
@@ -106,7 +116,6 @@ async function pool(items, worker, size) {
   );
   return out;
 }
-
 
 /**
  * Read a ledger file, never from a cache (#128).
@@ -299,6 +308,36 @@ if (!dated.length) {
         `file is reachable, which is the half that can see a stranded visitor.`
     );
   }
+}
+
+/**
+ * IS THE CHAIN STAMP PUBLISHED? (#157)
+ *
+ * Each deploy writes `LEDGER_CHAIN.txt`, and the next deploy asserts the stamp it read
+ * names the deploy that actually went live before it. That assertion tolerates a missing
+ * stamp exactly once, as the ramp for the first deploy after the stamp shipped. This is
+ * what keeps that tolerance from becoming a standing escape hatch: once the ramp has
+ * elapsed, a live ledger with no well-formed stamp means the writer stopped, and the
+ * detector would be silently comparing nothing.
+ */
+if (Date.now() < CHAIN_RAMP_ENDS) {
+  // Nothing is asserted inside the ramp, so nothing is fetched either.
+  console.log(
+    `\n  chain     not asserted inside the ramp (ends ${new Date(CHAIN_RAMP_ENDS).toISOString()})`
+  );
+} else {
+  const stampRes = await fetch(ledgerUrl(CHAIN), NO_CACHE);
+  const stampOk =
+    stampRes.ok && /^chain \S+ \S+$/.test((await stampRes.text()).trim());
+  if (!stampOk) {
+    console.error(
+      `::error::${CHAIN} is missing or malformed (HTTP ${stampRes.status}) after the ramp. ` +
+        `Deploys no longer stamp the ledger, so nothing can detect a stale or forked ` +
+        `ledger being read by the next deploy.`
+    );
+    process.exit(1);
+  }
+  console.log(`\n  chain     stamp published`);
 }
 
 console.log(
