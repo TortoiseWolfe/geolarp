@@ -234,6 +234,20 @@ const DAY_MS = 86_400_000;
 const NOW = Date.now();
 
 /**
+ * WHICH DEPLOY WROTE THE LEDGER (#157).
+ *
+ * `LEDGER_CHAIN.txt` is one line, `chain <commit> <iso8601>`, naming the deploy that
+ * published the ledgers beside it. `THIS_DEPLOY` is that identity for the current run;
+ * `EXPECTED_PREVIOUS_DEPLOY_SHA` is who the workflow says deployed last. It is a
+ * separate file so the manifest and age-table formats stay as they are.
+ */
+const CHAIN_FILE = 'LEDGER_CHAIN.txt';
+const THIS_DEPLOY = process.env.GITHUB_SHA || 'unknown';
+const EXPECTED_PREVIOUS_DEPLOY_SHA = (
+  process.env.EXPECTED_PREVIOUS_DEPLOY_SHA ?? ''
+).trim();
+
+/**
  * Publish `ASSET_MANIFEST.txt` + `ASSET_AGES.txt` describing what is on disk.
  *
  * CALLED ON EVERY EXIT PATH, INCLUDING THE FAILURES, AND THAT IS THE POINT.
@@ -259,7 +273,8 @@ async function publishManifest() {
         await walk(p);
       } else if (
         e.name !== 'ASSET_MANIFEST.txt' &&
-        e.name !== 'ASSET_AGES.txt'
+        e.name !== 'ASSET_AGES.txt' &&
+        e.name !== CHAIN_FILE
       ) {
         published.push(p.slice(outDir.length + 1));
       }
@@ -291,6 +306,12 @@ async function publishManifest() {
           `${ages.get(rel) ?? 0} ${new Date(firstSeen.get(rel) ?? NOW).toISOString()} ${rel}`
       )
       .join('\n') + '\n'
+  );
+  // THE CHAIN STAMP (#157). Written beside the two ledgers, never inside either of
+  // them: four readers parse those formats, and a stamp is not an asset.
+  await writeFile(
+    join(staticRoot, CHAIN_FILE),
+    `chain ${THIS_DEPLOY} ${new Date(NOW).toISOString()}\n`
   );
   const oldest = [...firstSeen.values()].reduce((a, b) => Math.min(a, b), NOW);
   console.log(
@@ -483,6 +504,58 @@ if (manifest && agesRes) {
   }
 }
 
+/**
+ * DID THIS DEPLOY READ THE LEDGER ITS PREDECESSOR PUBLISHED? (#157)
+ *
+ * `ledgerDesync` above sees a ledger that disagrees with itself. It cannot see one that
+ * is internally consistent and belongs to a different chain — a CDN swap, a mirror, a
+ * rolled-back site. Each deploy stamps `LEDGER_CHAIN.txt`; the workflow names the last
+ * successful deploy; they must agree.
+ *
+ * "WHO DEPLOYED LAST", NOT GIT ANCESTRY. #82 declined a fingerprint because a re-run, a
+ * rollback or a publish that failed after the build all move the chain backwards through
+ * no fault of retention. The Deployments API answers with the deploy that actually went
+ * live, so those cases still match.
+ *
+ * REPORTED AT THE END, like the desync: failing here would skip retention and publish a
+ * ledger holding only this build.
+ *
+ * THE RAMP IS BOUNDED. No stamp on the live ledger is expected exactly once, for the
+ * first deploy after this lands, and it is a notice. `check-retained-assets.mjs` asserts
+ * the live stamp exists after `CHAIN_RAMP_ENDS`, so the notice cannot become a standing
+ * escape hatch.
+ */
+let chainMismatch = null;
+if (manifest) {
+  const stampRes = await getFresh(
+    `${BASE}/_next/static/${CHAIN_FILE}`,
+    CACHE_BUST
+  );
+  const stamp = stampRes
+    ? (await stampRes.text()).trim().match(/^chain (\S+) (\S+)$/)
+    : null;
+  if (!stamp) {
+    console.log(
+      `::notice::no chain stamp on the live ledger — the one-deploy ramp. This deploy ` +
+        `writes the first one; the chain is asserted from the next.`
+    );
+  } else if (!EXPECTED_PREVIOUS_DEPLOY_SHA || stamp[1] === 'unknown') {
+    console.log(
+      `::notice::chain continuity not asserted: the workflow could not name the last ` +
+        `deploy, or the live stamp carries no commit (the live ledger says ${stamp[1]}).`
+    );
+  } else if (
+    EXPECTED_PREVIOUS_DEPLOY_SHA.startsWith(stamp[1]) ||
+    stamp[1].startsWith(EXPECTED_PREVIOUS_DEPLOY_SHA)
+  ) {
+    console.log(
+      `chain continuity holds: the ledger read was published by ${stamp[1]}, the last deploy.`
+    );
+  } else {
+    chainMismatch = { read: stamp[1], expected: EXPECTED_PREVIOUS_DEPLOY_SHA };
+  }
+}
+
 let retained = 0;
 let alreadyPresent = 0;
 let failed = 0;
@@ -652,6 +725,15 @@ if (ledgerDesync.length > 0) {
   }
 }
 
+if (chainMismatch) {
+  console.log(
+    `\n::error::the ledger it read was published by ${chainMismatch.read}, but the last ` +
+      `deploy was ${chainMismatch.expected}. The ledger served at ${BASE} belongs to a ` +
+      `different chain (a stale mirror, a CDN swap or a rolled-back site), so what this ` +
+      `deploy carried forward may not be what the last deploy promised.`
+  );
+}
+
 const lost = [...lostToFetch, ...lostToBackstop];
 if (!manifest) {
   console.log(
@@ -659,7 +741,7 @@ if (!manifest) {
       `unreadable, so the file list came from crawling HTML and is not the ` +
       `previous deploy's promise. ${lost.length} asset(s) were lost this run.`
   );
-} else if (lost.length > 0 || ledgerDesync.length > 0) {
+} else if (lost.length > 0 || ledgerDesync.length > 0 || chainMismatch) {
   // TWO INDEPENDENT FAILURES SHARING ONE EXIT. The desync was already reported
   // above with its own paths; printing "0 asset(s) were NOT carried forward"
   // alongside it would be false, and a failure message that misdescribes the

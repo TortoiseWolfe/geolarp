@@ -38,7 +38,14 @@ function agesFor(entries, spanDays) {
 function runProbe(baseUrl, env = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [SCRIPT, baseUrl], {
-      env: { ...process.env, ...env },
+      // The chain-stamp ramp (#157) ends on a calendar date; pinned far in the future
+      // here so no other test turns red on the day it passes. The tests for the stamp
+      // itself override it.
+      env: {
+        ...process.env,
+        CHAIN_RAMP_ENDS: '2999-01-01T00:00:00Z',
+        ...env,
+      },
     });
     let stdout = '';
     let stderr = '';
@@ -345,4 +352,66 @@ test('reads both ledgers with a cache buster, not from the edge cache (#128)', a
     nonceOf(ages.url),
     'the two ledger reads used different nonces, so they can describe different moments'
   );
+});
+
+/**
+ * THE CHAIN STAMP RAMP MUST END (#157).
+ *
+ * The deploy tolerates a missing `LEDGER_CHAIN.txt` once, as the ramp for the first
+ * deploy after the stamp shipped. This probe is what stops that tolerance from becoming
+ * permanent: after the ramp date a live ledger with no well-formed stamp fails.
+ */
+async function chainServer(t, stamp) {
+  const entries = retainedEntries(['/_next/static/css/app.css']);
+  const server = await startServer((request, response) => {
+    const p = pathOf(request);
+    if (p === '/_next/static/ASSET_MANIFEST.txt') {
+      response.end(entries.join('\n'));
+    } else if (p === '/_next/static/ASSET_AGES.txt') {
+      response.end(agesFor(entries, 20));
+    } else if (p === '/_next/static/LEDGER_CHAIN.txt') {
+      if (stamp === null) response.writeHead(404).end();
+      else response.end(stamp);
+    } else {
+      response.writeHead(200).end();
+    }
+  });
+  t.after(() => server.close());
+  return server;
+}
+
+test('chain stamp: passes once published, after the ramp', async (t) => {
+  const server = await chainServer(
+    t,
+    'chain abc1234 2026-11-06T00:00:00.000Z\n'
+  );
+  const result = await runProbe(server.baseUrl, {
+    CHAIN_RAMP_ENDS: '2020-01-01T00:00:00Z',
+  });
+  assert.equal(result.code, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /stamp published/);
+});
+
+test('chain stamp: a missing stamp fails after the ramp', async (t) => {
+  const server = await chainServer(t, null);
+  const result = await runProbe(server.baseUrl, {
+    CHAIN_RAMP_ENDS: '2020-01-01T00:00:00Z',
+  });
+  assert.equal(result.code, 1, result.stdout + result.stderr);
+  assert.match(result.stdout + result.stderr, /LEDGER_CHAIN\.txt is missing/);
+});
+
+test('chain stamp: a malformed stamp fails after the ramp', async (t) => {
+  const server = await chainServer(t, '<html>not a stamp</html>');
+  const result = await runProbe(server.baseUrl, {
+    CHAIN_RAMP_ENDS: '2020-01-01T00:00:00Z',
+  });
+  assert.equal(result.code, 1, result.stdout + result.stderr);
+});
+
+test('chain stamp: a missing stamp is not asserted inside the ramp', async (t) => {
+  const server = await chainServer(t, null);
+  const result = await runProbe(server.baseUrl);
+  assert.equal(result.code, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /not asserted inside the ramp/);
 });
