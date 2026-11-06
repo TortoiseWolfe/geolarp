@@ -30,10 +30,10 @@
 name: Email Health
 
 on:
-  schedule:
-    # Daily. This is the point of the gate — it catches damage that accumulates
-    # with no repo change at all, which is exactly how #361 went unnoticed.
-    - cron: '40 15 * * *'
+  # PAUSED 2026-10-19: no RESEND_API_KEY secret, so every daily run fails.
+  # See https://github.com/TortoiseWolfe/geolarp/issues/185. When one manual run is green, restore:
+  #   schedule:
+  #     - cron: '40 15 * * *'
   push:
     branches: [main]
     paths:
@@ -99,4 +99,13 @@ jobs:
         run: |
           # No pnpm install: the script uses only built-in fetch, so there is
           # nothing to resolve and the job stays under a minute.
+          #
+          # While the Resend key is missing (#185) the push and pull_request
+          # runs for this file's own edits would fail for a reason that has
+          # nothing to do with the change. Skip them with a notice; a manual
+          # dispatch still fails loudly so the missing key is not forgotten.
+          if [ -z "${RESEND_API_KEY:-}" ] && [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ]; then
+            echo "::notice::RESEND_API_KEY is not set (#185), so the bounce-rate check did not run on this ${GITHUB_EVENT_NAME}."
+            exit 0
+          fi
           node scripts/check-email-health.mjs --window-days "$WINDOW_DAYS"
