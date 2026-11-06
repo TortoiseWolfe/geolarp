@@ -296,6 +296,7 @@ test.describe('Group Chat E2E', () => {
       // message-service unit tests; this spec guards the "group is reachable,
       // no 'not yet implemented' throw, message round-trips" flow when the
       // environment is fast enough to create the group.
+      // Kept skip (#196): group creation too slow (Argon2/ECDH) here
       test.skip(
         !navigated,
         'group creation did not complete within 90s on this runner (slow Argon2/ECDH)'

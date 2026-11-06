@@ -43,6 +43,7 @@ test.describe('User Registration E2E', () => {
   });
 
   // Skip: Requires real Supabase user creation - run with proper env setup
+  // Kept skip (#196): needs real Supabase user creation; env not set up
   test.skip('should complete full registration flow from sign-up to protected access', async ({
     page,
   }) => {
