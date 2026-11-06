@@ -124,6 +124,7 @@ test.describe('PWA Installation', () => {
   }) => {
     // WebKit does not support page.reload() while offline with service workers —
     // triggers "WebKit encountered an internal error". Known Playwright limitation.
+    // Kept skip (#196): WebKit cannot reload offline with a service worker
     test.skip(
       browserName === 'webkit',
       'WebKit does not support offline reload with service workers'
@@ -134,6 +135,7 @@ test.describe('PWA Installation', () => {
     // A bare `return` here reported as PASSED, so a browser with no service worker
     // support looked like proof that offline mode works (#850). test.skip() reports
     // what actually happened.
+    // Kept skip (#196): browser without service worker support; skip not pass [ScriptHammer#850]
     test.skip(
       !swSupported,
       'Service workers are not supported in this browser'
@@ -156,6 +158,7 @@ test.describe('PWA Installation', () => {
     });
 
     // Same again: a service worker that never activated is a skip, not a pass.
+    // Kept skip (#196): service worker did not activate; skip, not pass [ScriptHammer#850]
     test.skip(!swActive, 'Service worker did not activate within 5s');
 
     // Go offline

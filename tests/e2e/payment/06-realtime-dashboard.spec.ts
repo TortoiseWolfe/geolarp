@@ -127,6 +127,7 @@ test.describe('Payment Dashboard Real-Time Updates', () => {
     ).toBeVisible();
   });
 
+  // Kept skip (#196): needs real Stripe payment processing
   test.skip('should show real-time payment status updates', async ({
     page,
   }) => {
@@ -164,6 +165,7 @@ test.describe('Payment Dashboard Real-Time Updates', () => {
     }
   });
 
+  // Kept skip (#196): needs real Stripe webhooks
   test.skip('should update webhook verification status in real-time', async ({
     page,
   }) => {
@@ -270,6 +272,7 @@ test.describe('Payment Dashboard Real-Time Updates', () => {
   // heartbeat timeout, which is long and variable) — an E2E assertion here flakes.
   // The "Live" indicator itself is covered by the connection-status test above;
   // the transient "Reconnecting…" badge is the same badge map, exercised in unit.
+  // Kept skip (#196): a real WS drop is not deterministic; unit-covered
   test.skip('should show "Reconnecting…" on a channel drop (unit-covered)', async () => {
     test.skip(
       true,

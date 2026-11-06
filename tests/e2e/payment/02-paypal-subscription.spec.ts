@@ -49,6 +49,7 @@ test.describe('PayPal Subscription Creation Flow', () => {
       .waitFor({ state: 'visible', timeout: 15000 });
   });
 
+  // Kept skip (#196): needs real PayPal API keys, not set in CI
   test.skip('should create PayPal subscription successfully', async ({
     page,
   }) => {
@@ -116,6 +117,7 @@ test.describe('PayPal Subscription Creation Flow', () => {
   // remain skipped: cancel drives the cancel-subscription edge function and
   // failed-retry needs PayPal sandbox keys.
 
+  // Kept skip (#196): cancel needs a deployed Edge Function + provider
   test.skip('should allow subscription cancellation', async ({ page }) => {
     // Fixture exists (seedIsolatedSubscription) but cancel drives the
     // cancel-subscription Edge Function end-to-end; un-skip once that flow is
@@ -123,6 +125,7 @@ test.describe('PayPal Subscription Creation Flow', () => {
     test.skip(true, 'Cancel drives the cancel-subscription Edge Function');
   });
 
+  // Kept skip (#196): retry re-charges via PayPal; needs live sandbox creds
   test.skip('should handle failed payment retry logic', async ({ page }) => {
     // The past_due/grace row can now be seeded (seedIsolatedSubscription), but
     // the retry itself re-charges through the provider, which needs live PayPal
