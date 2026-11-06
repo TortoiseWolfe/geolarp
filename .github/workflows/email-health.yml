@@ -99,4 +99,13 @@ jobs:
         run: |
           # No pnpm install: the script uses only built-in fetch, so there is
           # nothing to resolve and the job stays under a minute.
+          #
+          # While the Resend key is missing (#185) the push and pull_request
+          # runs for this file's own edits would fail for a reason that has
+          # nothing to do with the change. Skip them with a notice; a manual
+          # dispatch still fails loudly so the missing key is not forgotten.
+          if [ -z "${RESEND_API_KEY:-}" ] && [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ]; then
+            echo "::notice::RESEND_API_KEY is not set (#185), so the bounce-rate check did not run on this ${GITHUB_EVENT_NAME}."
+            exit 0
+          fi
           node scripts/check-email-health.mjs --window-days "$WINDOW_DAYS"
