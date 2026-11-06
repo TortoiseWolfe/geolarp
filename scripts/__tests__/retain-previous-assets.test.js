@@ -1058,3 +1058,111 @@ describe('ledger cross-check (#82)', () => {
     assert.ok(!/ledgers disagree/.test(all));
   });
 });
+
+/**
+ * NOTHING USED TO ASSERT A DEPLOY READ THE LEDGER ITS PREDECESSOR PUBLISHED (#157).
+ *
+ * #128 fixed the known route to a stale ledger (an edge-cached copy). This is the
+ * detector for a different route to the same silent carry-forward of dead assets: a
+ * CDN swap, a mirror, a rolled-back site. Each deploy stamps `LEDGER_CHAIN.txt` with
+ * its own commit; the next deploy is told which commit the last successful deploy
+ * was (`EXPECTED_PREVIOUS_DEPLOY_SHA`, read from the Deployments API by the workflow)
+ * and fails if the stamp it read names a different one.
+ *
+ * The expectation is "who actually deployed last", not git ancestry, so a re-run or a
+ * rollback — the cases #82 worried a fingerprint would fail honestly — still matches.
+ */
+describe('ledger chain stamp (#157)', () => {
+  async function runWith(outDir, liveDir, env) {
+    try {
+      return { code: 0, stdout: await retain(outDir, liveDir, 14, env) };
+    } catch (err) {
+      return {
+        code: err.code ?? 1,
+        stdout: String(err.stdout ?? ''),
+        stderr: String(err.stderr ?? ''),
+      };
+    }
+  }
+
+  const stampOf = (dir) =>
+    fs.readFileSync(path.join(dir, '_next/static/LEDGER_CHAIN.txt'), 'utf8');
+
+  /** Deploy `tag` at commit `sha` on top of whatever `liveDir` serves. */
+  async function deploy(name, tag, liveDir, sha, expectedPrev) {
+    const out = makeGeneration(path.join(WORK, name), tag);
+    const result = await runWith(out, liveDir, {
+      GITHUB_SHA: sha,
+      EXPECTED_PREVIOUS_DEPLOY_SHA: expectedPrev ?? '',
+    });
+    return { out, result, all: result.stdout + (result.stderr ?? '') };
+  }
+
+  it('publishes a stamp naming its own commit, outside the asset manifest', async () => {
+    const live = makeGeneration(path.join(WORK, 'p157-stamp-live'), 'prev');
+    const { out, result, all } = await deploy(
+      'p157-stamp-out',
+      'next',
+      live,
+      'aaaa111'
+    );
+    assert.equal(result.code, 0, all);
+    assert.match(stampOf(out), /^chain aaaa111 \d{4}-\d\d-\d\dT[\d:.]+Z\n$/);
+    assert.ok(
+      !manifestOf(out).some((l) => l.includes('LEDGER_CHAIN')),
+      'the stamp is not an asset and must not be promised as one'
+    );
+    assert.ok(
+      !fs
+        .readFileSync(path.join(out, '_next/static/ASSET_AGES.txt'), 'utf8')
+        .includes('LEDGER_CHAIN')
+    );
+  });
+
+  it('holds when the ledger read is the one the last deploy published', async () => {
+    const live = makeGeneration(path.join(WORK, 'p157-ok-live'), 'gen0');
+    const a = await deploy('p157-ok-a', 'gen1', live, 'aaaa111');
+    assert.equal(a.result.code, 0, a.all);
+    // a.out is now what the site serves; the last deploy was aaaa111.
+    const b = await deploy('p157-ok-b', 'gen2', a.out, 'bbbb222', 'aaaa111');
+    assert.equal(b.result.code, 0, b.all);
+    assert.match(b.all, /chain continuity holds/);
+    assert.match(stampOf(b.out), /^chain bbbb222 /);
+  });
+
+  /** The control that proves the check can fail. */
+  it('fails and names both commits when the ledger belongs to another chain', async () => {
+    const live = makeGeneration(path.join(WORK, 'p157-fork-live'), 'gen0');
+    const a = await deploy('p157-fork-a', 'gen1', live, 'aaaa111');
+    // The last real deploy was zzzz999, but the ledger served here is aaaa111's.
+    const b = await deploy('p157-fork-b', 'gen2', a.out, 'bbbb222', 'zzzz999');
+
+    assert.equal(b.result.code, 1, `expected a non-zero exit.\n${b.all}`);
+    assert.match(b.all, /ledger it read was published by aaaa111/);
+    assert.match(b.all, /zzzz999/);
+    // Report, do not exit early: the ledger must still be published, and the
+    // previous deploy's assets must still be carried forward.
+    assert.match(stampOf(b.out), /^chain bbbb222 /);
+    assert.ok(
+      fs.existsSync(path.join(b.out, '_next/static/css/gen1.css')),
+      'retention was skipped on the chain-mismatch path'
+    );
+  });
+
+  it('is a documented ramp, not a failure, when the live ledger has no stamp yet', async () => {
+    const live = makeGeneration(path.join(WORK, 'p157-ramp-live'), 'gen0');
+    const a = await deploy('p157-ramp-a', 'gen1', live, 'aaaa111');
+    fs.rmSync(path.join(a.out, '_next/static/LEDGER_CHAIN.txt'));
+    const b = await deploy('p157-ramp-b', 'gen2', a.out, 'bbbb222', 'aaaa111');
+    assert.equal(b.result.code, 0, b.all);
+    assert.match(b.all, /no chain stamp on the live ledger/);
+  });
+
+  it('does not guess when the workflow could not name the last deploy', async () => {
+    const live = makeGeneration(path.join(WORK, 'p157-unk-live'), 'gen0');
+    const a = await deploy('p157-unk-a', 'gen1', live, 'aaaa111');
+    const b = await deploy('p157-unk-b', 'gen2', a.out, 'bbbb222', '');
+    assert.equal(b.result.code, 0, b.all);
+    assert.match(b.all, /not asserted: .*last deploy/);
+  });
+});
