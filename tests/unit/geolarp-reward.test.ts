@@ -22,7 +22,13 @@ import {
   toExportJSON,
 } from '@/lib/geolarp/character';
 import { LADDER, bandOf, Difficulty } from '@/lib/geolarp/ladder';
-import { roll } from '@/lib/geolarp/dice';
+import {
+  MAX_POINTS_PER_ROLL,
+  buy,
+  pointsSpent,
+  purchaseSeed,
+  roll,
+} from '@/lib/geolarp/dice';
 import { encounterFor } from '@/lib/geolarp/encounter';
 import { Rng } from '@/lib/geolarp/rng';
 import { seedOf, utcDay } from '@/lib/geolarp/cell';
@@ -95,7 +101,7 @@ describe('the daily cap', () => {
   const day = '2026-08-27';
   const base = () => generateCharacter('Ada', new Rng('cap'));
 
-  it('starts a character at the documented stake', () => {
+  it('starts a character at the documented balance', () => {
     expect(base().characterPoints).toBe(STARTING_CHARACTER_POINTS);
     expect(STARTING_CHARACTER_POINTS).toBe(DAILY_EARN_CAP);
   });
@@ -158,16 +164,49 @@ describe('the daily cap', () => {
 });
 
 describe('the economy does not silently drift', () => {
-  /** Points per encounter for a given rating and stake, over the real world. */
-  function simulate(dice: number, stake: number, n = 60_000): number {
-    const rng = new Rng(`economy-${dice}-${stake}`);
+  /** Points per encounter for a given rating, over the real world, buying nothing. */
+  function simulate(dice: number, n = 60_000): number {
+    const rng = new Rng(`economy-${dice}`);
     let total = 0;
     for (let i = 0; i < n; i += 1) {
       const e = encounterFor(`sim-${i}@2026-08-27`);
-      const r = roll({ dice, pips: 0 }, rng, bandOf(e.difficulty).floor, stake);
+      const r = roll({ dice, pips: 0 }, rng, bandOf(e.difficulty).floor);
       total += rewardFor(e.difficulty, r);
     }
     return total / n;
+  }
+
+  /**
+   * Points GAINED BY BUYING, per encounter, for a player who buys the cheapest
+   * rescue (an extra die) after EVERY miss, up to two points a roll: the reward
+   * the purchases won, minus the points they cost. The reward the roll would
+   * have paid anyway is not credited to the purchases. Purchases come from
+   * the cell's own seed, so this is the same dice the game would show.
+   */
+  function simulateBuyingAfterMisses(dice: number, n = 40_000): number {
+    let net = 0;
+    for (let i = 0; i < n; i += 1) {
+      const seed = `buy-${i}@2026-08-27`;
+      const e = encounterFor(seed);
+      const floor = bandOf(e.difficulty).floor;
+      const code = { dice, pips: 0 };
+      const base = roll(code, new Rng(`${seed}|0`), floor);
+      let r = base;
+      while (r.success === false && pointsSpent(r) < MAX_POINTS_PER_ROLL) {
+        r = buy(
+          code,
+          r,
+          'die',
+          new Rng(purchaseSeed(seed, 'die', pointsSpent(r) + 1)),
+          floor
+        );
+      }
+      net +=
+        rewardFor(e.difficulty, r) -
+        rewardFor(e.difficulty, base) -
+        pointsSpent(r);
+    }
+    return net / n;
   }
 
   it('pays a starting character 0.23 to 0.39 per encounter, by rating', () => {
@@ -177,10 +216,10 @@ describe('the economy does not silently drift', () => {
     // real shift. Measured: 3d7 (an untrained skill rolling its attribute)
     // pays 0.229; 4d7 (a trained one) pays 0.390. Those bracket what a real
     // starting sheet rolls, so an 8-cell walk earns roughly 2 to 3.
-    expect(simulate(3, 0)).toBeGreaterThan(0.2);
-    expect(simulate(3, 0)).toBeLessThan(0.26);
-    expect(simulate(4, 0)).toBeGreaterThan(0.36);
-    expect(simulate(4, 0)).toBeLessThan(0.42);
+    expect(simulate(3)).toBeGreaterThan(0.2);
+    expect(simulate(3)).toBeLessThan(0.26);
+    expect(simulate(4)).toBeGreaterThan(0.36);
+    expect(simulate(4)).toBeLessThan(0.42);
   });
 
   it('earns almost everything from Moderate cells', () => {
@@ -200,11 +239,13 @@ describe('the economy does not silently drift', () => {
     expect(byBand['easy'] ?? 0).toBe(0);
   });
 
-  it('makes every stake a net loss, so points come from walking', () => {
-    // If a stake ever paid for itself the sink would become a farm. Measured
-    // at 4d7: stake 2 earns 0.635 against 2 spent.
-    for (const stake of [1, 2, 3]) {
-      expect(simulate(4, stake, 30_000)).toBeLessThan(stake);
+  it('makes buying after every miss a net loss, so points come from walking', () => {
+    // If buying ever paid for itself the sink would become a farm. A player who
+    // buys an extra die after every miss, two a roll at most, ends each
+    // encounter behind. The one purchase that does pay (a 6d7 reroll against
+    // Very Difficult) is pinned in economy-invariants.test.ts.
+    for (const dice of [3, 4, 5]) {
+      expect(simulateBuyingAfterMisses(dice)).toBeLessThan(0);
     }
   });
 });

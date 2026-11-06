@@ -35,7 +35,8 @@ const meta: Meta<typeof D7Roller> = {
     },
     availablePoints: {
       control: { type: 'number', min: 0, max: 5 },
-      description: 'Character Points the player may spend, one die each',
+      description:
+        'Character Points the player holds; each buys an extra die or a reroll after the roll',
     },
   },
 };
@@ -73,7 +74,7 @@ export const OutmatchedByTheCell: Story = {
         story:
           'A cell is rated by the place, not by who is standing in it. A ' +
           'starting sheet cannot reach Heroic on dice alone, which is what ' +
-          'Character Points and coming back later are for.',
+          'Character Points, bought after the roll, and coming back later are for.',
       },
     },
   },
