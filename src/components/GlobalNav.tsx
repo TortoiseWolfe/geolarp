@@ -322,8 +322,10 @@ export function GlobalNav() {
     // the d7. It used to point at `/chatt?diorama&walk`, the inherited
     // Chattanooga tech demo, while the actual game sat two levels down in
     // Demos → Character. The one word in the nav that names the product took a
-    // visitor somewhere the product isn't.
-    { href: '/character', label: 'Play' },
+    // visitor somewhere the product isn't. Now the MVP character sheet at
+    // /play (local-only, no location); the location-driven version of the
+    // game stays reachable as Demos → On the map.
+    { href: '/play', label: 'Play' },
     // TOP LEVEL, deliberately not inside Demos. Until this landed, the only
     // payment-adjacent destination in the whole nav was `/payment-demo` labelled
     // "Payments" — a DEMO, sitting in the Demos menu between Diorama and Game.
@@ -341,6 +343,7 @@ export function GlobalNav() {
         { href: '/wireframes', label: 'Wireframes' },
         { href: '/map', label: 'Map' },
         { href: '/game', label: 'Game' },
+        { href: '/character', label: 'On the map' },
         // The walkable/bikeable 3D Chattanooga, moved here from the top-level
         // "Play" slot. It does NOT go away: the `ride-the-open-source-city`
         // post links it four times and /credits links it once, so retiring the

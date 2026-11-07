@@ -1,39 +1,40 @@
-'use client';
-
-import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
+import CharacterSheet from '@/components/game/CharacterSheet';
+import { generateCharacter } from '@/lib/geolarp/character';
+import { Rng } from '@/lib/geolarp/rng';
 
 /**
- * geoLARP — Coming Soon.
+ * geoLARP.com home.
  *
- * Ported from the Claude Design canvas file `geoLARP Coming Soon Steampunk.dc.html`.
- * The canvas wrapper (`<x-dc>`, `<helmet>`, `support.js`, the `DCLogic` props
- * class) is harness, not design, and is dropped. Its two props become the
- * constants below.
+ * Grown out of the Coming Soon page (same file, same steampunk frame: the
+ * brass bezel, the counter-rotating globe, the seven-sided die). The notify-me
+ * form and its Supabase call are gone on purpose: the MVP is local-only, so the
+ * home page collects nothing and offers two honest doors instead, the post that
+ * explains the game and the character sheet you can use today.
  *
- * `style-hover` / `style-focus` / `style-active` are Claude Design attributes
- * with no browser meaning, so those rules move into the stylesheet block where
- * they actually apply.
+ * The sample sheet is the REAL `CharacterSheet`, read-only, on a fixed
+ * character, so what a visitor sees here is what /play gives them.
  *
- * The mark is three stacked layers, and the counter-rotation is the whole
- * effect: an outer brass bezel carrying the wordmark spins one way, a wireframe
- * globe spins the other, and the seven-sided die sits still in the middle. The
- * die alone is also the favicon — it is the only layer that survives 32px,
- * which is why the bezel is not the app icon.
+ * HEADLINES: no single word alone on a line. `text-wrap: balance` spreads the
+ * words, and the last two words of every headline are joined by a no-break
+ * space so a lone final word cannot be left on its own line at any width.
+ * `tests/e2e/tests/headline-wrap.spec.ts` measures the rendered lines.
  */
 
 /** Brass. The canvas exposed this as a colour prop; there is one brand value. */
 const ACCENT = '#E8B84B';
 
-/** Seconds for one bezel revolution. Canvas default; 6–90 was the design range. */
+/** Seconds for one bezel revolution. Canvas default; 6-90 was the design range. */
 const SPIN_SECONDS = 28;
 
-export default function ComingSoon() {
-  const [email, setEmail] = useState('');
-  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>(
-    'idle'
-  );
+/** A fixed sample, so the page is the same for everyone and for every build. */
+const SAMPLE = {
+  ...generateCharacter('Ada Wren', new Rng('home-sample')),
+  concept: 'A cartographer who walks the edges of the map',
+  created: '2026-11-04T00:00:00.000Z',
+};
 
+export default function Home() {
   return (
     <main
       data-theme="geolarp-dark"
@@ -48,11 +49,11 @@ export default function ComingSoon() {
       <style>{`
         .gl-root {
           min-height: 100vh;
-          padding: 64px 32px;
+          padding: 56px 32px 72px;
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: center;
+          justify-content: flex-start;
           gap: 36px;
           position: relative;
           overflow: hidden;
@@ -72,24 +73,6 @@ export default function ComingSoon() {
         .gl-bg-hatch { position: absolute; inset: 0; opacity: 0.35;
           background: repeating-linear-gradient(58deg, rgba(232,184,75,0.05) 0px, rgba(232,184,75,0.05) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 9px); }
 
-        .gl-panel {
-          position: relative; width: min(760px, 100%);
-          padding: 58px 56px 52px;
-          border: 3px solid #8A6A26; border-radius: 6px;
-          background: linear-gradient(#1C140Cf2, #120C07f2);
-          box-shadow: inset 0 0 0 1px #E3C68840, inset 0 2px 40px #00000080, 0 30px 70px -20px #000000cc;
-          display: flex; flex-direction: column; align-items: center;
-          gap: 26px; text-align: center;
-          animation: gl-fade 1s ease-out both;
-        }
-        .gl-panel-inner { position: absolute; inset: 11px; border: 1px solid #8A6A2666; border-radius: 3px; pointer-events: none; }
-        .gl-rivet { position: absolute; width: 9px; height: 9px; border-radius: 999px;
-          background: radial-gradient(circle at 34% 30%, #F0D69A, #7A5C20); }
-
-        .gl-markwrap { position: relative; width: 276px; height: 276px; }
-        .gl-markglow { position: absolute; inset: -22px; border-radius: 999px;
-          background: radial-gradient(circle, var(--geo-accent) 0%, rgba(0,0,0,0) 68%);
-          animation: gl-glow 6s ease-in-out infinite; }
         .gl-spin { animation: gl-spin var(--geo-spin) linear infinite; transform-origin: 200px 200px; transform-box: view-box; }
         .gl-spin-rev { animation: gl-spin-rev 52s linear infinite; transform-origin: 200px 200px; transform-box: view-box; }
 
@@ -99,40 +82,54 @@ export default function ComingSoon() {
           animation: gl-rise 0.9s 0.2s ease-out both; }
         .gl-wordmark span:last-child { color: var(--geo-accent); }
 
-        .gl-rule { display: flex; align-items: center; gap: 16px; animation: gl-rise 0.9s 0.4s ease-out both; }
-        .gl-rule i { width: 64px; height: 1px; display: block; }
-        .gl-rule .l { background: linear-gradient(90deg, rgba(0,0,0,0), #8A6A26); }
-        .gl-rule .r { background: linear-gradient(90deg, #8A6A26, rgba(0,0,0,0)); }
-        .gl-eyebrow { font-family: Cinzel, Georgia, serif; font-weight: 700; font-size: 15px;
-          letter-spacing: 9px; text-transform: uppercase; color: var(--geo-accent); }
-
-        .gl-form { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
-          margin-top: 4px; animation: gl-rise 0.9s 0.6s ease-out both; }
-        .gl-input { width: 296px; height: 50px; padding: 0 16px;
-          font-family: Spectral, Georgia, serif; font-size: 16px; color: #EFE2C6;
-          background: #0E0905; border: 2px solid #8A6A26; border-radius: 3px; outline: none; }
-        .gl-input:focus { border-color: #E3C688; }
-        .gl-btn { height: 50px; padding: 0 28px;
+        .gl-content { position: relative; width: min(760px, 100%); display: flex; flex-direction: column; gap: 56px; }
+        .gl-hero { padding-top: 12px; }
+        .gl-h1 { font-family: Spectral, Georgia, serif; font-weight: 800;
+          font-size: clamp(30px, 6.4vw, 46px); line-height: 1.12; letter-spacing: -0.5px;
+          text-wrap: balance; text-shadow: 0 2px 0 #00000066; margin: 0; }
+        .gl-h1 em { font-style: normal; color: var(--geo-accent); }
+        .gl-h2 { font-family: Cinzel, Georgia, serif; font-weight: 700;
+          font-size: clamp(20px, 4.6vw, 26px); line-height: 1.2; letter-spacing: 1px;
+          color: var(--geo-accent); text-wrap: balance; margin: 0 0 14px; }
+        .gl-lede { font-family: Spectral, Georgia, serif; font-size: 19px; line-height: 1.55;
+          margin: 0; max-width: 60ch; }
+        .gl-doors { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 4px; }
+        .gl-door { display: inline-flex; align-items: center; justify-content: center;
+          min-height: 52px; padding: 0 26px; text-decoration: none; text-align: center;
           font-family: Cinzel, Georgia, serif; font-weight: 700; font-size: 14px;
-          letter-spacing: 2.5px; text-transform: uppercase; color: #0C0805;
-          background: linear-gradient(#F0D69A, #C79B36);
-          border: 2px solid #7A5C20; border-radius: 3px; cursor: pointer;
-          box-shadow: inset 0 1px 0 #FFF4D8, 0 2px 0 #5C4419; }
-        .gl-btn:hover { background: linear-gradient(#F7E3B4, #D3A840); }
-        .gl-btn:active { transform: translateY(1px); box-shadow: inset 0 1px 0 #FFF4D8; }
-        .gl-sent { font-family: Spectral, Georgia, serif; font-size: 16px; color: var(--geo-accent); }
-        .gl-error { font-family: Spectral, Georgia, serif; font-size: 15px; color: #d98b6a; flex-basis: 100%; margin-top: 10px; }
+          letter-spacing: 2.5px; text-transform: uppercase; border-radius: 3px; }
+        .gl-door-main { color: #0C0805; background: linear-gradient(#F0D69A, #C79B36);
+          border: 2px solid #7A5C20; box-shadow: inset 0 1px 0 #FFF4D8, 0 2px 0 #5C4419; }
+        .gl-door-main:hover { background: linear-gradient(#F7E3B4, #D3A840); }
+        .gl-door-alt { color: #EFE2C6; background: #0E0905; border: 2px solid #8A6A26; }
+        .gl-door-alt:hover { border-color: #E3C688; }
+        .gl-door:focus-visible { outline: 3px solid #EFE2C6; outline-offset: 3px; }
+        .gl-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+          list-style: none; padding: 0; margin: 0; }
+        .gl-step { padding: 18px 18px 20px; border: 1px solid #8A6A2699; border-radius: 4px;
+          background: #1C140Cd9; }
+        .gl-step b { display: block; font-family: Cinzel, Georgia, serif; font-size: 15px;
+          letter-spacing: 1px; color: var(--geo-accent); margin-bottom: 6px; }
+        .gl-step span { font-family: Spectral, Georgia, serif; font-size: 16px; line-height: 1.5; }
+        .gl-note { font-family: Spectral, Georgia, serif; font-size: 16px; line-height: 1.55;
+          margin: 0 0 18px; max-width: 62ch; }
+        .gl-foot { font-family: Spectral, Georgia, serif; font-size: 15px; line-height: 1.6;
+          padding-top: 24px; border-top: 1px solid #8A6A2666; }
+        .gl-foot a { color: #E3C688; text-decoration: underline; text-underline-offset: 3px; }
+        .gl-mark-small { width: 108px; height: 108px; flex: none; }
+        .gl-top { display: flex; align-items: center; gap: 18px; margin-bottom: 26px; }
+        .gl-top .gl-wordmark { font-size: 40px; animation: none; }
 
         /* The rings carry meaning, not decoration, but motion sensitivity wins. */
         @media (prefers-reduced-motion: reduce) {
-          .gl-spin, .gl-spin-rev, .gl-markglow,
-          .gl-panel, .gl-wordmark, .gl-rule, .gl-form { animation: none; }
+          .gl-spin, .gl-spin-rev, .gl-wordmark { animation: none; }
         }
         @media (max-width: 640px) {
-          .gl-panel { padding: 40px 22px 36px; }
-          .gl-wordmark { font-size: 40px; }
-          .gl-markwrap { width: 208px; height: 208px; }
-          .gl-input { width: 100%; }
+          .gl-root { padding: 36px 16px 48px; }
+          .gl-steps { grid-template-columns: 1fr; }
+          .gl-door { width: 100%; }
+          .gl-top .gl-wordmark { font-size: 32px; }
+          .gl-mark-small { width: 84px; height: 84px; }
         }
       `}</style>
 
@@ -413,102 +410,108 @@ export default function ComingSoon() {
         </svg>
       </div>
 
-      <div className="gl-panel">
-        <div className="gl-panel-inner" />
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          <span className="gl-rivet" style={{ left: 13, top: 13 }} />
-          <span className="gl-rivet" style={{ right: 13, top: 13 }} />
-          <span className="gl-rivet" style={{ left: 13, bottom: 13 }} />
-          <span className="gl-rivet" style={{ right: 13, bottom: 13 }} />
-        </div>
+      <div className="gl-content">
+        <section className="gl-hero" aria-labelledby="home-title">
+          <div className="gl-top">
+            <div className="gl-mark-small">
+              <svg
+                viewBox="0 0 400 400"
+                width="100%"
+                height="100%"
+                role="img"
+                aria-label="geoLARP.com mark"
+              >
+                <g className="gl-spin">
+                  <use href="#gl-bezel" />
+                </g>
+                <g className="gl-spin-rev">
+                  <use href="#gl-globe" />
+                </g>
+                <use href="#gl-die" />
+              </svg>
+            </div>
+            <p className="gl-wordmark" aria-hidden="true">
+              <span>geoLARP</span>
+              <span>.com</span>
+            </p>
+          </div>
 
-        <div className="gl-markwrap">
-          <div className="gl-markglow" />
-          <svg
-            viewBox="0 0 400 400"
-            width="100%"
-            height="100%"
-            role="img"
-            aria-label="geoLARP.com mark"
-          >
-            <g className="gl-spin">
-              <use href="#gl-bezel" />
-            </g>
-            <g className="gl-spin-rev">
-              <use href="#gl-globe" />
-            </g>
-            <use href="#gl-die" />
-          </svg>
-        </div>
-
-        <h1 className="gl-wordmark">
-          <span>geoLARP</span>
-          <span>.com</span>
-        </h1>
-
-        <div className="gl-rule">
-          <i className="l" />
-          <span className="gl-eyebrow">Coming soon</span>
-          <i className="r" />
-        </div>
-
-        {state === 'sent' ? (
-          <p className="gl-sent" role="status">
-            You&rsquo;re on the list. We&rsquo;ll write once, when the gates
-            open.
+          <h1 id="home-title" className="gl-h1">
+            The street outside is the board. Your phone is the{' '}
+            <em>character&nbsp;sheet.</em>
+          </h1>
+          <p className="gl-lede" style={{ margin: '18px 0 22px' }}>
+            geoLARP is live action role-playing on real ground. Walk somewhere,
+            and something is there: that patch of the map and today&rsquo;s date
+            decide it. You roll seven-sided dice, and you keep your character in
+            your own phone.
           </p>
-        ) : (
-          <form
-            className="gl-form"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              // Normalising here is not cosmetic: email_signups CHECKs that the
-              // stored value equals lower(btrim(email)), so an address typed with
-              // capitals is rejected by the database rather than silently stored
-              // twice in two cases.
-              const address = email.trim().toLowerCase();
-              if (!address) return;
-              setState('sending');
-
-              const { error } = await createClient()
-                .from('email_signups')
-                .insert({ email: address, source: 'coming-soon' });
-
-              // 23505 is the unique violation -- this address is already on the
-              // list. Show the same thing as a first-time signup: telling someone
-              // "you already signed up" confirms list membership to anyone who can
-              // type an address, and is of no use to the person who just typed it.
-              if (error && error.code !== '23505') {
-                setState('error');
-                return;
-              }
-              setState('sent');
-            }}
-          >
-            <input
-              className="gl-input"
-              type="email"
-              required
-              placeholder="you@email.com"
-              aria-label="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <button
-              className="gl-btn"
-              type="submit"
-              disabled={state === 'sending'}
+          <div className="gl-doors">
+            <Link className="gl-door gl-door-main" href="/play">
+              Open the character sheet
+            </Link>
+            <Link
+              className="gl-door gl-door-alt"
+              href="/blog/the-world-is-the-board"
             >
-              {state === 'sending' ? 'Sending…' : 'Notify me'}
-            </button>
-            {state === 'error' && (
-              <p className="gl-error" role="alert">
-                That didn&rsquo;t save — the list is unreachable right now. Try
-                again in a moment.
-              </p>
-            )}
-          </form>
-        )}
+              Read how it works
+            </Link>
+          </div>
+        </section>
+
+        <section aria-labelledby="home-how">
+          <h2 id="home-how" className="gl-h2">
+            Three ideas, no&nbsp;installs
+          </h2>
+          <ol className="gl-steps">
+            <li className="gl-step">
+              <b>The world is the grid</b>
+              <span>
+                The map is cut into 100-metre cells. Each cell and each day
+                hashes to what you meet there, so nobody has to place it.
+              </span>
+            </li>
+            <li className="gl-step">
+              <b>Seven-sided dice</b>
+              <span>
+                Ratings are dice codes like 3D+2. You roll that many d7s plus a
+                wild die, and beat the difficulty.
+              </span>
+            </li>
+            <li className="gl-step">
+              <b>A second chance, earned</b>
+              <span>
+                Character Points buy an extra die or a reroll after a miss. You
+                can earn five a day, and no more.
+              </span>
+            </li>
+          </ol>
+        </section>
+
+        <section aria-labelledby="home-sheet">
+          <h2 id="home-sheet" className="gl-h2">
+            A character sheet, in full
+          </h2>
+          <p className="gl-note">
+            This is the whole sheet: five attributes and twenty skills, one per
+            line. Here is a sample character you can read. Making your own takes
+            under a minute.
+          </p>
+          <CharacterSheet character={SAMPLE} layout="list" sample />
+          <div className="gl-doors" style={{ marginTop: 22 }}>
+            <Link className="gl-door gl-door-main" href="/play">
+              Make your own
+            </Link>
+          </div>
+        </section>
+
+        <div className="gl-foot">
+          <p style={{ margin: 0 }}>
+            No account, no sign-in and no location. Your characters stay in this
+            browser, and you can save each one as a file.{' '}
+            <Link href="/app-privacy">Read the privacy promise</Link>.
+          </p>
+        </div>
       </div>
     </main>
   );
