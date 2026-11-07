@@ -160,12 +160,12 @@ test.describe('Template demo homepage (/template)', () => {
     await page.goBack();
   });
 
-  test('GitHub repository link opens in new tab', async ({ page }) => {
+test('GitHub repository link opens in new tab', async ({ page }) => {
     // Find the "View Source" link/button
     const viewSourceLink = page.getByRole('link', { name: /View Source/i }).first();
     // Or it might be a button that triggers navigation - check both
     const viewSourceButton = page.getByRole('button', { name: /View Source/i }).first();
-    
+
     const link = (await viewSourceLink.count()) ? viewSourceLink : viewSourceButton;
     await expect(link).toBeVisible();
 
@@ -177,8 +177,9 @@ test.describe('Template demo homepage (/template)', () => {
     const href = await link.getAttribute('href');
     expect(href).toContain('github.com');
 
-    // Navigate directly to verify the URL works (avoids popup flakiness in CI)
-    await page.goto(href!, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/github\.com/);
+    // NOTE: We intentionally do NOT navigate to the GitHub URL here.
+    // Navigating to an external site in CI introduces flakiness (network issues,
+    // rate limits, GitHub downtime) and tests GitHub's behavior, not ours.
+    // Our page's behavior is verified by checking the link attributes above.
   });
 });
