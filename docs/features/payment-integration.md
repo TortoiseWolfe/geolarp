@@ -464,7 +464,7 @@ cat .env | grep SUPABASE
 2. Continue with **Phase 4**: Build client library (offline queue, React hooks)
 3. Continue with **Phase 5**: Create UI components (PaymentButton, ConsentModal, Dashboard)
 
-See [tasks.md](./tasks.md) for full implementation plan.
+See [PAYMENT-DEPLOYMENT.md](../PAYMENT-DEPLOYMENT.md) for the deployment steps that follow.
 
 ---
 
@@ -480,4 +480,4 @@ See [tasks.md](./tasks.md) for full implementation plan.
 
 ---
 
-**Need Help?** Check [quickstart.md](./quickstart.md) for integration test scenarios.
+**Need Help?** Check [the payment E2E skip index](../payment-e2e-skip-index.md) for covered test scenarios.
