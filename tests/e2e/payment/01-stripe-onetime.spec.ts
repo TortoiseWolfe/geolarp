@@ -5,14 +5,20 @@
  * NOTE: The full Stripe Checkout redirect tests (one-time AND subscription
  * mode) run locally when NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (+
  * NEXT_PUBLIC_STRIPE_PRICE_ID for the subscription leg) are set via .env.
- * They auto-skip in CI, whose test-run env does not carry those vars
- * (isStripeConfigured is false). The remaining cancellation / declined-card
- * cases are still stubs. Cancel/resume lifecycle lives in
+ * In CI the dummy key (pk_test_e2e_dummy_not_a_real_key) is provided so
+ * isStripeConfigured is true and the payment UI renders; the redirect tests
+ * still skip because they need a real Stripe backend. The offline queue test
+ * now runs because the queue IS implemented (#4) — it seeds the client-side
+ * Dexie store and asserts the offline badge. Cancel/resume lifecycle lives in
  * 08-subscription-lifecycle.spec.ts.
  */
 
 import { test, expect } from '@playwright/test';
-import { dismissCookieBanner } from '../utils/test-user-factory';
+import {
+  dismissCookieBanner,
+  seedPaymentQueue,
+  clearPaymentQueue,
+} from '../utils/test-user-factory';
 
 // Check if Stripe is configured
 const isStripeConfigured = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -193,11 +199,45 @@ test.describe('Stripe One-Time Payment Flow', () => {
     await expect(paypalTab).toHaveClass(/tab-active/);
   });
 
-  test.skip('should show offline queue indicator when offline', async ({
+  test('should show offline queue indicator when offline', async ({
     page,
     context,
   }) => {
-    // Skip: Offline queue feature may not be fully implemented
-    test.skip(true, 'Offline queue feature not yet implemented');
+    // The offline queue IS implemented (#4): PaymentQueuePanel on /payment hub.
+    // This test drives the queue via seedPaymentQueue() and asserts the
+    // offline badge flips when context.setOffline(true) + dispatchEvent.
+    await page.goto('/payment', { waitUntil: 'networkidle' });
+    if (page.url().includes('/sign-in')) {
+      await page.waitForTimeout(3000);
+      await page.goto('/payment', { waitUntil: 'networkidle' });
+    }
+    await dismissCookieBanner(page);
+
+    const panel = page.getByTestId('payment-queue-panel');
+    if (!(await panel.count())) {
+      test.skip(true, 'PaymentQueuePanel not rendered (no provider configured)');
+    }
+
+    await seedPaymentQueue(page, [{ type: 'payment_intent' }]);
+    await page.reload({ waitUntil: 'networkidle' });
+    await dismissCookieBanner(page);
+    await expect(page.getByTestId('queue-count')).toContainText('1 pending', {
+      timeout: 15000,
+    });
+
+    await context.setOffline(true);
+    await page.evaluate(() =>
+      window.dispatchEvent(new Event('offline', { bubbles: true }))
+    );
+    await expect(page.getByTestId('queue-conn-state')).toHaveText(/Offline/i, {
+      timeout: 15000,
+    });
+    await expect(page.getByTestId('queue-items').locator('li')).toHaveCount(1);
+
+    await context.setOffline(false);
+    await page.evaluate(() =>
+      window.dispatchEvent(new Event('online', { bubbles: true }))
+    );
+    await clearPaymentQueue(page);
   });
 });

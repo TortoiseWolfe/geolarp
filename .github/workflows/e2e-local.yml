@@ -490,6 +490,11 @@ jobs:
           # silently disarmed the very protection #830 added.
           PLAYWRIGHT_REQUIRED_ENV: NEXT_PUBLIC_SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY NEXT_PUBLIC_SUPABASE_ANON_KEY
           WORKERS: ${{ matrix.workers }}
+          # Stripe/PayPal dummy keys so payment UI renders and Stripe-configured
+          # tests run (isStripeConfigured checks process.env at test runtime).
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_e2e_dummy_not_a_real_key
+          NEXT_PUBLIC_PAYPAL_CLIENT_ID: e2e_dummy_paypal_client_id
+          NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY: e2e_dummy_web3forms_key
           # EVERY JOB MUST DO ITS OWN FULL SETUP (#575).
           #
           # auth.setup.ts:146 gates the second half of setup on

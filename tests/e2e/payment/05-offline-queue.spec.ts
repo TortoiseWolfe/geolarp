@@ -253,7 +253,7 @@ test.describe('Offline Payment Queue', () => {
   // needs real Stripe/PayPal sandbox creds, so this stays a documented skip.
   // (The retry button's presence/enablement is covered by the "#4" render test;
   // the sync/backoff LOGIC is covered by base-queue unit tests.)
-  test.skip('should drain the queue on Retry (needs live provider)', async ({
+  test('should drain the queue on Retry (needs live provider)', async ({
     page,
   }) => {
     test.skip(
