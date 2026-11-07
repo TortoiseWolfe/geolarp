@@ -20,8 +20,11 @@ import {
   clearPaymentQueue,
 } from '../utils/test-user-factory';
 
-// Check if Stripe is configured
-const isStripeConfigured = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+// Check if Stripe is configured with a real key (not the CI dummy key)
+const isStripeConfigured =
+  !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY !==
+    'pk_test_e2e_dummy_not_a_real_key';
 
 test.describe('Stripe One-Time Payment Flow', () => {
   test.describe.configure({ timeout: 60000 });
