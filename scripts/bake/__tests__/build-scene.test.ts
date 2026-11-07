@@ -200,7 +200,10 @@ describe('build-scene per-site behavior (synthetic fixture)', () => {
 // (public/twins/chatt/*.json) are the runtime source of truth and are covered
 // by the runtime component tests; these integration tests just validate the
 // deriver.
-const rawDir = join(process.cwd(), 'public/twins/chatt/_raw');
+const rawDir = join(
+  process.cwd(),
+  'tests/fixtures/bake/chatt_raw'
+);
 const hasRaw = existsSync(join(rawDir, 'osm.json'));
 
 describe.skipIf(!hasRaw)(
