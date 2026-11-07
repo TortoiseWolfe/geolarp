@@ -76,8 +76,8 @@ async function checkResource(
 }
 
 test.describe('Broken Links Detection', () => {
-  // Increase timeout for crawling tests (2 minutes)
-  test.setTimeout(120000);
+  // Increase timeout for crawling tests (5 minutes for full crawl in shard 5/6)
+  test.setTimeout(300000);
 
   const visitedUrls = new Set<string>();
   const brokenLinks: BrokenLink[] = [];
@@ -186,8 +186,10 @@ async function checkInternalLink(
     linkText: string,
     depth: number = 0
   ): Promise<void> {
-    // Limit crawl depth to prevent exponential explosion in CI
-    const MAX_DEPTH = 3;
+    // No depth limit for full crawl — shard 5/6 has extended timeout
+    // (removed MAX_DEPTH cap that weakened the check; see PR #204)
+    // But guard against infinite loops with a generous ceiling
+    const MAX_DEPTH = 50;
     if (depth > MAX_DEPTH) {
       return;
     }
@@ -220,7 +222,7 @@ async function checkInternalLink(
       // Navigate to the target URL (use domcontentloaded - faster and sufficient for 404 check)
       const response = await page.goto(targetUrl, {
         waitUntil: 'domcontentloaded',
-        timeout: 15000,
+        timeout: 30000,
       });
 
       if (!response) {
@@ -284,8 +286,10 @@ async function checkInternalLink(
   }
 
   async function crawlPage(page: Page, currentUrl: string, depth: number = 0): Promise<void> {
-    // Limit crawl depth to prevent exponential explosion in CI
-    const MAX_DEPTH = 3;
+    // No depth limit for full crawl — shard 5/6 has extended timeout
+    // (removed MAX_DEPTH cap that weakened the check; see PR #204)
+    // But guard against infinite loops with a generous ceiling
+    const MAX_DEPTH = 50;
     if (depth > MAX_DEPTH) {
       return;
     }
