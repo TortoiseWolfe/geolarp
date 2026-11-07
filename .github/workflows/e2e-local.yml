@@ -337,6 +337,35 @@ jobs:
             echo "edge runtime absent at this commit — skipping its readiness probe"
           fi
 
+      - name: Verify avatars bucket exists in local storage
+        run: |
+          set +e
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
+              -H "apikey: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
+              -H "Authorization: Bearer ${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
+              http://localhost:54321/storage/v1/bucket/avatars)
+            [ "$code" = "200" ] && { echo "avatars bucket ready after ${i} attempt(s)"; break; }
+            if [ "$code" = "404" ]; then
+              echo "avatars bucket not found (404), creating..."
+              # Create the bucket via storage API
+              create_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
+                -X POST \
+                -H "apikey: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
+                -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+                -H "Content-Type: application/json" \
+                -d '{"id":"avatars","name":"avatars","public":true,"file_size_limit":5242880,"allowed_mime_types":["image/jpeg","image/png","image/webp"]}' \
+                http://localhost:54321/storage/v1/bucket)
+              echo "bucket create response: $create_code"
+              if [ "$create_code" = "200" ] || [ "$create_code" = "201" ]; then
+                echo "avatars bucket created successfully"
+                break
+              fi
+            fi
+            sleep 3
+          done
+          [ "$code" = "200" ] || { echo "::error::avatars bucket not accessible (last=$code)"; exit 1; }
+
       - name: Assert schema fidelity before trusting any result
         run: |
           # docker-compose.yml mounts the SAME monolithic migration production

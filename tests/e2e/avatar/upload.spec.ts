@@ -10,8 +10,9 @@
  *
  * Prerequisites:
  * - Test user authenticated
- * - Account Settings page accessible at /account-settings
+ * - Account Settings page accessible at /account
  * - Test fixtures available at e2e/fixtures/avatars/
+ * - Supabase Storage 'avatars' bucket exists (created by migration in local stack)
  */
 
 import { test, expect } from '@playwright/test';
@@ -20,12 +21,6 @@ import { dismissCookieBanner } from '../utils/test-user-factory';
 
 // Auth comes from storageState (setup project) - no sign-in needed
 test.describe('Avatar Upload Flow', () => {
-  // Avatar upload requires Supabase Storage — Save button doesn't dismiss modal in CI
-  // because the upload to storage fails silently without a configured bucket
-  test.skip(
-    !!process.env.CI,
-    'Avatar upload requires Supabase Storage — skipped in CI'
-  );
   test.beforeEach(async ({ page }) => {
     // Navigate to Account Settings (already authenticated via storageState)
     await page.goto('/account');
