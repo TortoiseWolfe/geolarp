@@ -179,13 +179,19 @@ test.describe('Broken Links Detection', () => {
 
     return true;
   }
-
-  async function checkInternalLink(
+async function checkInternalLink(
     page: Page,
     sourceUrl: string,
     targetUrl: string,
-    linkText: string
+    linkText: string,
+    depth: number = 0
   ): Promise<void> {
+    // Limit crawl depth to prevent exponential explosion in CI
+    const MAX_DEPTH = 3;
+    if (depth > MAX_DEPTH) {
+      return;
+    }
+
     // Skip if already visited
     if (visitedUrls.has(targetUrl)) {
       return;
@@ -197,6 +203,7 @@ test.describe('Broken Links Detection', () => {
     // Normalize trailing slashes for comparison
     const sourcePath = sourceUrlObj.pathname.replace(/\/$/, '');
     const targetPath = targetUrlObj.pathname.replace(/\/$/, '');
+
     // Check if URL contains a hash (includes empty hash like "#")
     const hasHash = targetUrl.includes('#');
     if (
@@ -264,8 +271,8 @@ test.describe('Broken Links Detection', () => {
         return;
       }
 
-      // If successful, crawl this page for more links
-      await crawlPage(page, targetUrl);
+      // If successful, crawl this page for more links (with incremented depth)
+      await crawlPage(page, targetUrl, depth + 1);
     } catch (error) {
       brokenLinks.push({
         sourceUrl,
@@ -276,7 +283,13 @@ test.describe('Broken Links Detection', () => {
     }
   }
 
-  async function crawlPage(page: Page, currentUrl: string): Promise<void> {
+  async function crawlPage(page: Page, currentUrl: string, depth: number = 0): Promise<void> {
+    // Limit crawl depth to prevent exponential explosion in CI
+    const MAX_DEPTH = 3;
+    if (depth > MAX_DEPTH) {
+      return;
+    }
+
     try {
       const links = await extractLinks(page);
 
@@ -284,7 +297,7 @@ test.describe('Broken Links Detection', () => {
         const normalizedUrl = await normalizeUrl(link.href, currentUrl);
 
         if (await isInternalLink(normalizedUrl)) {
-          await checkInternalLink(page, currentUrl, normalizedUrl, link.text);
+          await checkInternalLink(page, currentUrl, normalizedUrl, link.text, depth);
         } else if (normalizedUrl.startsWith('http')) {
           // Track external links for reporting
           const sources = externalLinksToCheck.get(normalizedUrl) || new Set();
@@ -298,10 +311,6 @@ test.describe('Broken Links Detection', () => {
   }
 
   test('check all internal links for 404s', async ({ page, baseURL }) => {
-    test.skip(
-      !!process.env.CI,
-      'Crawl too slow in CI (120s timeout exceeded with authenticated storageState)'
-    );
     baseUrl = baseURL || 'http://localhost:3000';
 
     // Start from homepage
