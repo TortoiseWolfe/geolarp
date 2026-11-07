@@ -1718,6 +1718,17 @@ export async function openAuthedPage(
   const context = await browser.newContext({
     storageState: { cookies: [], origins: [] },
   });
+  // The promotional countdown banner is fixed at the top right from 31 Oct to
+  // 31 Dec and sits over message bubbles' Edit/Delete buttons. It mounts after
+  // hydration, so dismissCookieBanner (which checks once) can run before it
+  // exists. Seed its own dismissal key so it never renders in these contexts.
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem('countdown-dismissed', String(Date.now()));
+    } catch {
+      // storage unavailable: the banner shows, tests that need it dismiss it
+    }
+  });
   const page = await context.newPage();
   await injectSessionIntoPage(page, session);
   return { page, context, close: () => context.close() };
