@@ -42,8 +42,10 @@ test.describe('User Registration E2E', () => {
     await dismissCookieBanner(page);
   });
 
-  // Skip: Requires real Supabase user creation - run with proper env setup
-  test.skip('should complete full registration flow from sign-up to protected access', async ({
+// Full registration flow: sign-up → verify email (if enabled) → sign-in → protected access
+// Runs against local GoTrue in e2e-local.yml; email verification is disabled in test env
+// so sign-up redirects directly to profile.
+test('should complete full registration flow from sign-up to protected access', async ({
     page,
   }) => {
     // Step 1: Navigate to sign-up page
