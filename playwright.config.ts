@@ -128,17 +128,6 @@ export default defineConfig({
     contextOptions: {
       ignoreHTTPSErrors: true,
     },
-    /* Force SwiftShader (software WebGL) on CI so WebGL-dependent tests
-     * (game-3d, twins) have a real canvas instead of a blank one. Headless
-     * Chromium/Firefox have no GPU; these flags make ANGLE use SwiftShader. */
-    launchOptions: {
-      args: [
-        '--use-gl=angle',
-        '--use-angle=swiftshader',
-        '--ignore-gpu-blocklist',
-        '--enable-unsafe-swiftshader',
-      ],
-    },
   },
 
   /* Configure projects with ordered execution for rate-limiting isolation */
@@ -170,6 +159,14 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: './tests/e2e/fixtures/storage-state.json',
+        launchOptions: {
+          args: [
+            '--use-gl=angle',
+            '--use-angle=swiftshader',
+            '--ignore-gpu-blocklist',
+            '--enable-unsafe-swiftshader',
+          ],
+        },
       },
     },
 
@@ -182,6 +179,14 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: './tests/e2e/fixtures/storage-state.json',
+        launchOptions: {
+          args: [
+            '--use-gl=angle',
+            '--use-angle=swiftshader',
+            '--ignore-gpu-blocklist',
+            '--enable-unsafe-swiftshader',
+          ],
+        },
       },
     },
 
@@ -194,6 +199,14 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: './tests/e2e/fixtures/storage-state.json',
+        launchOptions: {
+          args: [
+            '--use-gl=angle',
+            '--use-angle=swiftshader',
+            '--ignore-gpu-blocklist',
+            '--enable-unsafe-swiftshader',
+          ],
+        },
       },
     },
 
@@ -208,6 +221,14 @@ export default defineConfig({
       testMatch: '**/basepath/**',
       use: {
         ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: [
+            '--use-gl=angle',
+            '--use-angle=swiftshader',
+            '--ignore-gpu-blocklist',
+            '--enable-unsafe-swiftshader',
+          ],
+        },
       },
     },
 
@@ -228,6 +249,14 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: './tests/e2e/fixtures/storage-state-auth.json',
+        launchOptions: {
+          args: [
+            '--use-gl=angle',
+            '--use-angle=swiftshader',
+            '--ignore-gpu-blocklist',
+            '--enable-unsafe-swiftshader',
+          ],
+        },
       },
     },
 
@@ -244,6 +273,14 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: './tests/e2e/fixtures/storage-state-auth.json',
+        launchOptions: {
+          args: [
+            '--use-gl=angle',
+            '--use-angle=swiftshader',
+            '--ignore-gpu-blocklist',
+            '--enable-unsafe-swiftshader',
+          ],
+        },
       },
     },
 
@@ -264,6 +301,14 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: './tests/e2e/fixtures/storage-state-auth.json',
+        launchOptions: {
+          args: [
+            '--use-gl=angle',
+            '--use-angle=swiftshader',
+            '--ignore-gpu-blocklist',
+            '--enable-unsafe-swiftshader',
+          ],
+        },
       },
     },
 
