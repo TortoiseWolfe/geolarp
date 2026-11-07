@@ -255,11 +255,6 @@ test.describe('Offline Payment Queue', () => {
   // the sync/backoff LOGIC is covered by base-queue unit tests.)
   test.skip(
     'should drain the queue on Retry (needs live provider)',
-    'Retry runs a real provider charge — needs live Stripe/PayPal sandbox creds'
-  );
-
-  test.skip(
-    'should drain the queue on Retry (needs live provider)',
     async () => {
       // Skipped: Retry runs a real provider charge — needs live Stripe/PayPal sandbox creds
     }
