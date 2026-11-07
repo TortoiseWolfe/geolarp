@@ -1,0 +1,47 @@
+{
+  "models": [
+    {
+      "slug": "test-building-1",
+      "after": {
+        "glbBytes": 1000000,
+        "materials": 4,
+        "textures": 1,
+        "lodTriangles": {
+          "LOD0": 10000,
+          "LOD1": 5000,
+          "LOD2": 2000
+        },
+        "dimensions": { "x": 50, "y": 30, "z": 40 }
+      }
+    },
+    {
+      "slug": "test-building-2",
+      "after": {
+        "glbBytes": 1500000,
+        "materials": 6,
+        "textures": 2,
+        "lodTriangles": {
+          "LOD0": 15000,
+          "LOD1": 8000,
+          "LOD2": 3000
+        },
+        "dimensions": { "x": 60, "y": 35, "z": 50 }
+      }
+    },
+    {
+      "slug": "test-building-3",
+      "after": {
+        "glbBytes": 2000000,
+        "materials": 8,
+        "textures": 2,
+        "lodTriangles": {
+          "LOD0": 20000,
+          "LOD1": 10000,
+          "LOD2": 4000
+        },
+        "dimensions": { "x": 70, "y": 40, "z": 60 }
+      }
+    }
+  ],
+  "failed": []
+}
