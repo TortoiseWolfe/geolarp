@@ -258,6 +258,13 @@ test.describe('Offline Payment Queue', () => {
     'Retry runs a real provider charge — needs live Stripe/PayPal sandbox creds'
   );
 
+  test.skip(
+    'should drain the queue on Retry (needs live provider)',
+    async () => {
+      // Skipped: Retry runs a real provider charge — needs live Stripe/PayPal sandbox creds
+    }
+  );
+
   test('should clear the queue manually', async ({ page }) => {
     const panel = await openHubPanel(page);
     test.skip(
