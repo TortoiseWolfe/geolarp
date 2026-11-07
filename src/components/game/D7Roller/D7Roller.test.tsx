@@ -49,11 +49,13 @@ describe('D7Roller', () => {
     expect(screen.queryByText(/13-17/)).not.toBeInTheDocument();
   });
 
-  it('prices the roll before it is made, with no stake to set', () => {
-    // The fix for the session that started all this: a playtester spent five
-    // Character Points on a Heroic cell and lost, because nobody had shown them
-    // the odds. The odds are still shown up front, and there is nothing to stake
-    // before the dice are down any more (Jonathan's ruling, 4 Nov 2026).
+  it('prices the stake, and REPRICES IT as the stake changes', async () => {
+    // The fix for the session that started all this. A playtester spent five
+    // Character Points on a Heroic cell and lost, and the premise everyone
+    // carried — the ticket included — was that a starting sheet cannot beat
+    // Heroic. It can, at 43% with the whole purse in. They were taking a
+    // coin-flip nobody had shown them.
+    const user = userEvent.setup();
     render(
       <D7Roller
         label="Search"
@@ -62,13 +64,21 @@ describe('D7Roller', () => {
         availablePoints={5}
       />
     );
-    expect(screen.getByText(/Chance on this roll/)).toHaveTextContent(
+
+    expect(screen.getByText(/Chance at this stake/)).toHaveTextContent(
       'almost never'
     );
-    expect(
-      screen.queryByRole('button', { name: /Spend one more Character Point/ })
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText(/Chance at this stake/)).not.toBeInTheDocument();
+
+    for (let i = 0; i < 5; i += 1) {
+      await user.click(
+        screen.getByRole('button', { name: 'Spend one more Character Point' })
+      );
+    }
+
+    // A number a player can act on, where before there was silence.
+    expect(screen.getByText(/Chance at this stake/)).toHaveTextContent(
+      'about 43%'
+    );
   });
 
   it('says nothing about odds when there is no cell to have odds against', () => {
@@ -76,7 +86,7 @@ describe('D7Roller', () => {
     // there is no target, and inventing a percentage would be worse than
     // showing none.
     render(<D7Roller label="Search" rating={rating} />);
-    expect(screen.queryByText(/Chance on this roll/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Chance at this stake/)).not.toBeInTheDocument();
   });
 
   it('counts a roll above the band as a success', () => {
@@ -145,25 +155,56 @@ describe('D7Roller', () => {
     expect(list.querySelectorAll('li')[0]).toHaveTextContent(/Wild die:/);
   });
 
-  it('offers nothing to buy before the roll, and says when buying opens', () => {
-    // No purchase before the roll: the dice come first, then the choice.
+  it('explains why the control is empty rather than removing it', () => {
+    // It used to unmount at zero, which is what a playtester hit: five points
+    // spent against a Heroic cell, then the control simply vanished with
+    // nothing saying the points were gone or could come back.
+    render(<D7Roller label="Search" rating={rating} availablePoints={0} />);
+    expect(
+      screen.getByText(/No Character Points\. Beat a Moderate cell or harder/)
+    ).toBeInTheDocument();
+    // Present, and inert.
+    expect(
+      screen.getByRole('button', { name: 'Spend one more Character Point' })
+    ).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Spend one fewer Character Point' })
+    ).toBeDisabled();
+  });
+
+  it('spends Character Points as extra dice, and stops at the limit', async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
     render(
       <D7Roller
         label="Search"
         rating={rating}
-        difficulty="difficult"
-        availablePoints={5}
+        availablePoints={2}
+        onResult={onResult}
+        rng={new Rng('deterministic')}
       />
     );
+    const more = screen.getByRole('button', {
+      name: 'Spend one more Character Point',
+    });
+    await user.click(more);
+    await user.click(more);
+    expect(more).toBeDisabled(); // cannot spend a third
+    expect(screen.getByText('3d7+1 + 2d7')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    await waitFor(() => expect(onResult).toHaveBeenCalled());
+    const [result, spent] = onResult.mock.calls[0];
+    expect(spent).toBe(2);
+    expect(result.bonusDice).toBe(2);
+    expect(result.faces.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('cannot spend below zero', () => {
+    render(<D7Roller label="Search" rating={rating} availablePoints={2} />);
     expect(
-      screen.queryByRole('button', { name: /Buy an extra die/ })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /Buy a reroll/ })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByText(/Roll first\. Then you may spend Character Points/)
-    ).toBeInTheDocument();
+      screen.getByRole('button', { name: 'Spend one fewer Character Point' })
+    ).toBeDisabled();
   });
 
   it('skips the animation entirely under prefers-reduced-motion', async () => {
@@ -253,18 +294,14 @@ describe('D7Roller', () => {
 });
 
 /**
- * Character Points are bought AFTER the roll (Jonathan's ruling, 4 Nov 2026).
+ * The two spend bugs (#42), and why the original tests missed them.
  *
- * The earlier spend bugs (#42) were a stake that survived a roll and a stake
- * that outlived the balance. Both came from the stake being set BEFORE the dice.
- * The stake is gone, so those failure modes are gone with it; what replaces
- * them is a purchase rule: an extra die or a reroll, one point each, at most
- * two points on one roll, and only while the roll is still a miss.
- *
- * Heroic is the cell used throughout: with 3d7+1 against 35 a miss is near
- * certain, so each test starts from a roll with something to fix.
+ * The shipped suite covered "stake some points, roll once". It never covered
+ * rolling TWICE, and never covered rolling after the balance reached zero —
+ * which is exactly where both defects lived. A playtester found them in the
+ * first session.
  */
-describe('Character Points are bought after the roll', () => {
+describe('the stake is per roll, and never exceeds the balance', () => {
   beforeEach(() => {
     window.matchMedia = vi.fn().mockImplementation((q: string) => ({
       matches: q.includes('prefers-reduced-motion'),
@@ -278,189 +315,93 @@ describe('Character Points are bought after the roll', () => {
     })) as unknown as typeof window.matchMedia;
   });
 
-  function heroic(points: number, onResult = vi.fn()) {
-    const user = userEvent.setup();
-    const view = render(
-      <D7Roller
-        label="Search"
-        rating={rating}
-        difficulty="heroic"
-        availablePoints={points}
-        onResult={onResult}
-        rng={new Rng('heroic-miss')}
-      />
-    );
-    return { user, onResult, ...view };
-  }
-
-  async function rollFirst(user: ReturnType<typeof userEvent.setup>) {
-    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
-    await screen.findByRole('button', { name: /Buy an extra die/ });
-  }
-
-  it('reports the first roll as costing nothing', async () => {
-    const { user, onResult } = heroic(5);
-    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
-    await waitFor(() => expect(onResult).toHaveBeenCalledTimes(1));
-    expect(onResult.mock.calls[0][1]).toBe(0);
-  });
-
-  it('buys an extra die for one point, keeping the dice already rolled', async () => {
-    const { user, onResult } = heroic(5);
-    await rollFirst(user);
-    const before = onResult.mock.calls[0][0];
-    await user.click(screen.getByRole('button', { name: /Buy an extra die/ }));
-    expect(onResult).toHaveBeenCalledTimes(2);
-    const [after, spent] = onResult.mock.calls[1];
-    expect(spent).toBe(1);
-    expect(after.bonusDice).toBe(1);
-    expect(after.faces.slice(0, before.faces.length)).toEqual(before.faces);
-    expect(after.faces).toHaveLength(before.faces.length + 1);
-    expect(after.purchases).toEqual(['die']);
-  });
-
-  it('buys a reroll for one point, rolling the pool again', async () => {
-    const { user, onResult } = heroic(5);
-    await rollFirst(user);
-    await user.click(screen.getByRole('button', { name: /Buy a reroll/ }));
-    const [after, spent] = onResult.mock.calls[1];
-    expect(spent).toBe(1);
-    expect(after.purchases).toEqual(['reroll']);
-    expect(after.bonusDice).toBe(0);
-  });
-
-  it('prices both options on the screen before the player picks', async () => {
-    const { user } = heroic(5);
-    await rollFirst(user);
-    for (const name of [/Buy an extra die/, /Buy a reroll/]) {
-      const button = screen.getByRole('button', { name });
-      expect(button).toHaveTextContent('1 Character Point');
-      expect(button).toHaveTextContent(/to win from here|almost/);
-    }
-  });
-
-  it('stops at two points on one roll, across both options together', async () => {
-    const { user, onResult } = heroic(5);
-    await rollFirst(user);
-    await user.click(screen.getByRole('button', { name: /Buy an extra die/ }));
-    await user.click(screen.getByRole('button', { name: /Buy a reroll/ }));
-    expect(onResult.mock.calls[2][1]).toBe(2);
-    expect(
-      screen.getByRole('button', { name: /Buy an extra die/ })
-    ).toBeDisabled();
-    expect(screen.getByRole('button', { name: /Buy a reroll/ })).toBeDisabled();
-    expect(
-      screen.getByText(/2 Character Points a roll allows/)
-    ).toBeInTheDocument();
-    expect(onResult).toHaveBeenCalledTimes(3);
-  });
-
-  it('disables both buys with a reason when the player holds no points', async () => {
-    const { user } = heroic(0);
-    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
-    expect(
-      await screen.findByText(/No Character Points\. Beat a Moderate cell/)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /Buy an extra die/ })
-    ).toBeDisabled();
-    expect(screen.getByRole('button', { name: /Buy a reroll/ })).toBeDisabled();
-  });
-
-  it('cannot buy more than the balance, so the purse never goes negative', async () => {
-    const { user, onResult, rerender } = heroic(1);
-    await rollFirst(user);
-    await user.click(screen.getByRole('button', { name: /Buy a reroll/ }));
-    expect(onResult.mock.calls[1][1]).toBe(1);
-    // The caller deducts the point; the balance prop falls to zero.
-    rerender(
-      <D7Roller
-        label="Search"
-        rating={rating}
-        difficulty="heroic"
-        availablePoints={0}
-        onResult={onResult}
-        rng={new Rng('heroic-miss')}
-      />
-    );
-    expect(
-      screen.getByRole('button', { name: /Buy an extra die/ })
-    ).toBeDisabled();
-  });
-
-  it('offers no purchase once the roll has beaten the cell', async () => {
-    const user = userEvent.setup();
-    render(
-      <D7Roller
-        label="Search"
-        rating={{ dice: 6, pips: 0 }}
-        difficulty="very-easy"
-        availablePoints={5}
-        rng={new Rng('easy')}
-      />
-    );
-    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
-    await waitFor(() =>
-      expect(
-        screen.getByRole('status', { name: 'Roll result' })
-      ).toHaveTextContent(/success/)
-    );
-    expect(
-      screen.queryByRole('button', { name: /Buy an extra die/ })
-    ).not.toBeInTheDocument();
-  });
-
-  it('does not charge again when the player presses Roll after buying', async () => {
-    // A cell-seeded roll replays the same dice and the same purchases, so the
-    // second press shows the state the player paid for and bills nothing new.
+  it('does not charge twice for one encounter', async () => {
     const user = userEvent.setup();
     const onResult = vi.fn();
     render(
       <D7Roller
         label="Search"
         rating={rating}
-        difficulty="heroic"
         availablePoints={5}
-        seed="cell|char|Search"
         onResult={onResult}
+        rng={new Rng('twice')}
       />
     );
-    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+
     await user.click(
-      await screen.findByRole('button', { name: /Buy an extra die/ })
+      screen.getByRole('button', { name: 'Spend one more Character Point' })
     );
-    const bought = onResult.mock.calls[1][0];
     await user.click(screen.getByRole('button', { name: 'Roll Search' }));
-    await waitFor(() => expect(onResult).toHaveBeenCalledTimes(3));
-    const [again, spent] = onResult.mock.calls[2];
-    expect(spent).toBe(1);
-    expect(again.faces).toEqual(bought.faces);
+    await waitFor(() => expect(onResult).toHaveBeenCalledTimes(1));
+    expect(onResult.mock.calls[0][1]).toBe(1);
+
+    // The bug: `spend` survived the roll, so a second press paid again for the
+    // same encounter.
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    await waitFor(() => expect(onResult).toHaveBeenCalledTimes(2));
+    expect(onResult.mock.calls[1][1]).toBe(0);
   });
 
-  it('restores the purchases a cell already saw, and the cap with them', () => {
-    const restored = {
-      faces: [2, 3, 1, 4],
-      total: 11,
-      pips: 1,
-      bonusDice: 1,
-      wild: 2,
-      outcome: 'normal' as const,
-      success: false,
-      purchases: ['die', 'reroll'] as Array<'die' | 'reroll'>,
-    };
+  it('never stakes more than the balance, and does not throw at zero', async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
+    const { rerender } = render(
+      <D7Roller
+        label="Search"
+        rating={rating}
+        availablePoints={5}
+        onResult={onResult}
+        rng={new Rng('drain')}
+      />
+    );
+
+    const more = screen.getByRole('button', {
+      name: 'Spend one more Character Point',
+    });
+    for (let i = 0; i < 5; i += 1) await user.click(more);
+    expect(screen.getByText('3d7+1 + 5d7')).toBeInTheDocument();
+
+    // The purse empties while the component stays mounted — exactly what
+    // happens after a real roll spends the last point.
+    rerender(
+      <D7Roller
+        label="Search"
+        rating={rating}
+        availablePoints={0}
+        onResult={onResult}
+        rng={new Rng('drain')}
+      />
+    );
+
+    // The stale stake must not survive the balance dropping.
+    expect(screen.queryByText(/\+ 5d7/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    await waitFor(() => expect(onResult).toHaveBeenCalled());
+    expect(onResult.mock.calls[0][1]).toBe(0);
+  });
+
+  it('clears the stake between two different encounters', async () => {
+    const user = userEvent.setup();
+    const onResult = vi.fn();
     render(
       <D7Roller
         label="Search"
         rating={rating}
-        difficulty="heroic"
         availablePoints={3}
-        restoredResult={restored}
+        onResult={onResult}
+        rng={new Rng('between')}
       />
     );
-    expect(
-      screen.getByRole('button', { name: /Buy an extra die/ })
-    ).toBeDisabled();
-    expect(screen.getByRole('button', { name: /Buy a reroll/ })).toBeDisabled();
+    await user.click(
+      screen.getByRole('button', { name: 'Spend one more Character Point' })
+    );
+    await user.click(screen.getByRole('button', { name: 'Roll Search' }));
+    await waitFor(() => expect(onResult).toHaveBeenCalled());
+
+    // The control returns to 0 of 3, not 1 of 3 — the player is not silently
+    // holding a stake they did not re-choose.
+    expect(screen.getByText('0 / 3')).toBeInTheDocument();
   });
 });
 
@@ -528,14 +469,13 @@ describe('a cell-seeded roll is fixed until the world reseeds', () => {
     expect(a).not.toBe(b);
   });
 
-  it('never changes the first roll when points are bought', async () => {
-    // The first roll is a pure function of the cell. Buying afterwards adds to
-    // it or replaces it, but cannot change what the cell first showed — so a
-    // free miss reveals the deficit, and the pricing (one point, two at most)
-    // is what keeps that from being a vending machine.
+  it('makes each stake an independent bet, not a deficit calculator', async () => {
+    // With the stake outside the seed, a free failure would tell the player
+    // exactly how many dice to buy. Raising a stake has to be a gamble.
     const seed = '-77750:39012@2026-08-28|2026-08-27T00:00:00.000Z|Scavenge';
-    const firsts = new Set<string>();
-    for (const availablePoints of [0, 1, 5]) {
+    const totals = new Set<number>();
+    for (const availablePoints of [0, 1, 2]) {
+      const user = userEvent.setup();
       const onResult = vi.fn();
       const view = render(
         <D7Roller
@@ -546,13 +486,18 @@ describe('a cell-seeded roll is fixed until the world reseeds', () => {
           onResult={onResult}
         />
       );
-      const user = userEvent.setup();
+      for (let i = 0; i < availablePoints; i += 1) {
+        await user.click(
+          screen.getByRole('button', { name: 'Spend one more Character Point' })
+        );
+      }
       await user.click(screen.getByRole('button', { name: 'Roll Search' }));
       await waitFor(() => expect(onResult).toHaveBeenCalled());
-      firsts.add(onResult.mock.calls[0][0].faces.join(','));
+      totals.add(onResult.mock.calls[0][0].faces.slice(0, 3).join(','));
       view.unmount();
     }
-    expect(firsts.size).toBe(1);
+    // Three different stakes, three genuinely different rolls.
+    expect(totals.size).toBe(3);
   });
 
   it('still takes an injected rng first, so tests stay deterministic', async () => {
