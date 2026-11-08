@@ -185,8 +185,10 @@ test.describe('Colour vision controls (Display popover) - Accessibility', () => 
     // Re-query for select after navigation
     select = page.getByRole('combobox');
 
-    // Verify mode is still selected
-    const selectedOption = await select.inputValue();
-    expect(selectedOption).toContain('deuteranopia');
+    // Verify mode is still selected. Retrying on purpose: the panel renders
+    // its default ("none") first and hydrates the stored mode from
+    // localStorage in an effect, so a one-shot inputValue() can read the
+    // default before persistence has landed.
+    await expect(select).toHaveValue('deuteranopia');
   });
 });
