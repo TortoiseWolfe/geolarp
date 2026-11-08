@@ -122,6 +122,7 @@ test.describe('Offline Payment Queue', () => {
     context,
   }) => {
     const panel = await openHubPanel(page);
+    // Kept skip (#196): no provider configured, so the queue panel is absent
     test.skip(
       !panel,
       'PaymentQueuePanel not rendered (no provider configured)'
@@ -163,6 +164,7 @@ test.describe('Offline Payment Queue', () => {
 
   test('should handle multiple queued payments', async ({ page }) => {
     const panel = await openHubPanel(page);
+    // Kept skip (#196): no provider configured, so the queue panel is absent
     test.skip(
       !panel,
       'PaymentQueuePanel not rendered (no provider configured)'
@@ -185,6 +187,7 @@ test.describe('Offline Payment Queue', () => {
 
   test('should persist queue across page reloads', async ({ page }) => {
     const panel = await openHubPanel(page);
+    // Kept skip (#196): no provider configured, so the queue panel is absent
     test.skip(
       !panel,
       'PaymentQueuePanel not rendered (no provider configured)'
@@ -206,6 +209,7 @@ test.describe('Offline Payment Queue', () => {
 
   test('should show retry count on queued items', async ({ page }) => {
     const panel = await openHubPanel(page);
+    // Kept skip (#196): no provider configured, so the queue panel is absent
     test.skip(
       !panel,
       'PaymentQueuePanel not rendered (no provider configured)'
@@ -228,6 +232,7 @@ test.describe('Offline Payment Queue', () => {
 
   test('should show Max-retries badge after max attempts', async ({ page }) => {
     const panel = await openHubPanel(page);
+    // Kept skip (#196): no provider configured, so the queue panel is absent
     test.skip(
       !panel,
       'PaymentQueuePanel not rendered (no provider configured)'
@@ -253,6 +258,7 @@ test.describe('Offline Payment Queue', () => {
   // needs real Stripe/PayPal sandbox creds, so this stays a documented skip.
   // (The retry button's presence/enablement is covered by the "#4" render test;
   // the sync/backoff LOGIC is covered by base-queue unit tests.)
+  // Kept skip (#196): Retry runs a real charge; needs live sandbox creds
   test.skip('should drain the queue on Retry (needs live provider)', async ({
     page,
   }) => {
@@ -321,6 +327,7 @@ test.describe('Offline Payment Queue', () => {
     });
 
     const panel = await openHubPanel(page);
+    // Kept skip (#196): no provider configured, so the queue panel is absent
     test.skip(
       !panel,
       'PaymentQueuePanel not rendered (no provider configured)'

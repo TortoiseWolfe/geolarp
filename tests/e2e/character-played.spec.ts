@@ -414,6 +414,7 @@ for (const theme of THEMES) {
     });
 
     test('the grid-movement controls are AAA', async ({ page }) => {
+      // Kept skip (#196): Grid movement is archived; runs when it returns
       test.skip(
         !LOCATION_FREE_MODES,
         'Grid movement is archived (playModes.ts); this runs again when it is back.'
@@ -591,6 +592,7 @@ test.describe('/character played — the grid is a real control', () => {
   test('every tile meets 44px and the six moves are operable buttons', async ({
     page,
   }) => {
+    // Kept skip (#196): Grid movement is archived; runs when it returns
     test.skip(
       !LOCATION_FREE_MODES,
       'Grid movement is archived (playModes.ts); this runs again when it is back.'

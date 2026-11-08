@@ -48,6 +48,7 @@ test.describe('Failed Payment Retry Logic', () => {
       .waitFor({ state: 'visible', timeout: 15000 });
   });
 
+  // Kept skip (#196): no Stripe keys in CI; real Checkout needed
   test.skip('should display retry button for failed payment', async ({
     page,
   }) => {
@@ -178,6 +179,7 @@ test.describe('Failed Payment Retry Logic', () => {
     }
   });
 
+  // Kept skip (#196): needs a real Stripe decline; unit-covered
   test.skip('should mount SwitchProviderPanel when "Use a different payment method" is clicked', async ({
     page,
   }) => {
@@ -195,6 +197,7 @@ test.describe('Failed Payment Retry Logic', () => {
     );
   });
 
+  // Kept skip (#196): needs a real Stripe decline; unit-covered
   test.skip('should expand recovery list at retry_count >= 2', async ({
     page,
   }) => {
@@ -221,6 +224,7 @@ test.describe('Failed Payment Retry Logic', () => {
     });
   });
 
+  // Kept skip (#196): no Stripe keys in CI; real Checkout needed
   test.skip('should log error details for debugging', async ({ page }) => {
     // Skip: Requires actual Stripe Checkout
     test.skip(
@@ -229,6 +233,7 @@ test.describe('Failed Payment Retry Logic', () => {
     );
   });
 
+  // Kept skip (#196): no Stripe keys in CI; real Checkout needed
   test.skip('should display user-friendly error messages', async ({ page }) => {
     // Skip: Requires actual Stripe Checkout
     test.skip(

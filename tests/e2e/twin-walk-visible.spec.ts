@@ -90,6 +90,7 @@ test.describe('walk scene is visible (not a dark void / empty frame)', () => {
       const c = document.createElement('canvas');
       return !!(c.getContext('webgl2') || c.getContext('webgl'));
     });
+    // Kept skip (#196): no WebGL here; walk meshes cannot be built [ScriptHammer#288]
     test.skip(
       !hasWebGL,
       'no WebGL in this browser (see #288) — the scene cannot produce the meshes walk ' +
@@ -122,7 +123,9 @@ test.describe('walk scene is visible (not a dark void / empty frame)', () => {
         : '';
       return { webgl: true, renderer };
     });
+    // Kept skip (#196): no WebGL here; the visual guard needs a GPU [ScriptHammer#288]
     test.skip(!gpu.webgl, 'no WebGL (see #288) — the visual guard needs a GPU');
+    // Kept skip (#196): software WebGL; the visual guard needs a real GPU [ScriptHammer#288]
     test.skip(
       /swiftshader|llvmpipe|softwarerasterizer|swrast|software/i.test(
         gpu.renderer

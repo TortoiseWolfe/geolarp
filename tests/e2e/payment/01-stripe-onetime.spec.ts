@@ -53,6 +53,7 @@ test.describe('Stripe One-Time Payment Flow', () => {
   // auto-skips in CI, where that var is absent from the test-run env so
   // isStripeConfigured is false. Drives a real Stripe Checkout redirect.
   test('should complete one-time payment successfully', async ({ page }) => {
+    // Kept skip (#196): no Stripe keys in CI; real Checkout needed
     test.skip(
       !isStripeConfigured,
       'Stripe API keys not configured - run locally for full payment flow tests'
@@ -92,6 +93,7 @@ test.describe('Stripe One-Time Payment Flow', () => {
   test('should redirect to subscription-mode Stripe Checkout', async ({
     page,
   }) => {
+    // Kept skip (#196): no recurring SKU is active yet [ScriptHammer#772, #559]
     test.skip(
       !isStripeConfigured || !process.env.SUBSCRIPTION_SKU_ACTIVE,
       'No recurring SKU is active yet (#772/#559) — set SUBSCRIPTION_SKU_ACTIVE=1 once one is'
@@ -120,6 +122,7 @@ test.describe('Stripe One-Time Payment Flow', () => {
     await page.waitForURL(/checkout\.stripe\.com/, { timeout: 15000 });
   });
 
+  // Kept skip (#196): stub; no Stripe keys in CI; real Checkout needed
   test.skip('should handle payment cancellation gracefully', async ({
     page,
   }) => {
@@ -129,6 +132,7 @@ test.describe('Stripe One-Time Payment Flow', () => {
     );
   });
 
+  // Kept skip (#196): stub; no Stripe keys in CI; real Checkout needed
   test.skip('should display error for declined card', async ({ page }) => {
     test.skip(
       !isStripeConfigured,
@@ -193,6 +197,7 @@ test.describe('Stripe One-Time Payment Flow', () => {
     await expect(paypalTab).toHaveClass(/tab-active/);
   });
 
+  // Kept skip (#196): offline queue feature not yet implemented
   test.skip('should show offline queue indicator when offline', async ({
     page,
     context,

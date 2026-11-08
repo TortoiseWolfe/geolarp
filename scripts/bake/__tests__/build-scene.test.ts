@@ -203,6 +203,7 @@ describe('build-scene per-site behavior (synthetic fixture)', () => {
 const rawDir = join(process.cwd(), 'public/twins/chatt/_raw');
 const hasRaw = existsSync(join(rawDir, 'osm.json'));
 
+// Kept skip (#196): needs the gitignored local _raw cache; absent in CI
 describe.skipIf(!hasRaw)(
   'build-scene hero resolution (local _raw cache; skipped in CI)',
   () => {
@@ -303,6 +304,7 @@ describe.skipIf(!hasRaw)(
 
     // Also needs the cached drape (hasRaw alone only guarantees osm.json —
     // a partial cache would hard-fail inside runRegistration otherwise).
+    // Kept skip (#196): needs the cached drape.jpg; absent in CI [ScriptHammer#233]
     it.skipIf(!existsSync(join(rawDir, 'drape.jpg')))(
       'measures footprint-vs-aerial registration into the manifest (#233)',
       { timeout: 120_000 }, // Sobel over the full flagship drape under suite load

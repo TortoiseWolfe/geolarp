@@ -189,6 +189,7 @@ test.describe('/twins/[slug]?diorama — the R3F exhibit (opt-in since #292)', (
     ).toBeVisible({
       timeout: 15000,
     });
+    // Kept skip (#196): no WebGL on this runner; no fallback panel [ScriptHammer#288]
     test.skip(
       !(await webglAvailable(page)),
       'WebGL unavailable in this browser/runner; the twin route has no fallback panel'
@@ -211,6 +212,7 @@ test.describe('/twins/[slug]?diorama — the R3F exhibit (opt-in since #292)', (
         errors.push(`${msg.text()} [${msg.location()?.url ?? ''}]`);
     });
     await page.goto('/twins/chatt/?ortho');
+    // Kept skip (#196): no WebGL on this runner; no fallback panel [ScriptHammer#288]
     test.skip(
       !(await webglAvailable(page)),
       'WebGL unavailable in this browser/runner; the twin route has no fallback panel'
@@ -250,10 +252,12 @@ test.describe('/twins/[slug]?diorama — the R3F exhibit (opt-in since #292)', (
     // could not satisfy them the test failed instead of skipping. A precondition checked
     // after the fact is not a precondition.
     await announceRenderer(page);
+    // Kept skip (#196): no WebGL on this runner; no fallback panel [ScriptHammer#288]
     test.skip(
       !(await webglAvailable(page)),
       'WebGL unavailable in this browser/runner; the twin route has no fallback panel'
     );
+    // Kept skip (#196): software WebGL readback blocks clicks; needs a GPU [ScriptHammer#719]
     test.skip(
       !(await hardwareAccelerated(page)),
       'Software-rendered WebGL (SwiftShader/llvmpipe): compositing this canvas goes through ' +
@@ -402,6 +406,7 @@ test.describe('/chatt — the atlas is the default (#292)', () => {
     await expect(page.getByText('Atlas —').first()).toBeVisible({
       timeout: 20000,
     });
+    // Kept skip (#196): no WebGL on this runner; no fallback panel [ScriptHammer#288]
     test.skip(
       !(await webglAvailable(page)),
       'WebGL unavailable in this browser/runner; Cesium cannot initialise'
@@ -462,6 +467,7 @@ test.describe('/chatt — the atlas is the default (#292)', () => {
     await expect(page.getByText('Atlas —').first()).toBeVisible({
       timeout: 20000,
     });
+    // Kept skip (#196): no WebGL on this runner; no fallback panel [ScriptHammer#288]
     test.skip(
       !(await webglAvailable(page)),
       'WebGL unavailable in this browser/runner; the type chip renders only behind `ready`'
@@ -647,6 +653,7 @@ test.describe('/chatt — the atlas is the default (#292)', () => {
     await expect(page.getByText('Atlas —').first()).toBeVisible({
       timeout: 20000,
     });
+    // Kept skip (#196): no WebGL on this runner; no fallback panel [ScriptHammer#288]
     test.skip(
       !(await webglAvailable(page)),
       'WebGL unavailable in this browser/runner; the count renders only behind `ready`'

@@ -81,6 +81,7 @@ const invPath = path.resolve('sites/_warehouse/inventory.json');
 const modelsPath = path.resolve('public/twins/chatt/models/models.json');
 const haveRealData = existsSync(invPath) && existsSync(modelsPath);
 
+// Kept skip (#196): needs gitignored local inventory; absent in CI
 describe.skipIf(!haveRealData)(
   'assignSlugs ↔ committed chatt artifact',
   () => {

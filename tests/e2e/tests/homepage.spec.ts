@@ -161,6 +161,7 @@ test.describe('Template demo homepage (/template)', () => {
   });
 
   test('GitHub repository link opens in new tab', async ({ page, context }) => {
+    // Kept skip (#196): external tab popups are unreliable in CI
     test.skip(!!process.env.CI, 'External tab popups unreliable in CI');
 
     // Listen for new page/tab

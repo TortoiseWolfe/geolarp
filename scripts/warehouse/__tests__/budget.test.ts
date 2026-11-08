@@ -28,6 +28,7 @@ const CEILINGS = {
   textures: 2, // palette texture (+1 slack)
 };
 
+// Kept skip (#196): needs the local imported-building data; absent in CI [ScriptHammer#259]
 describe.skipIf(!present)('#259 sampled-building budget ceilings', () => {
   const raw = present
     ? (JSON.parse(readFileSync(REPORT, 'utf8')) as {
