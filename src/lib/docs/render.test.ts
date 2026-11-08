@@ -71,7 +71,7 @@ describe('rewriteRepoLinks', () => {
   });
 
   it('leaves a path that climbs out of the repository alone', () => {
-    const html = '<a href="../../outside.md">outside</a>';
+    const html = '<a href="../../../outside.md">outside</a>';
     expect(rewriteRepoLinks(html, 'docs/features/x.md')).toBe(html);
   });
 });
