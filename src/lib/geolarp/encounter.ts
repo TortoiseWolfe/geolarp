@@ -90,13 +90,10 @@ const PROFILES: Record<EncounterKind, KindProfile> = {
  * Heroic is deliberately rare — the ladder tops out well above what a starting
  * 3d7+skill can reach, so a Heroic cell is a thing to SAVE UP FOR rather than
  * a thing to come back to. It reseeds at midnight UTC: come back tomorrow and
- * that cell is something else. What carries over is the Character Points,
- * which buy a second chance after a roll (an extra die or a reroll, two at most
- * on one roll), so a Heroic cell stays something to save up for.
- *
- * Exported so the economy tests weigh the bands by the game's own numbers.
+ * that cell is something else. What carries over is the Character Points, and
+ * spending five of them is how a starting sheet reaches a Heroic floor at all.
  */
-export const DIFFICULTY_WEIGHTS: ReadonlyArray<[Difficulty, number]> = [
+const DIFFICULTY_WEIGHTS: ReadonlyArray<[Difficulty, number]> = [
   ['very-easy', 10],
   ['easy', 25],
   ['moderate', 30],

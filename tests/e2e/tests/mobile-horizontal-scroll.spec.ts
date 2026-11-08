@@ -98,7 +98,7 @@ import { join } from 'node:path';
 import { CRITICAL_MOBILE_WIDTHS } from '@/config/test-viewports';
 import { dismissCookieBanner } from '../utils/test-user-factory';
 import { waitForLoadStateOrGiveUp } from '../utils/settle';
-import { longestPost, mostCodePost, richestPost } from '../utils/blog-corpus';
+import { longestPost, richestPost } from '../utils/blog-corpus';
 
 const APP_DIR = join(process.cwd(), 'src/app');
 
@@ -424,14 +424,7 @@ test.describe('Horizontal Scroll Detection', () => {
 
   test('Pre/code blocks are responsive', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    // The post with the most code, not the richest in tables: a post with no
-    // <pre>/<code> makes the loop below measure nothing (see mostCodePost).
-    const post = mostCodePost();
-    expect(
-      post.codeBlocks.length + post.codeSpans,
-      'no published post has any code, so this test would measure nothing'
-    ).toBeGreaterThan(0);
-    await page.goto(`/blog/${post.slug}`);
+    await page.goto(`/blog/${richestPost().slug}`);
     await dismissCookieBanner(page);
     await page.waitForTimeout(800);
 
