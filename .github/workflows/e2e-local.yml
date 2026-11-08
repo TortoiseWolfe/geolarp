@@ -373,6 +373,9 @@ jobs:
           DISABLE_BASE_PATH: 'true'
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_e2e_dummy_not_a_real_key
           NEXT_PUBLIC_PAYPAL_CLIENT_ID: e2e_dummy_paypal_client_id
+          # Point the static build at the local Supabase stack so auth tests
+          # hit the local GoTrue instance, not production.
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
           # Dummy, and never reached: submitToWeb3Forms() THROWS when the key is
           # empty (web3forms.ts:95), so without this the contact form never gets
           # as far as fetch() and its submitting state cannot be observed (#850).
