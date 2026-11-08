@@ -97,7 +97,7 @@ Skills are what you usually roll. The attribute is the floor.
 
 `spec.md` §2 records attributes on a **1–7 scale** (`:53`), and that is simply not this system — D6 attributes are dice codes with pips, spanning `2d7`–`4d7` here, not integers 1 through 7. There is no conversion that makes both true.
 
-**`:53` is wrong and needs amending.** Recording it plainly rather than working around it: an earlier draft of this file invented "attribute value is its dice count, 1–7" to satisfy that sentence, which dropped pips, invented a range with no basis in D6, and left skills unmentioned. The post's correction of 4 November 2026 fixed this line, the advantage and disadvantage promise and the natural-7 wording together; `:124` is a separate line and is not covered by it.
+**`:53` is wrong and needs amending.** Recording it plainly rather than working around it: an earlier draft of this file invented "attribute value is its dice count, 1–7" to satisfy that sentence, which dropped pips, invented a range with no basis in D6, and left skills unmentioned. The post already owes a correction for `:124`; this rides along with it.
 
 The related clause at `:53-55` — the sheet "reads in the same units as the roll" — survives in a different and better way than the published one: a skill of `3d7+2` _is_ the dice you pick up. The sheet is the roll.
 

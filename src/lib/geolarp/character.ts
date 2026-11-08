@@ -2,10 +2,10 @@
  * The character model.
  *
  * Attributes and skills are DICE CODES WITH PIPS, as in West End Games' D6 —
- * `3d7+2`, not a number from 1 to 7. The blog's old line that attributes "sit
- * on the same 1-7 scale as the die" did not describe this system; it was
- * recorded as wrong in `features/enhancements/052-character-model/resolution.md`
- * §4 and corrected in the post with a dated note (4 Nov 2026).
+ * `3d7+2`, not a number from 1 to 7. The blog's line that attributes "sit on
+ * the same 1-7 scale as the die" (`the-world-is-the-board.md:53-55`) does not
+ * describe this system and is recorded as wrong in
+ * `features/enhancements/052-character-model/resolution.md` §4.
  *
  * A character is BROWSER-LOCAL by published promise: "Nothing about you goes to
  * a server, which is also why **you** are responsible for that export"
@@ -87,7 +87,7 @@ export const SKILL_MAX_OVER_ATTRIBUTE = 1;
 export const SKILL_FOCUS_MAX_OVER_ATTRIBUTE = 2;
 
 /**
- * The Character Points a character begins with.
+ * The stake a character begins with.
  *
  * Named because the bare `5` appeared in NO specification document — not in
  * `spec.md`, not in `resolution.md`. It was an implementation invention filling
@@ -105,11 +105,7 @@ export interface Character {
   attributes: Record<AttributeName, DiceCode>;
   /** Only skills raised above their attribute are stored. */
   skills: Partial<Record<SkillName, DiceCode>>;
-  /**
-   * Spendable AFTER a roll, one point for an extra die or a reroll, two at most
-   * on one roll (`dice.ts`: `PURCHASE_COST`, `MAX_POINTS_PER_ROLL`). D6's
-   * Character Points.
-   */
+  /** Spendable for a reroll; D6's Character Points. */
   characterPoints: number;
   /**
    * The UTC day of the most recent earning, `YYYY-MM-DD`.
@@ -286,9 +282,9 @@ export function advance(code: DiceCode, pips: number): DiceCode {
 }
 
 /**
- * Spend Character Points. Returns the updated character; the caller is billing
- * purchases made after a roll (`buy` in `dice.ts`). Spending more than you have
- * is a bug in the caller, not a house rule, so it throws.
+ * Spend Character Points. Returns the updated character; the caller passes the
+ * same count to `roll` as `bonusDice`. Spending more than you have is a bug in
+ * the caller, not a house rule, so it throws.
  */
 export function spendCharacterPoints(char: Character, n: number): Character {
   if (n < 0) throw new Error('cannot spend a negative number of points');
