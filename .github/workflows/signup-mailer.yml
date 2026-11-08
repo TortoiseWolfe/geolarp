@@ -164,7 +164,7 @@ jobs:
           # generated addresses plus-routed. Nothing leaves the machine: local
           # Supabase delivers to Mailpit, so there is no bounce risk (#361).
           TEST_USER_PRIMARY_EMAIL: geolarp.e2e+local@gmail.com
-          TEST_USER_PRIMARY_PASSWORD: LocalStackTestPassword123!
+          TEST_USER_PRIMARY_PASSWORD: ${{ secrets.TEST_USER_PRIMARY_PASSWORD }}
         run: scripts/ci/playwright-in-container.sh test --config playwright.signup-mailer.config.ts
 
       - name: Dump logs on failure
