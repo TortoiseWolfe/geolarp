@@ -166,19 +166,8 @@ export function useCharacterPlay(
   /** `${seed}|${skill}` — an outcome belongs to the skill that produced it. */
   const keyFor = (seed: string, skill: SkillName | null) =>
     `${seed}|${skill ?? ''}`;
-  /**
-   * Points already billed on each roll, keyed `${seed}|${skill}`. The roller
-   * reports a running total for the roll, so a purchase bills the difference
-   * and a replay of the same state bills nothing: one bill per point.
-   */
-  const charged = useRef(new Map<string, number>());
-  /**
-   * Cells whose payout has been collected, by encounter seed. A cell pays its
-   * first WIN, not its first roll: with points bought after the roll, a miss
-   * followed by a bought reroll is one attempt at the cell, and a miss must not
-   * use up the only payout it offers.
-   */
-  const paid = useRef(new Set<string>());
+  /** `${seed}|${skill}|${stake}` already charged. Identical dice, one bill. */
+  const charged = useRef(new Set<string>());
   /** Set when the player enters GPS mode; the next fix anchors and clears it (#140). */
   const anchorNextFix = useRef(false);
 
@@ -404,23 +393,25 @@ export function useCharacterPlay(
       setResult(r);
       if (!encounter) return;
 
-      const rollKey = keyFor(encounter.seed, selectedSkill);
-      // Points are billed as they are bought, once each. The roller reports the
-      // running total spent on this roll, so what is owed now is the difference
-      // from what has already been billed; replaying a state owes nothing.
-      const billed = charged.current.get(rollKey) ?? 0;
-      const spend = Math.max(0, pointsSpent - billed);
-      charged.current.set(rollKey, Math.max(billed, pointsSpent));
+      const stakeKey = `${encounter.seed}|${selectedSkill ?? ''}|${pointsSpent}`;
+      // Identical dice must not be billed twice. Resolution is seeded from the
+      // cell, so re-rolling at the same stake returns the same faces — charging
+      // again for numbers the player has already seen would be a toll on
+      // looking.
+      const alreadyCharged = charged.current.has(stakeKey);
+      charged.current.add(stakeKey);
 
-      // Payment is per CELL and goes to the first WIN on it; memory is per cell
-      // AND skill, because an outcome labelled with the wrong skill is worse
-      // than no memory at all.
-      resolved.current.set(rollKey, r);
-      const firstWin = r.success === true && !paid.current.has(encounter.seed);
-      if (firstWin) paid.current.add(encounter.seed);
-      const reward = firstWin ? rewardFor(encounter.difficulty, r) : 0;
+      // One payout per cell per session, whatever the player rolls afterwards.
+      // Payment is per CELL; memory is per cell AND skill, because an outcome
+      // labelled with the wrong skill is worse than no memory at all.
+      const firstResolution = ![...resolved.current.keys()].some((k) =>
+        k.startsWith(`${encounter.seed}|`)
+      );
+      resolved.current.set(keyFor(encounter.seed, selectedSkill), r);
+      const reward = firstResolution ? rewardFor(encounter.difficulty, r) : 0;
       setEarned(reward > 0 ? reward : null);
 
+      const spend = alreadyCharged ? 0 : pointsSpent;
       if (spend <= 0 && reward <= 0) return;
 
       setCharacter((prev) => {
@@ -432,7 +423,7 @@ export function useCharacterPlay(
          * that silently absorbs a bad argument is worse. But here that throw
          * runs inside a setState updater, where React surfaces it during commit
          * and the player gets a blank screen on the one route that holds their
-         * character. The roller only offers a purchase the balance covers; this clamps again, because
+         * character. The component clamps its stake; this clamps again, because
          * a crash on the character sheet is not an acceptable failure mode for
          * an arithmetic slip.
          */

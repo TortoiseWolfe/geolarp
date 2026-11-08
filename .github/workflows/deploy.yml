@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  deployments: read
   pages: write
   id-token: write
 
@@ -236,10 +237,26 @@ jobs:
         id: retain
         continue-on-error: true
         run: |
+          # WHO DEPLOYED LAST (#157). The newest github-pages deployment whose latest
+          # status is `success` is the deploy actually serving the site, so a re-run, a
+          # rollback or a failed publish still names the right predecessor. If the API
+          # cannot answer, the variable stays empty and the script says so rather than
+          # guessing; it never fails the deploy.
+          EXPECTED_PREVIOUS_DEPLOY_SHA=""
+          for id in $(gh api "repos/${GITHUB_REPOSITORY}/deployments?environment=github-pages&per_page=20" --jq '.[].id' 2>/dev/null); do
+            state=$(gh api "repos/${GITHUB_REPOSITORY}/deployments/${id}/statuses?per_page=1" --jq '.[0].state' 2>/dev/null || true)
+            if [ "$state" = "success" ]; then
+              EXPECTED_PREVIOUS_DEPLOY_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/deployments/${id}" --jq '.sha' 2>/dev/null || true)
+              break
+            fi
+          done
+          echo "last successful deploy: ${EXPECTED_PREVIOUS_DEPLOY_SHA:-unknown}"
+          export EXPECTED_PREVIOUS_DEPLOY_SHA
           node scripts/retain-previous-assets.mjs merged-output \
             "${SITE_URL:-https://geolarp.com}"
         env:
           SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          GH_TOKEN: ${{ github.token }}
           # HOW LONG an asset is carried. Stated in days because the exposure is a
           # duration: how long a visitor may still be holding a document.
           #
