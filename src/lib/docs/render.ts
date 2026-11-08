@@ -88,7 +88,7 @@ export function rewriteRepoLinks(html: string, sourceFile: string): string {
 
   return html.replace(
     /\b(href|src)=("([^"]*)"|'([^']*)')/g,
-    (match, attr: string, quote: string, double: string, single: string) => {
+    (match, attr: string, fullQuoted: string, double: string, single: string) => {
       const url = double ?? single;
       if (!url || /^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(url)) return match;
 
@@ -102,6 +102,8 @@ export function rewriteRepoLinks(html: string, sourceFile: string): string {
 
       const suffix = (query ? `?${query}` : '') + (hash ? `#${hash}` : '');
       const slug = slugByFile.get(resolved);
+      // The quote character is the first char of the full quoted string.
+      const quote = fullQuoted[0];
       if (slug) {
         return `${attr}=${quote}${basePath}/docs/${slug}/${suffix}${quote}`;
       }
