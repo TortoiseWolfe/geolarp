@@ -179,7 +179,7 @@ export class HomePage extends BasePage {
    * (Navigating to external sites in CI is flaky and tests GitHub, not us)
    */
   async verifyGitHubRepoLink() {
-    const link = this.page.locator(this.selectors.viewSourceButton).first();
+    const link = this.page.locator(this.selectors.githubLink).first();
     await expect(link).toBeVisible();
 
     // Verify it has target="_blank" (opens in new tab)

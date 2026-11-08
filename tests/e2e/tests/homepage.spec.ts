@@ -161,12 +161,8 @@ test.describe('Template demo homepage (/template)', () => {
   });
 
 test('GitHub repository link opens in new tab', async ({ page }) => {
-    // Find the "View Source" link/button
-    const viewSourceLink = page.getByRole('link', { name: /View Source/i }).first();
-    // Or it might be a button that triggers navigation - check both
-    const viewSourceButton = page.getByRole('button', { name: /View Source/i }).first();
-
-    const link = (await viewSourceLink.count()) ? viewSourceLink : viewSourceButton;
+    // Find the GitHub link - use the href pattern since the link text is "Clone the starter"
+    const link = page.locator('a[href*="github.com"]').first();
     await expect(link).toBeVisible();
 
     // Verify it has target="_blank" (opens in new tab)
