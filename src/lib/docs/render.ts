@@ -1,5 +1,7 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, posix } from 'node:path';
+import { getProjectConfig } from '@/config/project.config';
+import { DOCS } from './registry';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
@@ -59,7 +61,58 @@ export async function renderDoc(file: string): Promise<RenderedDoc> {
       .process(bare)
   );
 
-  return { html: withIds, headings: headingsFrom(withIds) };
+  // The source markdown was written to be read on GitHub, where `docs/FORKING.md`
+  // is a valid relative link. Rendered into `/docs/<slug>/` that same href points
+  // at a file the static site does not serve, so every repository link 404s
+  // (28 of them, all on `/docs/*` — #196).
+  const html = rewriteRepoLinks(withIds, file);
+
+  return { html, headings: headingsFrom(html) };
+}
+
+const IMAGE = /\.(?:png|jpe?g|gif|svg|webp|avif|ico)$/i;
+
+/**
+ * Map a rendered doc's relative links onto places the site can actually serve:
+ * other docs become their `/docs/<slug>/` route, repository files go to GitHub
+ * (blob, or raw for images). Absolute, protocol-relative, root-relative and
+ * fragment-only hrefs are already valid and are left alone.
+ *
+ * This cannot live in the markdown: the same files are read on GitHub, where a
+ * `/docs/<slug>/` route does not exist.
+ */
+export function rewriteRepoLinks(html: string, sourceFile: string): string {
+  const { projectUrl, basePath } = getProjectConfig();
+  const sourceDir = posix.dirname(sourceFile);
+  const slugByFile = new Map(DOCS.map((d) => [d.file, d.slug]));
+
+  return html.replace(
+    /\b(href|src)=("([^"]*)"|'([^']*)')/g,
+    (match, attr: string, fullQuoted: string, double: string, single: string) => {
+      const url = double ?? single;
+      if (!url || /^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(url)) return match;
+
+      const [beforeHash, hash] = url.split('#');
+      const [pathPart, query] = beforeHash.split('?');
+      if (!pathPart) return match;
+
+      const resolved = posix.normalize(posix.join(sourceDir, pathPart));
+      // A `..` that climbs out of the repository is not a repo file.
+      if (resolved.startsWith('..')) return match;
+
+      const suffix = (query ? `?${query}` : '') + (hash ? `#${hash}` : '');
+      const slug = slugByFile.get(resolved);
+      // The quote character is the first char of the full quoted string.
+      const quote = fullQuoted[0];
+      if (slug) {
+        return `${attr}=${quote}${basePath}/docs/${slug}/${suffix}${quote}`;
+      }
+
+      const isAsset = attr === 'src' || IMAGE.test(resolved);
+      const base = isAsset ? `${projectUrl}/raw/main` : `${projectUrl}/blob/main`;
+      return `${attr}=${quote}${base}/${resolved}${suffix}${quote}`;
+    }
+  );
 }
 
 /**
