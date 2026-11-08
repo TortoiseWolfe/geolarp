@@ -194,8 +194,15 @@ async function checkInternalLink(
       return;
     }
 
+    // A URL fragment never changes the HTTP response, and navigating from a
+    // page to that same page plus an anchor is a same-document navigation
+    // where Playwright resolves `page.goto` with a null response. Check each
+    // document once, ignoring its fragment, so a cross-page anchor is not
+    // reported as a broken link.
+    const documentUrl = targetUrl.split('#')[0];
+
     // Skip if already visited
-    if (visitedUrls.has(targetUrl)) {
+    if (visitedUrls.has(documentUrl)) {
       return;
     }
 
@@ -216,11 +223,11 @@ async function checkInternalLink(
       return;
     }
 
-    visitedUrls.add(targetUrl);
+    visitedUrls.add(documentUrl);
 
     try {
       // Navigate to the target URL (use domcontentloaded - faster and sufficient for 404 check)
-      const response = await page.goto(targetUrl, {
+      const response = await page.goto(documentUrl, {
         waitUntil: 'domcontentloaded',
         timeout: 30000,
       });
