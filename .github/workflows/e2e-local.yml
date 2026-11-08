@@ -347,6 +347,38 @@ jobs:
             echo "edge runtime absent at this commit — skipping its readiness probe"
           fi
 
+      - name: Verify avatars bucket exists in local storage
+        run: |
+          set +e
+          for i in $(seq 1 10); do
+            # Use service role key for admin storage API access
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
+              -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+              http://localhost:54321/storage/v1/bucket/avatars)
+            [ "$code" = "200" ] && { echo "avatars bucket ready after ${i} attempt(s)"; break; }
+            # If bucket doesn't exist (404) or any other error (400, etc.), try to create it
+            if [ "$code" != "200" ]; then
+              echo "avatars bucket not accessible (code=$code), creating..."
+              # Create the bucket via storage API using service role key
+              create_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
+                -X POST \
+                -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+                -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+                -H "Content-Type: application/json" \
+                -d '{"id":"avatars","name":"avatars","public":true,"file_size_limit":5242880,"allowed_mime_types":["image/jpeg","image/png","image/webp"]}' \
+                http://localhost:54321/storage/v1/bucket)
+              echo "bucket create response: $create_code"
+              # 200/201 = created, 409 = already exists (race condition), both OK
+              if [ "$create_code" = "200" ] || [ "$create_code" = "201" ] || [ "$create_code" = "409" ]; then
+                echo "avatars bucket created or already exists"
+                break
+              fi
+            fi
+            sleep 3
+          done
+          [ "$code" = "200" ] || { echo "::error::avatars bucket not accessible (last=$code)"; exit 1; }
+
       - name: Assert schema fidelity before trusting any result
         run: |
           # docker-compose.yml mounts the SAME monolithic migration production
