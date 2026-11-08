@@ -46,8 +46,7 @@ test.describe('Homepage Navigation (with Page Objects)', () => {
   });
 
   test('GitHub repository link opens in new tab', async () => {
-    const newPage = await homePage.openGitHubRepo();
-    expect(newPage.url()).toContain('github.com');
-    await newPage.close();
+    const href = await homePage.verifyGitHubRepoLink();
+    expect(href).toContain('github.com');
   });
 });

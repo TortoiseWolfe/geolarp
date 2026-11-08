@@ -160,18 +160,22 @@ test.describe('Template demo homepage (/template)', () => {
     await page.goBack();
   });
 
-  test('GitHub repository link opens in new tab', async ({ page, context }) => {
-    test.skip(!!process.env.CI, 'External tab popups unreliable in CI');
+test('GitHub repository link opens in new tab', async ({ page }) => {
+    // Find the GitHub link - use the href pattern since the link text is "Clone the starter"
+    const link = page.locator('a[href*="github.com"]').first();
+    await expect(link).toBeVisible();
 
-    // Listen for new page/tab
-    const [newPage] = await Promise.all([
-      context.waitForEvent('page'),
-      page.click('text=View Source'),
-    ]);
+    // Verify it has target="_blank" (opens in new tab)
+    const target = await link.getAttribute('target');
+    expect(target).toBe('_blank');
 
-    // Check the new tab URL
-    await newPage.waitForLoadState();
-    expect(newPage.url()).toContain('github.com');
-    await newPage.close();
+    // Verify the href points to GitHub
+    const href = await link.getAttribute('href');
+    expect(href).toContain('github.com');
+
+    // NOTE: We intentionally do NOT navigate to the GitHub URL here.
+    // Navigating to an external site in CI introduces flakiness (network issues,
+    // rate limits, GitHub downtime) and tests GitHub's behavior, not ours.
+    // Our page's behavior is verified by checking the link attributes above.
   });
 });

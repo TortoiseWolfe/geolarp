@@ -175,17 +175,22 @@ export class HomePage extends BasePage {
   }
 
   /**
-   * Open GitHub repository in new tab
-   * @returns The new page object for the GitHub tab
+   * Verify GitHub repository link attributes without navigating
+   * (Navigating to external sites in CI is flaky and tests GitHub, not us)
    */
-  async openGitHubRepo() {
-    const [newPage] = await Promise.all([
-      this.page.context().waitForEvent('page'),
-      this.clickWithRetry(this.selectors.viewSourceButton),
-    ]);
+  async verifyGitHubRepoLink() {
+    const link = this.page.locator(this.selectors.githubLink).first();
+    await expect(link).toBeVisible();
 
-    await newPage.waitForLoadState();
-    return newPage;
+    // Verify it has target="_blank" (opens in new tab)
+    const target = await link.getAttribute('target');
+    expect(target).toBe('_blank');
+
+    // Verify the href points to GitHub
+    const href = await link.getAttribute('href');
+    expect(href).toContain('github.com');
+
+    return href;
   }
 
   /**
