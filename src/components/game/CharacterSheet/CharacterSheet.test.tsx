@@ -391,3 +391,30 @@ describe('a stored skill below its attribute (#64)', () => {
     expect(row.textContent).not.toContain('(trained)');
   });
 });
+
+describe('the MVP sheet: one skill per line, and an honest sample', () => {
+  it('list layout puts every skill on its own line, in a single column', () => {
+    render(<CharacterSheet character={character} layout="list" />);
+    const lists = screen
+      .getAllByRole('list')
+      .filter((ul) => ul.querySelector('li'));
+    const rows = lists.flatMap((ul) => Array.from(ul.children));
+    expect(rows).toHaveLength(Object.keys(SKILLS).length);
+    for (const ul of lists) {
+      expect(ul).toHaveClass('flex-col');
+      expect(ul).not.toHaveClass('grid-cols-2');
+    }
+  });
+
+  it('a sample does not claim to be saved in this browser', () => {
+    render(<CharacterSheet character={character} sample />);
+    expect(screen.getByText(/sample character/)).toBeInTheDocument();
+    expect(screen.queryByText(/lives in this browser/)).toBeNull();
+    expect(screen.queryByText(/never exported/)).toBeNull();
+  });
+
+  it('a real sheet still says it lives in this browser only', () => {
+    render(<CharacterSheet character={character} />);
+    expect(screen.getByText(/lives in this browser only/)).toBeInTheDocument();
+  });
+});

@@ -102,6 +102,11 @@ export interface Character {
   /** Schema version, so an exported file can be migrated rather than rejected. */
   version: 1;
   name: string;
+  /**
+   * A line of who this character is ("a ferry pilot who owes a favour").
+   * Optional so every character already stored still loads.
+   */
+  concept?: string;
   attributes: Record<AttributeName, DiceCode>;
   /** Only skills raised above their attribute are stored. */
   skills: Partial<Record<SkillName, DiceCode>>;
@@ -138,8 +143,44 @@ export interface Character {
    * imported onto a new device genuinely has never been exported from there.
    */
   exportedAt?: string;
+  /**
+   * What the wallet did, newest last: points spent and points paid, with the
+   * skill and the day. Optional so `version` stays 1 and every character already
+   * in a browser or an exported file still loads. It holds NO place and no
+   * clock reading finer than the UTC day: it is a ledger of the economy, not of
+   * movement, which is what keeps it inside the "no location history" promise.
+   * Capped at `HISTORY_LIMIT` entries by `withHistory`.
+   */
+  history?: HistoryEntry[];
   /** ISO timestamp. */
   created: string;
+}
+
+/** One line of the wallet's ledger. */
+export interface HistoryEntry {
+  /** UTC day, `YYYY-MM-DD`. */
+  day: string;
+  /** What was rolled. */
+  skill: string;
+  /** Negative for points spent on a roll, positive for points paid. */
+  change: number;
+  /** Plain words, e.g. "Bought an extra die" or "Won a Difficult roll". */
+  note: string;
+}
+
+/** The ledger keeps the most recent entries only; a sheet is not an archive. */
+export const HISTORY_LIMIT = 50;
+
+/** Append ledger entries, keeping the newest `HISTORY_LIMIT`. */
+export function withHistory(
+  char: Character,
+  entries: HistoryEntry[]
+): Character {
+  if (entries.length === 0) return char;
+  return {
+    ...char,
+    history: [...(char.history ?? []), ...entries].slice(-HISTORY_LIMIT),
+  };
 }
 
 export interface SkillRating {
