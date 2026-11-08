@@ -1,0 +1,66 @@
+{
+  "elements": [
+    {
+      "type": "way",
+      "id": 173782782,
+      "tags": { "building": "yes", "name": "Tennessee Aquarium" },
+      "geometry": [
+        { "lat": 35.0537, "lon": -85.3095 },
+        { "lat": 35.0537, "lon": -85.3085 },
+        { "lat": 35.0527, "lon": -85.3085 },
+        { "lat": 35.0527, "lon": -85.3095 }
+      ]
+    },
+    {
+      "type": "way",
+      "id": 164158074,
+      "tags": { "bridge": "yes", "name": "Walnut Street Bridge" },
+      "geometry": [
+        { "lat": 35.0577, "lon": -85.3101 },
+        { "lat": 35.0577, "lon": -85.3081 },
+        { "lat": 35.0567, "lon": -85.3081 },
+        { "lat": 35.0567, "lon": -85.3101 }
+      ]
+    },
+    {
+      "type": "way",
+      "id": 79292898,
+      "tags": { "building": "courthouse", "name": "Hamilton County Courthouse" },
+      "geometry": [
+        { "lat": 35.0452, "lon": -85.3092 },
+        { "lat": 35.0452, "lon": -85.3082 },
+        { "lat": 35.0442, "lon": -85.3082 },
+        { "lat": 35.0442, "lon": -85.3092 }
+      ]
+    },
+    {
+      "type": "way",
+      "id": 66951392,
+      "tags": { "building": "office", "name": "Republic Centre" },
+      "geometry": [
+        { "lat": 35.0458, "lon": -85.3078 },
+        { "lat": 35.0458, "lon": -85.3068 },
+        { "lat": 35.0448, "lon": -85.3068 },
+        { "lat": 35.0448, "lon": -85.3078 }
+      ]
+    },
+    {
+      "type": "way",
+      "id": 1001,
+      "tags": { "highway": "residential", "name": "Broad Street" },
+      "geometry": [
+        { "lat": 35.0500, "lon": -85.3120 },
+        { "lat": 35.0400, "lon": -85.3120 }
+      ]
+    },
+    {
+      "type": "way",
+      "id": 1002,
+      "tags": { "highway": "primary", "name": "Market Street" },
+      "geometry": [
+        { "lat": 35.0300, "lon": -85.3100 },
+        { "lat": 35.0600, "lon": -85.3100 }
+      ]
+    }
+  ]
+}
