@@ -1,0 +1,80 @@
+# GeoLARP WordPress test site on the co-op WordPress base image.
+# Local or tower staging only: it listens on 127.0.0.1 and has no public address.
+#
+#   ./make-env.sh                                              # once: throwaway settings
+#   docker compose -p geolarp-wp up -d --build
+#   docker compose -p geolarp-wp --profile seed run --rm wpcli sh /site/setup.sh
+#   open http://127.0.0.1:8095
+#
+# Take it all down, volumes included:  docker compose -p geolarp-wp down -v
+
+name: geolarp-wp
+
+services:
+  db:
+    image: mariadb:11.4@sha256:d1891ede5a559f1086f55053bb8cc1569b0298338c4d72d71725a7f74f6ba620
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: ${DB_PASSWORD:?run ./make-env.sh first}
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  wordpress:
+    build: ./base
+    image: chattanooga-digital/wordpress-base:7.1-php8.3
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_HOME', '${WP_URL}');
+        define('WP_SITEURL', '${WP_URL}');
+        define('DISALLOW_FILE_EDIT', true);
+        define('WP_ENVIRONMENT_TYPE', 'staging');
+    ports:
+      - "127.0.0.1:${WP_PORT:-8095}:80"
+    volumes:
+      - wp:/var/www/html
+      - ./site/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+
+  # Seeding only: docker compose -p geolarp-wp --profile seed run --rm wpcli sh /site/setup.sh
+  wpcli:
+    image: chattanooga-digital/wordpress-base:7.1-php8.3
+    profiles: ["seed"]
+    user: "33:33"
+    depends_on:
+      db:
+        condition: service_healthy
+      wordpress:
+        condition: service_healthy
+    entrypoint: []
+    healthcheck:
+      disable: true
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: wordpress
+      WP_URL: ${WP_URL}
+      WP_ADMIN_USER: ${WP_ADMIN_USER}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
+      WP_CLI_CACHE_DIR: /tmp/wp-cli-cache
+    working_dir: /var/www/html
+    volumes:
+      - wp:/var/www/html
+      - ./site:/site:ro
+
+volumes:
+  db:
+  wp:

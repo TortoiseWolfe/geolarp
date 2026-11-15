@@ -1,0 +1,79 @@
+<p>There has been a domain, a mark, and a coming-soon page for a while now, and no explanation of what any of it is for. So here is the design, plainly, including the parts I have not settled.</p>
+
+<p>The short version: <strong>geoLARP is geo-located live action role-playing.</strong> The street outside is the board. Your phone is the character sheet. You walk somewhere, and something is there — not because a designer placed it, but because that patch of ground and today's date hash to it.</p>
+
+<h2>🎲 Why a seven-sided die</h2>
+
+<p>Every tabletop system picks a die and inherits its personality. geoLARP runs on <strong>1d7</strong>, and that is not a gimmick — it changes the feel of play in a way you can calculate.</p>
+
+<table>
+<thead><tr><th></th><th>d20</th><th>d6</th><th><strong>d7</strong></th></tr></thead>
+<tbody>
+<tr><td>each face</td><td>5%</td><td>16.7%</td><td><strong>14.3%</strong></td></tr>
+<tr><td>average roll</td><td>10.5</td><td>3.5</td><td><strong>4.0</strong></td></tr>
+<tr><td>critical success</td><td>5%</td><td>—</td><td><strong>14.3%</strong></td></tr>
+</tbody>
+</table>
+
+<p>The 4.0 average is for one ordinary die. The 14.3 percent critical is a different thing: a roll has one "wild" die, and when that die's first face shows a 7, the roll is a critical and the die explodes (you roll it again and add). Ordinary dice never explode.</p>
+
+<p>A natural 20 lands about once every twenty rolls. A <strong>critical on the wild die lands about once every seven</strong> — nearly three times as often. Criticals stop being a rare fireworks moment and become a texture you plan around. The same is true at the bottom: a 1 on the wild die complicates things about as often as a 7 saves them, so the game keeps handing you both.</p>
+
+<p>Attributes (Strength, Agility, Intellect, Spirit, Luck) are written as dice codes like 3d7+2, so a character sheet reads in the same dice as the roll; circumstances will shift the difficulty rather than change the dice.</p>
+
+<p>You may have noticed the site's mark is a seven-sided die. That is not decoration. It is the one design decision everything else is built on, so it may as well be the logo.</p>
+
+<blockquote><p>A physical d7 is geometrically impractical — you cannot fairly divide a solid into seven equal faces the way you can into six or twenty. The digital-only constraint is not a compromise for a phone game. It is the reason this die can exist at all.</p></blockquote>
+
+<h2>🗺️ Encounters made of coordinates</h2>
+
+<p>The world is divided into <strong>100-metre cells</strong>. Each cell's coordinates are hashed into a seed, and that seed generates what is there — a monster, a trader, a cache, a shrine, a trap. Five kinds, scaled by a challenge rating tuned to the d7 curve.</p>
+
+<p>Two consequences fall out of that, and they are the whole reason for the design:</p>
+
+<p><strong>It is the same for everybody.</strong> No server assigns you an encounter. The corner of your street holds the same thing for you as for the person who walks past an hour later, because it is derived from the place, not handed out. That is what makes it a shared world rather than a private one.</p>
+
+<p><strong>Encounters need nothing behind them.</strong> No matchmaking and no database of what is where: your device can generate the seven-cell flower around you (the cell you stand in and its six neighbours) while completely offline, from map tiles it cached earlier.</p>
+
+<h2>🔒 Where you are, and who knows it</h2>
+
+<p>geoLARP is for adults, and it is played with other people on real streets.</p>
+
+<p>Everyone who plays shares their exact location with the other players and game masters, all the time, as precisely as their phone can give it. That is the game: the people around you know where you are, and you know where they are. If you do not want to share your location, do not play.</p>
+
+<p>No history of where you went is kept, and your location is never sold or used for advertising. The details are on the <a href="https://geolarp.com/app-privacy/">App Privacy</a> page.</p>
+
+<h2>🚶 What playing actually looks like</h2>
+
+<p>You generate a character in well under a minute — the target is ten seconds — and it lives in your browser's storage. You can export it as a file or a QR code and carry it to another device, and <strong>you</strong> are responsible for that export; clearing your browser data clears your character, and the game will warn you rather than quietly lose it.</p>
+
+<p>Then you go outside. Quests are built around real distance — walk a quarter mile and see what is at the other end. The design target is about half a mile of actual walking in a session. This is a game that only works if you move.</p>
+
+<h2>🏗️ What exists today, honestly</h2>
+
+<p>I would rather undersell this than have you click through to a disappointment.</p>
+
+<p><strong>Playable now, and worth your time:</strong></p>
+
+<ul>
+<li>🌆 A <a href="https://geolarp.com/chatt/">3D digital twin of Chattanooga</a> — around eight thousand buildings at real rooftop heights, over the real street grid, from open data, with no server behind it</li>
+<li>🚲 <a href="https://geolarp.com/blog/ride-the-open-source-city">First-person walking and cycling through it</a>, on an asset-free procedural engine that ships zero texture or model files</li>
+<li>🧱 A bare <a href="https://geolarp.com/game/cod-skeleton">test level</a> proving the engine is reusable rather than one scene in a trenchcoat</li>
+</ul>
+
+<p><strong>Designed, specified, not yet a game you can play:</strong> the d7 system, the character model, the encounter engine, the offline map layer. The specifications are written. The game is not finished. There is no beta build to hand you today, and the signup form on the front page is the honest version of that — it takes an address and tells you nothing else has happened yet.</p>
+
+<h2>🙋 The part where you come in</h2>
+
+<p>This is early enough that the interesting version of this game is not the one I sketch alone. Some questions I genuinely have not answered:</p>
+
+<ol>
+<li><strong>What is the fiction?</strong> The mechanics are specified; the <em>world</em> is not. Is this fantasy laid over the real street, near-future, folk-horror, something with no combat in it at all? The encounter types — monster, trader, cache, shrine, trap — are placeholders wearing familiar clothes.</li>
+<li><strong>What happens when two players meet?</strong> They can see each other on the radar; what they do then is open. Co-op, competition, or simply knowing someone else has been here — each pulls the design somewhere different.</li>
+<li><strong>How much walking is too much?</strong> Half a mile a session is a guess. It is the difference between a game you play on a commute and one you make a trip for, and I do not know which this should be.</li>
+<li><strong>Does the seven hold up in play?</strong> Criticals landing three times as often as d20 reads well on paper. Whether it feels generous or chaotic is not something arithmetic can tell me.</li>
+</ol>
+
+<p>If any of that makes you want to argue with me, that is exactly the point. The <strong>Notify me</strong> box on the <a href="https://geolarp.com">front page</a> is where to start — it is a real list now, stored properly, and it will be used once, to tell you when there is something to play. If you would rather argue in public than wait, the <a href="https://geolarp.com/blog/playable-city-chattanooga">playable-city brainstorm</a> has its own open questions and the door propped open the same way.</p>
+
+<p>Come help decide what this is while it is still deciding.</p>
