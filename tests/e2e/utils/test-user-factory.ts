@@ -495,7 +495,6 @@ export const DEFAULT_TEST_PASSWORD = 'TestPassword123!';
  *
  * Dismisses:
  * - Cookie consent banner ("Accept All" button)
- * - Promotional countdown banner ("Dismiss countdown banner" button)
  *
  * @param page - Playwright page object
  * @param options - Configuration options
@@ -540,19 +539,6 @@ export async function dismissCookieBanner(
         },
         { timeout: 3000 }
       );
-    }
-  } catch {
-    // Banner not present or already dismissed - continue silently
-  }
-
-  // Dismiss promotional countdown banner using force click
-  try {
-    const countdownDismiss = page.getByRole('button', {
-      name: /dismiss countdown banner/i,
-    });
-    if (await countdownDismiss.isVisible({ timeout }).catch(() => false)) {
-      await countdownDismiss.click({ force: true });
-      await page.waitForTimeout(500);
     }
   } catch {
     // Banner not present or already dismissed - continue silently
@@ -1717,17 +1703,6 @@ export async function openAuthedPage(
 ): Promise<OpenedParticipant> {
   const context = await browser.newContext({
     storageState: { cookies: [], origins: [] },
-  });
-  // The promotional countdown banner is fixed at the top right from 31 Oct to
-  // 31 Dec and sits over message bubbles' Edit/Delete buttons. It mounts after
-  // hydration, so dismissCookieBanner (which checks once) can run before it
-  // exists. Seed its own dismissal key so it never renders in these contexts.
-  await context.addInitScript(() => {
-    try {
-      localStorage.setItem('countdown-dismissed', String(Date.now()));
-    } catch {
-      // storage unavailable: the banner shows, tests that need it dismiss it
-    }
   });
   const page = await context.newPage();
   await injectSessionIntoPage(page, session);
